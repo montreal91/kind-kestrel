@@ -149,13 +149,21 @@ public final class Lexer {
     }
 
     if (!hasNext()) {
-      return new ErrorToken(line, getCurrentLine(), "Missing closing of the string.");
+      return new ErrorToken(
+          line,
+          getCurrentLine(),
+          "Missing closing of the string."
+      );
     }
     if (getCurrentChar() == '"') {
       next();
       return new Token(TokenType.STRING, sb.toString());
     }
-    ErrorToken et = new ErrorToken(line, getCurrentLine(), "Missing closing of the string.");
+    ErrorToken et = new ErrorToken(
+        line,
+        getCurrentLine(),
+        "Missing closing of the string."
+    );
     next();
     line++;
     return et;
@@ -206,7 +214,11 @@ public final class Lexer {
       return new Token(TokenType.LESSER, "<");
     }
 
-    Token errorToken = new ErrorToken(line, getCurrentLine(), "Unexpected character: " + getCurrentChar());
+    Token errorToken = new ErrorToken(
+        line,
+        getCurrentLine(),
+        "Unexpected character: " + getCurrentChar()
+    );
     hasErrors = true;
     skipComment();
     return errorToken;
