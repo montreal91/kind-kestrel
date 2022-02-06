@@ -10,6 +10,14 @@ class Parser {
     this.tokens = tokens;
   }
 
+  Expr parse() {
+    try {
+      return expression();
+    } catch (ParseError e) {
+      return null;
+    }
+  }
+
 
   /**
    * expression → equality
@@ -103,10 +111,7 @@ class Parser {
       consume(TokenType.RPAR, "Expect ')' after expression.");
       return new Expr.Grouping(expression);
     }
-    throw new RuntimeException("This should never happen.");
-  }
-
-  private void consume(TokenType rpar, String s) {
+    throw error(peek(), "Expect expression.");
   }
 
   private boolean match(TokenType... types) {
@@ -117,6 +122,41 @@ class Parser {
       }
     }
     return false;
+  }
+
+  private Token consume(TokenType type, String message) {
+    if (check(type)) {
+      return advance();
+    }
+
+    throw error(peek(), message);
+  }
+
+  private ParseError error(Token token, String message) {
+    ErrorReporter.reportParserError(token, message);
+    return new ParseError();
+  }
+
+  private void synchronize() {
+    advance();
+    while (!isAtEnd()) {
+      if (previous().type == TokenType.SEMI) {
+        return;
+      }
+
+      switch (peek().type) {
+        case CLASS:
+        case FUN:
+        case VAR:
+        case FOR:
+        case IF:
+        case WHILE:
+        case PRINT:
+        case RETURN:
+          return;
+      }
+      advance();
+    }
   }
 
   private boolean check(TokenType type) {

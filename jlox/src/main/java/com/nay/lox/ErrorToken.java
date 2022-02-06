@@ -10,7 +10,7 @@ public final class ErrorToken extends Token {
     this.message = message;
   }
 
-  int getLine() {
+  public int getLine() {
     return line;
   }
 

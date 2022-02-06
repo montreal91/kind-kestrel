@@ -51,7 +51,7 @@ public class Lox {
     Token currentToken = lexer.getNextToken();
     while (currentToken.getType() != TokenType.EOF) {
       if (currentToken.getType() == TokenType.ERROR) {
-        ErrorReporter.reportErrorToken((ErrorToken)currentToken);
+        ErrorReporter.reportLexerError((ErrorToken)currentToken);
         currentToken = lexer.getNextToken();
         continue;
       }

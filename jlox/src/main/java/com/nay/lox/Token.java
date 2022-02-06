@@ -13,8 +13,12 @@ public class Token {
     return type;
   }
 
-  String getValue() {
-    return value;
+  public int getLine() {
+    return 0;
+  }
+
+  public String getLexeme() {
+    return "";
   }
 
   public String toString() {
