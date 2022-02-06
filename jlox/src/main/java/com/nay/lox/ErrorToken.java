@@ -5,7 +5,7 @@ public final class ErrorToken extends Token {
   private final String message;
 
   ErrorToken(int line, String errorLine, String message) {
-    super(TokenType.ERROR, errorLine);
+    super(TokenType.ERROR, errorLine, null, line);
     this.line = line;
     this.message = message;
   }
