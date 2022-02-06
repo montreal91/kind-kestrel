@@ -55,7 +55,7 @@
             <archive>
               <manifest>
                 <addClasspath>true</addClasspath>
-                <mainClass>com.nay.App</mainClass>
+                <mainClass>com.nay.Lox</mainClass>
               </manifest>
             </archive>
           </configuration>
