@@ -68,7 +68,7 @@ public final class Lexer {
     skipWhiteSpace();
 
     if (pos >= text.length()) {
-      return new Token(TokenType.EOF, "");
+      return new Token(TokenType.EOF, "", null, line);
     }
 
     if (Character.isDigit(getCurrentChar())) {
@@ -118,7 +118,11 @@ public final class Lexer {
       next();
     }
     if (getCurrentChar() != '.') {
-      return new Token(TokenType.NUMBER, sb.toString());
+      return new Token(
+          TokenType.NUMBER,
+          sb.toString(),
+          Double.parseDouble(sb.toString()), line
+      );
     }
     sb.append(getCurrentChar());
     next();
@@ -126,7 +130,12 @@ public final class Lexer {
       sb.append(getCurrentChar());
       next();
     }
-    return new Token(TokenType.NUMBER, sb.toString());
+    return new Token(
+        TokenType.NUMBER,
+        sb.toString(),
+        Double.parseDouble(sb.toString()),
+        line
+    );
   }
 
   private Token parseAlphanumericToken() {
@@ -149,13 +158,21 @@ public final class Lexer {
     }
 
     if (!hasNext()) {
-      return new ErrorToken(line, getCurrentLine(), "Missing closing of the string.");
+      return new ErrorToken(
+          line,
+          getCurrentLine(),
+          "Missing closing of the string."
+      );
     }
     if (getCurrentChar() == '"') {
       next();
-      return new Token(TokenType.STRING, sb.toString());
+      return new Token(TokenType.STRING, sb.toString(), sb.toString(), line);
     }
-    ErrorToken et = new ErrorToken(line, getCurrentLine(), "Missing closing of the string.");
+    ErrorToken et = new ErrorToken(
+        line,
+        getCurrentLine(),
+        "Missing closing of the string."
+    );
     next();
     line++;
     return et;
@@ -164,7 +181,12 @@ public final class Lexer {
   private Token parseSymbolicToken() {
     TokenType type = SINGLE_CHAR_TOKENS.get(getCurrentChar());
     if (type != null) {
-      Token token = new Token(type, Character.toString(getCurrentChar()));
+      Token token = new Token(
+          type,
+          Character.toString(getCurrentChar()),
+          Character.toString(getCurrentChar()),
+          line
+      );
       next();
       return token;
     }
@@ -176,7 +198,7 @@ public final class Lexer {
         return makeMultiSymbolToken("!=");
       }
       next();
-      return new Token(TokenType.BANG, "!");
+      return new Token(TokenType.BANG, "!", "!", line);
     }
     if (getCurrentChar() == '=') {
       if (getLookAhead() == '=') {
@@ -185,7 +207,7 @@ public final class Lexer {
         return makeMultiSymbolToken("==");
       }
       next();
-      return new Token(TokenType.EQUAL, "=");
+      return new Token(TokenType.EQUAL, "=", "=", line);
     }
     if (getCurrentChar() == '>') {
       if (getLookAhead() == '=') {
@@ -194,7 +216,7 @@ public final class Lexer {
         return makeMultiSymbolToken(">=");
       }
       next();
-      return new Token(TokenType.GREATER, ">");
+      return new Token(TokenType.GREATER, ">", ">", line);
     }
     if (getCurrentChar() == '<') {
       if (getLookAhead() == '=') {
@@ -203,10 +225,14 @@ public final class Lexer {
         return makeMultiSymbolToken("<=");
       }
       next();
-      return new Token(TokenType.LESSER, "<");
+      return new Token(TokenType.LESSER, "<", "<", line);
     }
 
-    Token errorToken = new ErrorToken(line, getCurrentLine(), "Unexpected character: " + getCurrentChar());
+    Token errorToken = new ErrorToken(
+        line,
+        getCurrentLine(),
+        "Unexpected character: " + getCurrentChar()
+    );
     hasErrors = true;
     skipComment();
     return errorToken;
@@ -239,7 +265,12 @@ public final class Lexer {
 
   private Token makeMultiSymbolToken(String value) {
     TokenType type = KEYWORDS.get(value);
-    return new Token(Objects.requireNonNullElse(type, TokenType.ID), value);
+    return new Token(
+        Objects.requireNonNullElse(type, TokenType.ID),
+        value,
+        value,
+        line
+    );
   }
 
   private boolean currentCharIsStringTerminator() {
