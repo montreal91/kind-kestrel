@@ -1,17 +1,16 @@
 package com.nay;
 
-import com.nay.lox.ErrorReporter;
-import com.nay.lox.ErrorToken;
-import com.nay.lox.Lexer;
-import com.nay.lox.Token;
-import com.nay.lox.TokenType;
+import com.nay.lox.*;
 
+import javax.swing.text.html.parser.Parser;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.LinkedList;
+import java.util.List;
 
 
 public class Lox {
@@ -46,17 +45,6 @@ public class Lox {
   }
 
   private static void run(final String source) {
-    final Lexer lexer = new Lexer(source);
-
-    Token currentToken = lexer.getNextToken();
-    while (currentToken.getType() != TokenType.EOF) {
-      if (currentToken.getType() == TokenType.ERROR) {
-        ErrorReporter.reportLexerError((ErrorToken)currentToken);
-        currentToken = lexer.getNextToken();
-        continue;
-      }
-      System.out.println(currentToken);
-      currentToken = lexer.getNextToken();
-    }
+    System.out.println(Interpreter.interpret(source));
   }
 }

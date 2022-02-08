@@ -1,8 +1,6 @@
 package com.nay.lox;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Objects;
+import java.util.*;
 
 
 public final class Lexer {
@@ -56,6 +54,17 @@ public final class Lexer {
 
   public Lexer(String text) {
     this.text = text;
+  }
+
+  public List<Token> getAllTokens() {
+    List<Token> tokens = new LinkedList<>();
+    Token current = getNextToken();
+    while (current.type != TokenType.EOF) {
+      tokens.add(current);
+      current = getNextToken();
+    }
+    tokens.add(current);
+    return tokens;
   }
 
   public Token getNextToken() {
