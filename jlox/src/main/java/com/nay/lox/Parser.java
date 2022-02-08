@@ -103,7 +103,10 @@ class Parser {
       return new Expr.Literal(null);
     }
     if (match(TokenType.NUMBER, TokenType.STRING)) {
-      return new Expr.Literal(Double.parseDouble(previous().value));
+      if (previous().type == TokenType.NUMBER) {
+        return new Expr.Literal(Double.parseDouble(previous().value));
+      }
+      return new Expr.Literal(previous().value);
     }
 
     if (match(TokenType.LPAR)) {
