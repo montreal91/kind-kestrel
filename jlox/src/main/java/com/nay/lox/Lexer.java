@@ -1,7 +1,9 @@
 package com.nay.lox;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 
@@ -52,10 +54,21 @@ public final class Lexer {
   private final String text;
   private int pos = 0;
   private int line = 1;
-  private boolean hasErrors = false;
+//  private boolean hasErrors = false;
 
   public Lexer(String text) {
     this.text = text;
+  }
+
+  public List<Token> getAllTokens() {
+    List<Token> tokens = new LinkedList<>();
+    Token current = getNextToken();
+    while (current.type != TokenType.EOF) {
+      tokens.add(current);
+      current = getNextToken();
+    }
+    tokens.add(current);
+    return tokens;
   }
 
   public Token getNextToken() {
@@ -83,10 +96,6 @@ public final class Lexer {
       return parseStringToken();
     }
     return parseSymbolicToken();
-  }
-
-  public boolean getHasErrors() {
-    return hasErrors;
   }
 
   char getCurrentChar() {
@@ -233,7 +242,7 @@ public final class Lexer {
         getCurrentLine(),
         "Unexpected character: " + getCurrentChar()
     );
-    hasErrors = true;
+//    hasErrors = true;
     skipComment();
     return errorToken;
   }
