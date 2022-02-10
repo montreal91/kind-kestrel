@@ -1,16 +1,14 @@
 package com.nay;
 
-import com.nay.lox.*;
+import com.nay.lox.ErrorReporter;
+import com.nay.lox.Interpreter;
 
-import javax.swing.text.html.parser.Parser;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.LinkedList;
-import java.util.List;
 
 
 public class Lox {
@@ -28,6 +26,9 @@ public class Lox {
   private static void runFile(String path) throws IOException {
     byte[] bytes = Files.readAllBytes(Paths.get(path));
     run(new String(bytes, Charset.defaultCharset()));
+    if (ErrorReporter.hadRuntimeErrors()) {
+      System.exit(70);
+    }
   }
 
   private static void runPrompt() throws IOException {
@@ -45,6 +46,6 @@ public class Lox {
   }
 
   private static void run(final String source) {
-    System.out.println(Interpreter.interpret(source));
+    Interpreter.interpret(source);
   }
 }

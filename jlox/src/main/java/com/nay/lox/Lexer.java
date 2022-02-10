@@ -54,7 +54,7 @@ public final class Lexer {
   private final String text;
   private int pos = 0;
   private int line = 1;
-  private boolean hasErrors = false;
+//  private boolean hasErrors = false;
 
   public Lexer(String text) {
     this.text = text;
@@ -96,10 +96,6 @@ public final class Lexer {
       return parseStringToken();
     }
     return parseSymbolicToken();
-  }
-
-  public boolean getHasErrors() {
-    return hasErrors;
   }
 
   char getCurrentChar() {
@@ -246,7 +242,7 @@ public final class Lexer {
         getCurrentLine(),
         "Unexpected character: " + getCurrentChar()
     );
-    hasErrors = true;
+//    hasErrors = true;
     skipComment();
     return errorToken;
   }
