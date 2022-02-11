@@ -8,3 +8,9 @@ print "Variables";
 var a = 1;
 var b = 2;
 print a + b;
+
+print "";
+print "Assignment";
+var c = "Ban";
+c = c + "ana";
+print c;

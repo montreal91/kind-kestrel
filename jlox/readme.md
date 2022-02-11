@@ -24,8 +24,12 @@ exprStmt   → expression ";"
 printStmt  → "print" expression ";" 
            ;
 
-expression → equality
-           ;
+expression     → assignment
+               ;
+
+assignment     → ID "=" assignment
+               | equality
+               ;
 
 equality   → comparison ( ( "!=" | "==" ) comparison )*
            ;
