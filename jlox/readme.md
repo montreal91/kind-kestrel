@@ -1,6 +1,6 @@
 # jLox
 
-This is a java implementation of a tree-walk interpreter for a toy-language called lox.
+This is a java implementation of a tree-walk interpreter for a toy-language called **Lox**.
 
 ## Current grammar
 ```
@@ -14,38 +14,42 @@ declaration    → varDecl;
 varDecl        → "var" IDENTIFIER ( = expression )? ";"
                ;
 
-statement  → exprStmt 
-           | printStmt 
-           ;
+statement      → exprStmt
+               | printStmt
+               | block
+               ;
 
-exprStmt   → expression ";" 
-           ;
+block          → "{" declaration* "}"
+               ;
 
-printStmt  → "print" expression ";" 
-           ;
+exprStmt       → expression ";" 
+               ;
+
+printStmt      → "print" expression ";" 
+               ;
 
 expression     → assignment
                ;
 
-assignment     → ID "=" assignment
+assignment     → IDENTIFIER "=" assignment
                | equality
                ;
 
-equality   → comparison ( ( "!=" | "==" ) comparison )*
-           ;
+equality       → comparison ( ( "!=" | "==" ) comparison )*
+               ;
 
-comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )*
-           ;
+comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )*
+               ;
 
-term       → factor ( ( "+" | "-" ) factor) *
-           ;
+term           → factor ( ( "+" | "-" ) factor) *
+               ;
 
-factor     → unary ( ( "*" | "/" ) unary) *
-           ;
+factor         → unary ( ( "*" | "/" ) unary) *
+               ;
 
-unary      → ( ("!" | "-") unary )
-           | primary
-           ;
+unary          → ( ("!" | "-") unary )
+               | primary
+               ;
 
 primary        → NUMBER
                | STRING

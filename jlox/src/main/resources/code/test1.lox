@@ -14,3 +14,11 @@ print "Assignment";
 var c = "Ban";
 c = c + "ana";
 print c;
+
+print "";
+print "Blocks";
+{
+    var a = 10;
+    a = a + 1;
+    print a; // should print 11
+}

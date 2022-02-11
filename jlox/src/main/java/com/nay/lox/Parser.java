@@ -13,19 +13,23 @@ class Parser {
 
   List<Stmt> parse() {
     List<Stmt> statements = new LinkedList<>();
+
     while (!isAtEnd()) {
       statements.add(declaration());
     }
+
     return statements;
   }
 
   private Stmt declaration() {
     try {
+
       if (match(TokenType.VAR)) {
         return varDeclaration();
       } else {
         return statement();
       }
+
     } catch (ParseError error) {
       synchronize();
       return null;
@@ -33,9 +37,10 @@ class Parser {
   }
 
   private Stmt varDeclaration() {
-    Token name = consume(TokenType.ID, "Expect variable name.");
+    Token name = consume(TokenType.IDENTIFIER, "Expect variable name.");
 
     Expr initializer = null;
+
     if (match(TokenType.EQUAL)) {
       initializer = expression();
     }
@@ -48,7 +53,23 @@ class Parser {
     if (match(TokenType.PRINT)) {
       return printStatement();
     }
+
+    if (match(TokenType.LCURL)) {
+      return new Stmt.Block(block());
+    }
+
     return expressionStatement();
+  }
+
+  private List<Stmt> block() {
+    List<Stmt> statements = new LinkedList<>();
+
+    while (!check(TokenType.RCURL) && !isAtEnd()) {
+      statements.add(declaration());
+    }
+
+    consume(TokenType.RCURL, "Expect '}' after block.");
+    return statements;
   }
 
   private Stmt printStatement() {
@@ -69,6 +90,7 @@ class Parser {
 
   private Expr assignment() {
     Expr expr = equality();
+
     if (match(TokenType.EQUAL)) {
       Token equals = previous();
       Expr value = assignment();
@@ -77,8 +99,10 @@ class Parser {
         Token name = ((Expr.Variable) expr).name;
         return new Expr.Assign(name, value);
       }
+
       error(equals, "Invalid assignment target.");
     }
+
     return expr;
   }
 
@@ -90,6 +114,7 @@ class Parser {
       Expr right = comparison();
       expr = new Expr.Binary(expr, operator, right);
     }
+
     return expr;
   }
 
@@ -101,11 +126,13 @@ class Parser {
         TokenType.LESSER,
         TokenType.LESSER_EQUAL
     };
+
     while (match(comparisons)) {
       Token operator = previous();
       Expr right = term();
       expr = new Expr.Binary(expr, operator, right);
     }
+
     return expr;
   }
 
@@ -117,6 +144,7 @@ class Parser {
       Expr right = factor();
       expr = new Expr.Binary(expr, operator, right);
     }
+
     return expr;
   }
 
@@ -138,6 +166,7 @@ class Parser {
       Expr right = unary();
       return new Expr.Unary(operator, right);
     }
+
     return primary();
   }
 
@@ -167,9 +196,10 @@ class Parser {
       return new Expr.Grouping(expression);
     }
 
-    if (match(TokenType.ID)) {
+    if (match(TokenType.IDENTIFIER)) {
       return new Expr.Variable(previous());
     }
+
     throw error(peek(), "Expect expression.");
   }
 
@@ -180,6 +210,7 @@ class Parser {
         return true;
       }
     }
+
     return false;
   }
 
@@ -198,6 +229,7 @@ class Parser {
 
   private void synchronize() {
     advance();
+
     while (!isAtEnd()) {
       if (previous().type == TokenType.SEMI) {
         return;
@@ -214,6 +246,7 @@ class Parser {
         case RETURN:
           return;
       }
+
       advance();
     }
   }
@@ -222,6 +255,7 @@ class Parser {
     if (isAtEnd()) {
       return false;
     }
+
     return peek().type == type;
   }
 
@@ -229,6 +263,7 @@ class Parser {
     if (!isAtEnd()) {
       current++;
     }
+
     return previous();
   }
 
