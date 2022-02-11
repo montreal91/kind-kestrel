@@ -4,6 +4,19 @@ This is a java implementation of a tree-walk interpreter for a toy-language call
 
 ## Current grammar
 ```
+program    → statement* EOF
+           ;
+
+statement  → exprStmt 
+           | printStmt 
+           ;
+
+exprStmt   → expression ";" 
+           ;
+
+printStmt  → "print" expression ";" 
+           ;
+
 expression → equality
            ;
 
