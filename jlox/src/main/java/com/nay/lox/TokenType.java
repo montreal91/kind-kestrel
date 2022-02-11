@@ -12,7 +12,7 @@ public enum TokenType {
   LESSER, LESSER_EQUAL,
 
   // Literals
-  ID, NUMBER, STRING,
+  IDENTIFIER, NUMBER, STRING,
 
   // keywords
   AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR, PRINT,

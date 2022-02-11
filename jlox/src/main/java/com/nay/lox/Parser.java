@@ -1,5 +1,6 @@
 package com.nay.lox;
 
+import java.util.LinkedList;
 import java.util.List;
 
 class Parser {
@@ -10,25 +11,101 @@ class Parser {
     this.tokens = tokens;
   }
 
-  Expr parse() {
+  List<Stmt> parse() {
+    List<Stmt> statements = new LinkedList<>();
+
+    while (!isAtEnd()) {
+      statements.add(declaration());
+    }
+
+    return statements;
+  }
+
+  private Stmt declaration() {
     try {
-      return expression();
-    } catch (ParseError e) {
+
+      if (match(TokenType.VAR)) {
+        return varDeclaration();
+      } else {
+        return statement();
+      }
+
+    } catch (ParseError error) {
+      synchronize();
       return null;
     }
   }
 
+  private Stmt varDeclaration() {
+    Token name = consume(TokenType.IDENTIFIER, "Expect variable name.");
 
-  /**
-   * expression → equality
-   */
-  private Expr expression() {
-    return equality();
+    Expr initializer = null;
+
+    if (match(TokenType.EQUAL)) {
+      initializer = expression();
+    }
+
+    consume(TokenType.SEMI, "Expect ';' after variable declaration.");
+    return new Stmt.Var(name, initializer);
   }
 
-  /**
-   * equality → comparison ( ( "!=" | "==" ) comparison )* ;
-   */
+  private Stmt statement() {
+    if (match(TokenType.PRINT)) {
+      return printStatement();
+    }
+
+    if (match(TokenType.LCURL)) {
+      return new Stmt.Block(block());
+    }
+
+    return expressionStatement();
+  }
+
+  private List<Stmt> block() {
+    List<Stmt> statements = new LinkedList<>();
+
+    while (!check(TokenType.RCURL) && !isAtEnd()) {
+      statements.add(declaration());
+    }
+
+    consume(TokenType.RCURL, "Expect '}' after block.");
+    return statements;
+  }
+
+  private Stmt printStatement() {
+    Expr expr = expression();
+    consume(TokenType.SEMI, "Expect ';' after value.");
+    return new Stmt.Print(expr);
+  }
+
+  private Stmt expressionStatement() {
+    Expr value = expression();
+    consume(TokenType.SEMI, "Expect ';' after value.");
+    return new Stmt.Expression(value);
+  }
+
+  private Expr expression() {
+    return assignment();
+  }
+
+  private Expr assignment() {
+    Expr expr = equality();
+
+    if (match(TokenType.EQUAL)) {
+      Token equals = previous();
+      Expr value = assignment();
+
+      if (expr instanceof Expr.Variable) {
+        Token name = ((Expr.Variable) expr).name;
+        return new Expr.Assign(name, value);
+      }
+
+      error(equals, "Invalid assignment target.");
+    }
+
+    return expr;
+  }
+
   private Expr equality() {
     Expr expr = comparison();
 
@@ -37,13 +114,10 @@ class Parser {
       Expr right = comparison();
       expr = new Expr.Binary(expr, operator, right);
     }
+
     return expr;
   }
 
-
-  /**
-   * comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
-   */
   private Expr comparison() {
     Expr expr = term();
     TokenType[] comparisons = new TokenType[] {
@@ -52,11 +126,13 @@ class Parser {
         TokenType.LESSER,
         TokenType.LESSER_EQUAL
     };
+
     while (match(comparisons)) {
       Token operator = previous();
       Expr right = term();
       expr = new Expr.Binary(expr, operator, right);
     }
+
     return expr;
   }
 
@@ -68,6 +144,7 @@ class Parser {
       Expr right = factor();
       expr = new Expr.Binary(expr, operator, right);
     }
+
     return expr;
   }
 
@@ -89,6 +166,7 @@ class Parser {
       Expr right = unary();
       return new Expr.Unary(operator, right);
     }
+
     return primary();
   }
 
@@ -96,12 +174,15 @@ class Parser {
     if (match(TokenType.FALSE)) {
       return new Expr.Literal(false);
     }
+
     if (match(TokenType.TRUE)) {
       return new Expr.Literal(true);
     }
+
     if (match(TokenType.NIL)) {
       return new Expr.Literal(null);
     }
+
     if (match(TokenType.NUMBER, TokenType.STRING)) {
       if (previous().type == TokenType.NUMBER) {
         return new Expr.Literal(Double.parseDouble(previous().value));
@@ -114,6 +195,11 @@ class Parser {
       consume(TokenType.RPAR, "Expect ')' after expression.");
       return new Expr.Grouping(expression);
     }
+
+    if (match(TokenType.IDENTIFIER)) {
+      return new Expr.Variable(previous());
+    }
+
     throw error(peek(), "Expect expression.");
   }
 
@@ -124,6 +210,7 @@ class Parser {
         return true;
       }
     }
+
     return false;
   }
 
@@ -142,6 +229,7 @@ class Parser {
 
   private void synchronize() {
     advance();
+
     while (!isAtEnd()) {
       if (previous().type == TokenType.SEMI) {
         return;
@@ -158,6 +246,7 @@ class Parser {
         case RETURN:
           return;
       }
+
       advance();
     }
   }
@@ -166,6 +255,7 @@ class Parser {
     if (isAtEnd()) {
       return false;
     }
+
     return peek().type == type;
   }
 
@@ -173,6 +263,7 @@ class Parser {
     if (!isAtEnd()) {
       current++;
     }
+
     return previous();
   }
 

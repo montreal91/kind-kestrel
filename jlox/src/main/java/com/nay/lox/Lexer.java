@@ -54,7 +54,6 @@ public final class Lexer {
   private final String text;
   private int pos = 0;
   private int line = 1;
-//  private boolean hasErrors = false;
 
   public Lexer(String text) {
     this.text = text;
@@ -275,7 +274,7 @@ public final class Lexer {
   private Token makeMultiSymbolToken(String value) {
     TokenType type = KEYWORDS.get(value);
     return new Token(
-        Objects.requireNonNullElse(type, TokenType.ID),
+        Objects.requireNonNullElse(type, TokenType.IDENTIFIER),
         value,
         value,
         line
