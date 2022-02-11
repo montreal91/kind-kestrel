@@ -1,5 +1,6 @@
 package com.nay.lox;
 
+import java.util.LinkedList;
 import java.util.List;
 
 class Parser {
@@ -10,12 +11,31 @@ class Parser {
     this.tokens = tokens;
   }
 
-  Expr parse() {
-    try {
-      return expression();
-    } catch (ParseError e) {
-      return null;
+  List<Stmt> parse() {
+    List<Stmt> statements = new LinkedList<>();
+    while (!isAtEnd()) {
+      statements.add(statement());
     }
+    return statements;
+  }
+
+  private Stmt statement() {
+    if (match(TokenType.PRINT)) {
+      return printStatement();
+    }
+    return expressionStatement();
+  }
+
+  private Stmt printStatement() {
+    Expr expr = expression();
+    consume(TokenType.SEMI, "Expect ';' after value.");
+    return new Stmt.Print(expr);
+  }
+
+  private Stmt expressionStatement() {
+    Expr value = expression();
+    consume(TokenType.SEMI, "Expect ';' after value.");
+    return new Stmt.Expression(value);
   }
 
 

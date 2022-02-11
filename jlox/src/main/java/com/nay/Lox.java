@@ -1,7 +1,7 @@
 package com.nay;
 
 import com.nay.lox.ErrorReporter;
-import com.nay.lox.Interpreter;
+import com.nay.lox.InterpreterFacade;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -46,6 +46,6 @@ public class Lox {
   }
 
   private static void run(final String source) {
-    Interpreter.interpret(source);
+    InterpreterFacade.interpret(source);
   }
 }

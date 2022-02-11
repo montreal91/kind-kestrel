@@ -1,0 +1,4 @@
+print "one";
+print true;
+print nil;
+print 2 + 1;
