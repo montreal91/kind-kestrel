@@ -4,8 +4,15 @@ This is a java implementation of a tree-walk interpreter for a toy-language call
 
 ## Current grammar
 ```
-program    → statement* EOF
-           ;
+program        → declaration* EOF
+               ;
+
+declaration    → varDecl;
+               | statement
+               ;
+
+varDecl        → "var" IDENTIFIER ( = expression )? ";"
+               ;
 
 statement  → exprStmt 
            | printStmt 
@@ -36,11 +43,12 @@ unary      → ( ("!" | "-") unary )
            | primary
            ;
 
-primary    → NUMBER 
-           | STRING
-           | "true"
-           | "false" 
-           | "nil" 
-           | "(" expression ")"
-           ;
+primary        → NUMBER
+               | STRING
+               | "true"
+               | "false"
+               | "nil"
+               | "(" expression ")"
+               | IDENTIFIER
+               ;
 ```

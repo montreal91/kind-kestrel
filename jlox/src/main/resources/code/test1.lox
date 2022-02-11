@@ -2,3 +2,9 @@ print "one";
 print true;
 print nil;
 print 2 + 1;
+
+print "";
+print "Variables";
+var a = 1;
+var b = 2;
+print a + b;

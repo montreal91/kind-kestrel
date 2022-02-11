@@ -14,9 +14,34 @@ class Parser {
   List<Stmt> parse() {
     List<Stmt> statements = new LinkedList<>();
     while (!isAtEnd()) {
-      statements.add(statement());
+      statements.add(declaration());
     }
     return statements;
+  }
+
+  private Stmt declaration() {
+    try {
+      if (match(TokenType.VAR)) {
+        return varDeclaration();
+      } else {
+        return statement();
+      }
+    } catch (ParseError error) {
+      synchronize();
+      return null;
+    }
+  }
+
+  private Stmt varDeclaration() {
+    Token name = consume(TokenType.ID, "Expect variable name.");
+
+    Expr initializer = null;
+    if (match(TokenType.EQUAL)) {
+      initializer = expression();
+    }
+
+    consume(TokenType.SEMI, "Expect ';' after variable declaration.");
+    return new Stmt.Var(name, initializer);
   }
 
   private Stmt statement() {
@@ -116,12 +141,15 @@ class Parser {
     if (match(TokenType.FALSE)) {
       return new Expr.Literal(false);
     }
+
     if (match(TokenType.TRUE)) {
       return new Expr.Literal(true);
     }
+
     if (match(TokenType.NIL)) {
       return new Expr.Literal(null);
     }
+
     if (match(TokenType.NUMBER, TokenType.STRING)) {
       if (previous().type == TokenType.NUMBER) {
         return new Expr.Literal(Double.parseDouble(previous().value));
@@ -133,6 +161,10 @@ class Parser {
       Expr expression = expression();
       consume(TokenType.RPAR, "Expect ')' after expression.");
       return new Expr.Grouping(expression);
+    }
+
+    if (match(TokenType.ID)) {
+      return new Expr.Variable(previous());
     }
     throw error(peek(), "Expect expression.");
   }
