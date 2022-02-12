@@ -17,7 +17,11 @@ varDecl        → "var" IDENTIFIER ( = expression )? ";"
 statement      → exprStmt
                | ifStmt
                | printStmt
+               | whileStmt
                | block
+               ;
+
+whileStmt      → "while" "(" expression ")" statement
                ;
 
 exprStmt       → expression ";" 

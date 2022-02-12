@@ -13,3 +13,11 @@ if (false) {
 
 print "hi" or 2;
 print nil or "Yes";
+
+print "";
+print "10 Foxes";
+var i = 0;
+while (i < 10) {
+  print "Fox";
+  i = i + 1;
+}

@@ -1,7 +1,7 @@
 package com.nay.lox;
 
-
 import java.util.List;
+
 
 class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
   private Environment environment = new Environment();
@@ -36,6 +36,15 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
       value = evaluate(stmt.initializer);
     }
     environment.define(stmt.name.getLexeme(), value);
+    return null;
+  }
+
+  @Override
+  public Void visitWhileStmt(Stmt.While stmt) {
+    while (isTruthy(evaluate(stmt.condition))) {
+      execute(stmt.body);
+    }
+
     return null;
   }
 
@@ -89,6 +98,10 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
       case GREATER_EQUAL -> {
         checkNumberOperands(expr.operator, left, right);
         yield (double) left >= (double) right;
+      }
+      case LESSER -> {
+        checkNumberOperands(expr.operator, left, right);
+        yield (double) left < (double) right;
       }
       case LESSER_EQUAL -> {
         checkNumberOperands(expr.operator, left, right);

@@ -59,6 +59,10 @@ class Parser {
       return printStatement();
     }
 
+    if (match(TokenType.WHILE)) {
+      return whileStatement();
+    }
+
     if (match(TokenType.LCURL)) {
       return new Stmt.Block(block());
     }
@@ -96,6 +100,15 @@ class Parser {
     Expr expr = expression();
     consume(TokenType.SEMI, "Expect ';' after value.");
     return new Stmt.Print(expr);
+  }
+
+  private Stmt whileStatement() {
+    consume(TokenType.LPAR, "Expect '(' after 'while'.");
+    Expr condition = expression();
+    consume(TokenType.RPAR, "Expect ')' after condition.");
+    Stmt body = statement();
+
+    return new Stmt.While(condition, body);
   }
 
   private Stmt expressionStatement() {
