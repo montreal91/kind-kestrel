@@ -1,5 +1,6 @@
 package com.nay.lox;
 
+
 public class Token {
   final TokenType type;
   final String value;
@@ -22,7 +23,7 @@ public class Token {
   }
 
   public String getLexeme() {
-    return "";
+    return value;
   }
 
   public String toString() {

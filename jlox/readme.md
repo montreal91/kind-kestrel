@@ -16,23 +16,44 @@ varDecl        → "var" IDENTIFIER ( = expression )? ";"
 
 statement      → exprStmt
                | printStmt
+               | ifStmt
+               | whileStmt
+               | forStmt
                | block
                ;
 
-block          → "{" declaration* "}"
+whileStmt      → "while" "(" expression ")" statement
+               ;
+
+forstmt        → "for" "(" ( varDecl | exprStmt | ";" ) 
+                 expression? ";" 
+                 expression? ")" 
+                 statement
                ;
 
 exprStmt       → expression ";" 
                ;
 
+ifStmt         → "if" "(" expression ")" statement ("else" statement )? 
+               ;
+
 printStmt      → "print" expression ";" 
+               ;
+
+block          → "{" declaration* "}"
                ;
 
 expression     → assignment
                ;
 
 assignment     → IDENTIFIER "=" assignment
-               | equality
+               | logic_or
+               ;
+               
+logic_or       → logic_and ( "or" logic_and )*
+               ;
+
+logic_and      → equality ( "and" equality )*
                ;
 
 equality       → comparison ( ( "!=" | "==" ) comparison )*

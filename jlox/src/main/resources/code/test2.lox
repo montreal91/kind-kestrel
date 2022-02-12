@@ -1,0 +1,30 @@
+
+if (true) {
+  print "True";
+} else {
+  print "False";
+}
+
+if (false) {
+  print "True";
+} else {
+  print "False";
+}
+
+print "hi" or 2;
+print nil or "Yes";
+
+print "";
+print "10 Foxes";
+var i = 0;
+while (i < 10) {
+  print "Fox";
+  i = i + 1;
+}
+
+print "";
+print "10 Boxes (in for loop)";
+
+for (var a = 0; a < 10; a = a + 1) {
+  print "Box";
+}
