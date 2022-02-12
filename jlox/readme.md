@@ -15,17 +15,21 @@ varDecl        → "var" IDENTIFIER ( = expression )? ";"
                ;
 
 statement      → exprStmt
+               | ifStmt
                | printStmt
                | block
-               ;
-
-block          → "{" declaration* "}"
                ;
 
 exprStmt       → expression ";" 
                ;
 
+ifStmt         → "if" "(" expression ")" statement ("else" statement )? 
+               ;
+
 printStmt      → "print" expression ";" 
+               ;
+
+block          → "{" declaration* "}"
                ;
 
 expression     → assignment
