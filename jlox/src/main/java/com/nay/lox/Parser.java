@@ -1,5 +1,6 @@
 package com.nay.lox;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -63,6 +64,10 @@ class Parser {
       return whileStatement();
     }
 
+    if (match(TokenType.FOR)) {
+      return forStatement();
+    }
+
     if (match(TokenType.LCURL)) {
       return new Stmt.Block(block());
     }
@@ -109,6 +114,56 @@ class Parser {
     Stmt body = statement();
 
     return new Stmt.While(condition, body);
+  }
+
+  private Stmt forStatement() {
+    consume(TokenType.LPAR, "Expect '(' after 'for'.");
+
+    Stmt initializer;
+
+    if (match(TokenType.SEMI)) {
+      initializer = null;
+    } else if (match(TokenType.VAR)) {
+      initializer = varDeclaration();
+    } else {
+      initializer = expressionStatement();
+    }
+
+    Expr condition = null;
+
+    if (!check(TokenType.SEMI)) {
+      condition = expression();
+    }
+
+    consume(TokenType.SEMI, "Expect ';' after loop condition.");
+
+    Expr increment = null;
+
+    if (!check(TokenType.RPAR)) {
+      increment = expression();
+    }
+
+    consume(TokenType.RPAR, "Expect ')' after for clauses.");
+    Stmt body = statement();
+
+    if (increment != null) {
+      body = new Stmt.Block(Arrays.asList(
+          body,
+          new Stmt.Expression(increment)
+      ));
+    }
+
+    if (condition == null) {
+      condition = new Expr.Literal(true);
+    }
+
+    body = new Stmt.While(condition, body);
+
+    if (initializer != null) {
+      body = new Stmt.Block(Arrays.asList(initializer, body));
+    }
+
+    return body;
   }
 
   private Stmt expressionStatement() {
