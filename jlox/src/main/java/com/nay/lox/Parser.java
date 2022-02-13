@@ -42,7 +42,9 @@ class Parser {
     }
   }
 
-  private Stmt.Function function(String kind) {
+  private Stmt.Function function(
+      @SuppressWarnings("SameParameterValue") String kind
+  ) {
     Token name = consume(
         TokenType.IDENTIFIER,
         "Expect " + kind + " name."
@@ -99,7 +101,23 @@ class Parser {
       return new Stmt.Block(block());
     }
 
+    if (match(TokenType.RETURN)) {
+      return returnStatement();
+    }
+
     return expressionStatement();
+  }
+
+  private Stmt returnStatement() {
+    Token keyword = previous();
+    Expr value = null;
+
+    if (!check(TokenType.SEMI)) {
+      value = expression();
+    }
+
+    consume(TokenType.SEMI, "Expect ';' after return value.");
+    return new Stmt.Return(keyword, value);
   }
 
   private Stmt ifStatement() {

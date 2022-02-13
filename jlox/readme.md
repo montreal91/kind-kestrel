@@ -30,6 +30,7 @@ statement      → exprStmt
                | whileStmt
                | forStmt
                | block
+               | returnStmt
                ;
 
 whileStmt      → "while" "(" expression ")" statement
@@ -51,6 +52,9 @@ printStmt      → "print" expression ";"
                ;
 
 block          → "{" declaration* "}"
+               ;
+
+returnStmt     → "return expression? ";"
                ;
 
 expression     → assignment

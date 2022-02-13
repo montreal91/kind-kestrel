@@ -9,6 +9,7 @@ import java.util.List;
 abstract class Stmt {
   interface Visitor<R> {
     R visitBlockStmt(Block stmt);
+    R visitReturnStmt(Return stmt);
     R visitExpressionStmt(Expression stmt);
     R visitIfStmt(If stmt);
     R visitPrintStmt(Print stmt);
@@ -28,6 +29,21 @@ abstract class Stmt {
     }
 
     final List<Stmt> statements;
+  }
+
+  static class Return extends Stmt {
+    Return(Token keyword, Expr value) {
+      this.keyword = keyword;
+      this.value = value;
+    }
+
+    @Override
+    <R> R accept(Visitor<R> visitor) {
+      return visitor.visitReturnStmt(this);
+    }
+
+    final Token keyword;
+    final Expr value;
   }
 
   static class Expression extends Stmt {
@@ -121,5 +137,6 @@ abstract class Stmt {
   }
 
 
+  @SuppressWarnings("UnusedReturnValue")
   abstract <R> R accept(Visitor<R> visitor);
 }
