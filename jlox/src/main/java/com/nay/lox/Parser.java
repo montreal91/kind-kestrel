@@ -1,5 +1,6 @@
 package com.nay.lox;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,14 +29,40 @@ class Parser {
 
       if (match(TokenType.VAR)) {
         return varDeclaration();
-      } else {
-        return statement();
       }
+
+      if (match(TokenType.FUN)) {
+        return function("function");
+      }
+      return statement();
 
     } catch (ParseError error) {
       synchronize();
       return null;
     }
+  }
+
+  private Stmt.Function function(String kind) {
+    Token name = consume(
+        TokenType.IDENTIFIER,
+        "Expect " + kind + " name."
+    );
+    consume(TokenType.LPAR, "Expect '(' after " + kind + " name.");
+    List<Token> parameters = new ArrayList<>();
+    if (!check(TokenType.RPAR)) {
+      do {
+        if (parameters.size() >= 255) {
+          error(peek(), "Can't have more than 255 parameters");
+        }
+
+        parameters.add(consume(TokenType.IDENTIFIER, "Expect parameter name"));
+      } while (match(TokenType.COMMA));
+    }
+    consume(TokenType.RPAR, "Expect ')' after parameters.");
+    consume(TokenType.LCURL, "Expect '{' before " + kind + " body.");
+    List<Stmt> body = block();
+    return new Stmt.Function(name, parameters, body);
+
   }
 
   private Stmt varDeclaration() {
@@ -279,7 +306,38 @@ class Parser {
       return new Expr.Unary(operator, right);
     }
 
-    return primary();
+    return call();
+  }
+
+  private Expr call() {
+    Expr expr = primary();
+
+    while (true) {
+      if (match(TokenType.LPAR)) {
+        expr = finishCall(expr);
+      } else {
+        break;
+      }
+    }
+
+    return expr;
+  }
+
+  private Expr finishCall(Expr callee) {
+    List<Expr> arguments = new ArrayList<>();
+
+    if (!check(TokenType.RPAR)) {
+      do {
+        if (arguments.size() >= 255) {
+          error(peek(), "Can't have more than 255 arguments.");
+        }
+
+        arguments.add(expression());
+      } while (match(TokenType.COMMA));
+    }
+
+    Token paren = consume(TokenType.RPAR, "Expect ')' after arguments");
+    return new Expr.Call(callee, paren, arguments);
   }
 
   private Expr primary() {

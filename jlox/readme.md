@@ -8,10 +8,20 @@ program        → declaration* EOF
                ;
 
 declaration    → varDecl;
+               | funDecl
                | statement
                ;
 
 varDecl        → "var" IDENTIFIER ( = expression )? ";"
+               ;
+
+funDecl        → "fun" function
+               ;
+
+function       → IDENTIFIER "(" parameters? ")" block
+               ;
+
+parameters     → IDENTIFIER ( "," IDENTIFIER )*
                ;
 
 statement      → exprStmt
@@ -69,7 +79,13 @@ factor         → unary ( ( "*" | "/" ) unary) *
                ;
 
 unary          → ( ("!" | "-") unary )
-               | primary
+               | call
+               ;
+
+call           → primary ( "(" arguments? ")" )*
+               ;
+
+arguments      → expression ( "," expression )*
                ;
 
 primary        → NUMBER
