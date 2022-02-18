@@ -411,7 +411,7 @@ class Parser {
   }
 
   private ParseError error(Token token, String message) {
-    ErrorReporter.reportParserError(token, message);
+    ErrorReporter.reportError(token, message);
     return new ParseError();
   }
 

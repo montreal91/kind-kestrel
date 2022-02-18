@@ -9,9 +9,15 @@ import java.util.Stack;
 class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
   private final Interpreter interpreter;
   private final Stack<Map<String, Boolean>> scopes = new Stack<>();
+  private FunctionType currentFunction = FunctionType.NONE;
 
   Resolver(Interpreter interpreter) {
     this.interpreter = interpreter;
+  }
+
+  private enum FunctionType {
+    NONE,
+    FUNCTION
   }
 
   @Override
@@ -66,11 +72,12 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
   @Override
   public Void visitVariableExpr(Expr.Variable expr) {
     if (!scopes.empty() && scopes.peek().get(expr.name.getLexeme()) == Boolean.FALSE) {
-      ErrorReporter.reportParserError(
+      ErrorReporter.reportError(
           expr.name,
           "Can't read local variable in its own initializer."
       );
     }
+
     resolveLocal(expr, expr.name);
     return null;
   }
@@ -85,9 +92,16 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
   @Override
   public Void visitReturnStmt(Stmt.Return stmt) {
+    if (currentFunction == FunctionType.NONE) {
+      ErrorReporter.reportError(
+          stmt.keyword,
+          "Can't return from outside of a function."
+      );
+    }
     if (stmt.value != null) {
       resolve(stmt.value);
     }
+
     return null;
   }
 
@@ -118,9 +132,11 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
   @Override
   public Void visitVarStmt(Stmt.Var stmt) {
     declare(stmt.name);
+
     if (stmt.initializer != null) {
       resolve(stmt.initializer);
     }
+
     define(stmt.name);
     return null;
   }
@@ -130,7 +146,7 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     declare(stmt.name);
     define(stmt.name);
 
-    resolveFunction(stmt);
+    resolveFunction(stmt, FunctionType.FUNCTION);
     return null;
   }
 
@@ -164,14 +180,20 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     }
   }
 
-  private void resolveFunction(Stmt.Function function) {
+  private void resolveFunction(Stmt.Function function, FunctionType type) {
+    FunctionType enclosingFunction = currentFunction;
+    currentFunction = type;
+
     beginScope();
+
     for (Token param : function.params) {
       declare(param);
       define(param);
     }
+
     resolve(function.body);
     endScope();
+    currentFunction = enclosingFunction;
   }
 
   private void beginScope() {
@@ -186,7 +208,16 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     if (scopes.isEmpty()) {
       return;
     }
+
     Map<String, Boolean> scope = scopes.peek();
+
+    if (scope.containsKey(name.getLexeme())) {
+      ErrorReporter.reportError(
+          name,
+          "Already a variable with this name in this scope."
+      );
+    }
+
     scope.put(name.getLexeme(), false);
   }
 
@@ -194,6 +225,7 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     if (scopes.isEmpty()) {
       return;
     }
+
     scopes.peek().put(name.getLexeme(), true);
   }
 }

@@ -9,15 +9,16 @@ public class ErrorReporter {
     );
   }
 
-  public static void reportParserError(Token token, String message) {
+  static void reportError(Token token, String message) {
     if (token.getType() == TokenType.EOF) {
-      report(token.getLine(), " at end", message);
+      reportError(token.getLine(), " at end", message);
     } else {
-      report(token.getLine(), " at '" + token.getLexeme() + "'", message);
+      reportError(token.getLine(), " at '" + token.getLexeme() + "'", message);
     }
   }
 
-  private static void report(int line, String at, String message) {
+  private static void reportError(int line, String at, String message) {
+    System.out.println(message + at + line);
   }
 
   public static void reportRuntimeError(RuntimeError error) {
