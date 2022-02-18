@@ -8,7 +8,9 @@ public class InterpreterFacade {
     Parser parser = new Parser(lexer.getAllTokens());
     List<Stmt> statements = parser.parse();
 
-    Interpreter evaluator = new Interpreter();
-    evaluator.interpret(statements);
+    Interpreter interpreter = new Interpreter();
+    Resolver resolver = new Resolver(interpreter);
+    resolver.resolve(statements);
+    interpreter.interpret(statements);
   }
 }

@@ -35,7 +35,7 @@ class Environment {
     );
   }
 
-  public void assign(Token name, Object value) {
+  void assign(Token name, Object value) {
     if (values.containsKey(name.getLexeme())) {
       values.put(name.getLexeme(), value);
       return;
@@ -51,5 +51,25 @@ class Environment {
             + name.getLexeme()
             + "'."
     );
+  }
+
+  Object getAt(Integer distance, String name) {
+    return ancestor(distance).values.get(name);
+  }
+
+  void assignAt(int distance, Token name, Object value) {
+    ancestor(distance).values.put(name.getLexeme(), value);
+  }
+
+  private Environment ancestor(int distance) {
+    Environment environment = this;
+    for (int i = 0; i < distance; i++) {
+      if (environment != null) {
+        environment = environment.enclosing;
+      } else {
+        // Should throw Resolution error right here;
+      }
+    }
+    return environment;
   }
 }
