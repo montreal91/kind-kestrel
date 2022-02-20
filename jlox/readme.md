@@ -9,6 +9,7 @@ program        → declaration* EOF
 
 declaration    → varDecl;
                | funDecl
+               | classDecl
                | statement
                ;
 
@@ -16,6 +17,9 @@ varDecl        → "var" IDENTIFIER ( = expression )? ";"
                ;
 
 funDecl        → "fun" function
+               ;
+               
+classDecl      → "class" IDENTIFIER "{" function* "}"
                ;
 
 function       → IDENTIFIER "(" parameters? ")" block

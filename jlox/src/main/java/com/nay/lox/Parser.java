@@ -34,6 +34,11 @@ class Parser {
       if (match(TokenType.FUN)) {
         return function("function");
       }
+
+      if (match(TokenType.CLASS)) {
+        return classDeclaration();
+      }
+
       return statement();
 
     } catch (ParseError error) {
@@ -51,7 +56,9 @@ class Parser {
     );
     consume(TokenType.LPAR, "Expect '(' after " + kind + " name.");
     List<Token> parameters = new ArrayList<>();
+
     if (!check(TokenType.RPAR)) {
+
       do {
         if (parameters.size() >= 255) {
           error(peek(), "Can't have more than 255 parameters");
@@ -59,12 +66,29 @@ class Parser {
 
         parameters.add(consume(TokenType.IDENTIFIER, "Expect parameter name"));
       } while (match(TokenType.COMMA));
+
     }
+
     consume(TokenType.RPAR, "Expect ')' after parameters.");
     consume(TokenType.LCURL, "Expect '{' before " + kind + " body.");
     List<Stmt> body = block();
     return new Stmt.Function(name, parameters, body);
 
+  }
+
+  private Stmt classDeclaration() {
+    Token name = consume(TokenType.IDENTIFIER, "Expect class name.");
+    consume(TokenType.LCURL, "Expect '{' before class body.");
+
+    List<Stmt.Function> methods = new LinkedList<>();
+
+    while (!check(TokenType.RCURL) && !isAtEnd()) {
+      methods.add(function("method"));
+    }
+
+    consume(TokenType.RCURL, "Expect '}' after class body.");
+
+    return new Stmt.Class(name, methods);
   }
 
   private Stmt varDeclaration() {
