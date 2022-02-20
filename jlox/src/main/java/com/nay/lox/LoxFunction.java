@@ -40,6 +40,6 @@ class LoxFunction implements LoxCallable {
 
   @Override
   public String toString() {
-    return "<fun " + declaration.name.getLexeme() + ">";
+    return "<fun '" + declaration.name.getLexeme() + "'>";
   }
 }

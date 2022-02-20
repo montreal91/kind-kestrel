@@ -2,6 +2,7 @@ package com.nay.lox;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 
 class LoxInstance {
@@ -15,6 +16,11 @@ class LoxInstance {
   Object get(Token name) {
     if (fields.containsKey(name.getLexeme())) {
       return fields.get(name.getLexeme());
+    }
+
+    Optional<LoxFunction> method = loxClass.findMethod(name.getLexeme());
+    if (method.isPresent()) {
+      return method.get();
     }
 
     throw new RuntimeError(

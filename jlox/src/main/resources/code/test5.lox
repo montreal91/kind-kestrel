@@ -17,3 +17,12 @@ print breakfast;
 breakfast.length = 10.1;
 print breakfast.length;
 
+
+class Bacon {
+  eat() {
+    print "Crunch crunch crunch!";
+  }
+}
+
+Bacon().eat();
+

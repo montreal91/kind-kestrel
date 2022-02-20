@@ -47,9 +47,7 @@ class Parser {
     }
   }
 
-  private Stmt.Function function(
-      @SuppressWarnings("SameParameterValue") String kind
-  ) {
+  private Stmt.Function function(String kind) {
     Token name = consume(
         TokenType.IDENTIFIER,
         "Expect " + kind + " name."
