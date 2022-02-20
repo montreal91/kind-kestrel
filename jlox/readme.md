@@ -64,7 +64,7 @@ returnStmt     → "return expression? ";"
 expression     → assignment
                ;
 
-assignment     → IDENTIFIER "=" assignment
+assignment     → ( call "." )? IDENTIFIER "=" assignment
                | logic_or
                ;
                
@@ -90,7 +90,7 @@ unary          → ( ("!" | "-") unary )
                | call
                ;
 
-call           → primary ( "(" arguments? ")" )*
+call           → primary ( "(" arguments? ")" | "." IDENTIFIER )*
                ;
 
 arguments      → expression ( "," expression )*

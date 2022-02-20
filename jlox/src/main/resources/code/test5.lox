@@ -13,3 +13,7 @@ print Breakfast;
 
 var breakfast = Breakfast();
 print breakfast;
+
+breakfast.length = 10.1;
+print breakfast.length;
+
