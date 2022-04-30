@@ -34,6 +34,11 @@ class Parser {
       if (match(TokenType.FUN)) {
         return function("function");
       }
+
+      if (match(TokenType.CLASS)) {
+        return classDeclaration();
+      }
+
       return statement();
 
     } catch (ParseError error) {
@@ -42,16 +47,16 @@ class Parser {
     }
   }
 
-  private Stmt.Function function(
-      @SuppressWarnings("SameParameterValue") String kind
-  ) {
+  private Stmt.Function function(String kind) {
     Token name = consume(
         TokenType.IDENTIFIER,
         "Expect " + kind + " name."
     );
     consume(TokenType.LPAR, "Expect '(' after " + kind + " name.");
     List<Token> parameters = new ArrayList<>();
+
     if (!check(TokenType.RPAR)) {
+
       do {
         if (parameters.size() >= 255) {
           error(peek(), "Can't have more than 255 parameters");
@@ -59,12 +64,29 @@ class Parser {
 
         parameters.add(consume(TokenType.IDENTIFIER, "Expect parameter name"));
       } while (match(TokenType.COMMA));
+
     }
+
     consume(TokenType.RPAR, "Expect ')' after parameters.");
     consume(TokenType.LCURL, "Expect '{' before " + kind + " body.");
     List<Stmt> body = block();
     return new Stmt.Function(name, parameters, body);
 
+  }
+
+  private Stmt classDeclaration() {
+    Token name = consume(TokenType.IDENTIFIER, "Expect class name.");
+    consume(TokenType.LCURL, "Expect '{' before class body.");
+
+    List<Stmt.Function> methods = new LinkedList<>();
+
+    while (!check(TokenType.RCURL) && !isAtEnd()) {
+      methods.add(function("method"));
+    }
+
+    consume(TokenType.RCURL, "Expect '}' after class body.");
+
+    return new Stmt.Class(name, methods);
   }
 
   private Stmt varDeclaration() {
@@ -232,6 +254,9 @@ class Parser {
         Token name = ((Expr.Variable) expr).name;
         return new Expr.Assign(name, value);
       }
+      else if (expr instanceof Expr.Get get) {
+        return new Expr.Set(get.object, get.name, value);
+      }
 
       error(equals, "Invalid assignment target.");
     }
@@ -333,7 +358,15 @@ class Parser {
     while (true) {
       if (match(TokenType.LPAR)) {
         expr = finishCall(expr);
-      } else {
+      }
+      else if (match(TokenType.DOT)){
+        Token name = consume(
+            TokenType.IDENTIFIER,
+            "Expect property name after '.'"
+        );
+        expr = new Expr.Get(expr, name);
+      }
+      else {
         break;
       }
     }
@@ -382,6 +415,10 @@ class Parser {
       Expr expression = expression();
       consume(TokenType.RPAR, "Expect ')' after expression.");
       return new Expr.Grouping(expression);
+    }
+
+    if (match(TokenType.THIS)) {
+      return new Expr.This(previous());
     }
 
     if (match(TokenType.IDENTIFIER)) {
