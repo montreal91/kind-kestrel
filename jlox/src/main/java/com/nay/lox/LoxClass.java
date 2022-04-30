@@ -26,11 +26,20 @@ class LoxClass implements LoxCallable {
 
   @Override
   public Object call(Interpreter interpreter, List<Object> arguments) {
-    return new LoxInstance(this);
+    LoxInstance instance = new LoxInstance(this);
+    Optional<LoxFunction> initializer = findMethod("init");
+
+    initializer.ifPresent(
+        init -> init.bind(instance).call(interpreter, arguments)
+    );
+
+    return instance;
   }
 
   @Override
   public int arity() {
-    return 0;
+    Optional<LoxFunction> initializer = findMethod("init");
+    return initializer.map(LoxFunction::arity)
+                      .orElse(0);
   }
 }

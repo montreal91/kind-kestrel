@@ -37,3 +37,13 @@ class Cake {
 var cake = Cake();
 cake.flavor = "German chocolate";
 cake.taste();
+
+
+class Candy {
+  init(name) {
+    this.name = name;
+  }
+}
+
+var candy = Candy("Sweet pie");
+print candy.name;
