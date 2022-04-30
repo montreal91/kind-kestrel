@@ -4,6 +4,7 @@ package com.nay.lox;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 @SuppressWarnings("ClassCanBeRecord")
 class LoxClass implements LoxCallable {
@@ -18,7 +19,16 @@ class LoxClass implements LoxCallable {
   }
 
   Optional<LoxFunction> findMethod(String name) {
-    return Optional.ofNullable(methods.get(name));
+    Optional<LoxFunction> result = Optional.ofNullable(methods.get(name));
+    if (result.isPresent()) {
+      return result;
+    }
+
+    if (superclass != null) {
+      return superclass.findMethod(name);
+    }
+
+    return Optional.empty();
   }
 
   @Override
