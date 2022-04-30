@@ -99,10 +99,11 @@ arguments      → expression ( "," expression )*
 
 primary        → NUMBER
                | STRING
+               | IDENTIFIER
                | "true"
                | "false"
                | "nil"
                | "(" expression ")"
-               | IDENTIFIER
+               | "super" "." IDENTIFIER
                ;
 ```

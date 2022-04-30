@@ -1,9 +1,6 @@
 package com.nay.lox;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
@@ -62,6 +59,11 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     environment.define(stmt.name.getLexeme(), null);
 
+    if (stmt.superclass != null) {
+      environment = new Environment(environment);
+      environment.define("super", superclass);
+    }
+
     Map<String, LoxFunction> methods = new HashMap<>();
 
     for (Stmt.Function method : stmt.methods) {
@@ -79,6 +81,11 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         (LoxClass) superclass,
         methods
     );
+
+    if (superclass != null) {
+      environment = environment.enclosing;
+    }
+
     environment.assign(stmt.name, loxClass);
     return null;
   }
@@ -255,6 +262,25 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     Object value = evaluate(expr.value);
     ((LoxInstance) object).set(expr.name, value);
     return null;
+  }
+
+  @Override
+  public Object visitSuperExpr(Expr.Super expr) {
+    int distance = locals.get(expr);
+    LoxClass superclass = (LoxClass) environment.getAt(distance, "super");
+    LoxInstance object = (LoxInstance) environment.getAt(
+        distance - 1,
+        "this"
+    );
+    Optional<LoxFunction> method = superclass.findMethod(expr.method.getLexeme());
+    return method.map(m -> m.bind(object))
+                 .orElseThrow(() -> new RuntimeError(
+                     expr.method,
+                     "Undefined property '" +
+                         expr.method.getLexeme() +
+                         "'.'"
+                     )
+                 );
   }
 
   @Override
