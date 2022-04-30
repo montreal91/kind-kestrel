@@ -1,6 +1,7 @@
 # jLox
 
-This is a java implementation of a tree-walk interpreter for a toy-language called **Lox**.
+This is a java implementation of a tree-walk interpreter for a toy-language called 
+**[Lox](https://craftinginterpreters.com/the-lox-language.html)**.
 
 ## Current grammar
 ```
@@ -19,7 +20,7 @@ varDecl        → "var" IDENTIFIER ( = expression )? ";"
 funDecl        → "fun" function
                ;
                
-classDecl      → "class" IDENTIFIER "{" function* "}"
+classDecl      → "class" IDENTIFIER ( "<" IDENTIFIER )? "{" function* "}"
                ;
 
 function       → IDENTIFIER "(" parameters? ")" block

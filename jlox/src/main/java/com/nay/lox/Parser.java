@@ -76,8 +76,15 @@ class Parser {
 
   private Stmt classDeclaration() {
     Token name = consume(TokenType.IDENTIFIER, "Expect class name.");
-    consume(TokenType.LCURL, "Expect '{' before class body.");
 
+    Expr.Variable superclass = null;
+
+    if (match(TokenType.LESSER)) {
+      consume(TokenType.IDENTIFIER, "Expect superclass name.");
+      superclass = new Expr.Variable(previous());
+    }
+
+    consume(TokenType.LCURL, "Expect '{' before class body.");
     List<Stmt.Function> methods = new LinkedList<>();
 
     while (!check(TokenType.RCURL) && !isAtEnd()) {
@@ -86,7 +93,7 @@ class Parser {
 
     consume(TokenType.RCURL, "Expect '}' after class body.");
 
-    return new Stmt.Class(name, methods);
+    return new Stmt.Class(name, superclass, methods);
   }
 
   private Stmt varDeclaration() {
