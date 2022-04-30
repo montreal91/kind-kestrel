@@ -75,9 +75,8 @@ public final class Lexer {
 
     while (hasNext() && isCommentStart()) {
       skipComment();
+      skipWhiteSpace();
     }
-
-    skipWhiteSpace();
 
     if (pos >= text.length()) {
       return new Token(TokenType.EOF, "", null, line);

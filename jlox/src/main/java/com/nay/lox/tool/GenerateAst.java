@@ -1,4 +1,4 @@
-package com.nay.tool;
+package com.nay.lox.tool;
 
 import java.io.IOException;
 import java.io.PrintWriter;
