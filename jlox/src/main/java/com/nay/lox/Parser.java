@@ -417,6 +417,10 @@ class Parser {
       return new Expr.Grouping(expression);
     }
 
+    if (match(TokenType.THIS)) {
+      return new Expr.This(previous());
+    }
+
     if (match(TokenType.IDENTIFIER)) {
       return new Expr.Variable(previous());
     }

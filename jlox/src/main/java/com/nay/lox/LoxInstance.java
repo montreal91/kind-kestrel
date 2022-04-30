@@ -19,14 +19,12 @@ class LoxInstance {
     }
 
     Optional<LoxFunction> method = loxClass.findMethod(name.getLexeme());
-    if (method.isPresent()) {
-      return method.get();
-    }
 
-    throw new RuntimeError(
-        name,
-        "Undefined property '" + name.getLexeme() + "'."
-    );
+    return method.map(m -> m.bind(this))
+                 .orElseThrow(() -> new RuntimeError(
+                     name,
+                     "Undefined property '" + name.getLexeme() + "'."
+                 ));
   }
 
   void set(Token name, Object value) {
