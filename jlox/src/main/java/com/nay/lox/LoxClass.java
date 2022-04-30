@@ -4,19 +4,31 @@ package com.nay.lox;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 @SuppressWarnings("ClassCanBeRecord")
 class LoxClass implements LoxCallable {
   final String name;
+  final LoxClass superclass;
   private final Map<String, LoxFunction> methods;
 
-  LoxClass(String name, Map<String, LoxFunction> methods) {
+  LoxClass(String name, LoxClass superclass, Map<String, LoxFunction> methods) {
     this.name = name;
+    this.superclass = superclass;
     this.methods = methods;
   }
 
   Optional<LoxFunction> findMethod(String name) {
-    return Optional.ofNullable(methods.get(name));
+    Optional<LoxFunction> result = Optional.ofNullable(methods.get(name));
+    if (result.isPresent()) {
+      return result;
+    }
+
+    if (superclass != null) {
+      return superclass.findMethod(name);
+    }
+
+    return Optional.empty();
   }
 
   @Override
