@@ -14,6 +14,7 @@ pub fn build(b: *std.build.Builder) void {
     "src/main.c",
     "src/chunk.c",
     "src/memory.c",
+    "src/debug.c",
   }, &.{
     "-std=c11",
     "-pedantic",
