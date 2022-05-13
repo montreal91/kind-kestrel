@@ -1,8 +1,10 @@
 
+using System.Collections.Generic;
+
 namespace Lox;
 
-internal class Lexer {
-    internal int TwoByTwo() {
-        return 2 * 2;
+class Lexer {
+    internal IList<Token> Scan(string text) {
+        return new List<Token>();
     }
 }
