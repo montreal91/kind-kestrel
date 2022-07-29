@@ -14,6 +14,8 @@ pub fn build(b: *std.build.Builder) void {
   clox.addCSourceFiles(&.{
     "src/main.c",
     "src/chunk.c",
+    "src/compiler.c",
+    "src/scanner.c",
     "src/memory.c",
     "src/debug.c",
     "src/value.c",
