@@ -4,7 +4,7 @@
 #include "common.h"
 
 typedef enum {
-  VAl_BOOL,
+  VAL_BOOL,
   VAL_NIL,
   VAL_NUMBER,
 } ValueType;
