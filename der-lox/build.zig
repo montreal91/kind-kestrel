@@ -11,8 +11,12 @@ pub fn build(b: *std.build.Builder) void {
   der_lox.linkLibC();
   der_lox.linkLibCpp();
   der_lox.addCSourceFiles(&.{
-    "src/Main.cc",
+    "src/Main.cc", // Main
+
+    // Othar files in alphabetical order
+    "src/Common.cc",
     "src/Runner.cc",
+    "src/Vm.cc",
   }, &.{
     "-std=c++17", "-Wall"
   });

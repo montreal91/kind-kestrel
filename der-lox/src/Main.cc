@@ -19,5 +19,7 @@ int main(int argc, const char* argv[]) {
     std::cout << "Usage: DerLox [path/to/file.lox]\n";
   }
 
+  delete runner;
+
   return 0;
 }

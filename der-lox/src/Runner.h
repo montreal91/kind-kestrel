@@ -3,12 +3,23 @@
 
 #include <string>
 
+#include "Common.h"
+#include "Vm.h"
+
 namespace lox {
+
+using namespace __internal__;
 
 class Runner {
 public:
+  Runner();
+  ~Runner();
+
   void run_repl();
   void run_file(const std::string& path);
+
+private:
+  Vm* vm;
 };
 
 } // namespace lox
