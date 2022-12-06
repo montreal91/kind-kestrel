@@ -20,6 +20,8 @@ public:
 
 private:
   Vm* vm;
+
+  InterpretResult run(const std::string& code);
 };
 
 } // namespace lox

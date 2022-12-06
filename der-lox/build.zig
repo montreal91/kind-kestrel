@@ -15,6 +15,9 @@ pub fn build(b: *std.build.Builder) void {
 
     // Othar files in alphabetical order
     "src/Common.cc",
+    "src/Compiler.cc",
+    "src/Lexer.cc",
+    "src/Parser.cc",
     "src/Runner.cc",
     "src/Vm.cc",
   }, &.{

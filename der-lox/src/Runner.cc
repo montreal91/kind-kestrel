@@ -3,7 +3,13 @@
 #include <iostream>
 #include <sstream>
 
+#include "Chunk.h"
+#include "Compiler.h"
+#include "Lexer.h"
+#include "Parser.h"
 #include "Runner.h"
+#include "Statement.h"
+#include "Token.h"
 #include "Vm.h"
 
 
@@ -25,11 +31,12 @@ void Runner::run_repl() {
   std::cout << "Type \\q to exit.\n";
   std::cout << "> ";
   std::string input;
-  std::cin >> input;
+  std::getline(std::cin, input);
+
   while (input != "\\q") {
-    vm->interpret(input);
+    run(input);
     std::cout << "> ";
-    std::cin >> input;
+    std::getline(std::cin, input);
   }
 }
 
@@ -45,7 +52,7 @@ void Runner::run_file(const std::string& path) {
   std::string code;
   __util__::read_from_file(path, &code);
 
-  InterpretResult result = vm->interpret(code);
+  InterpretResult result = run(code);
 
   if (result == InterpretResult::COMPILE_ERROR) {
     std::exit(65);
@@ -54,7 +61,43 @@ void Runner::run_file(const std::string& path) {
   if (result == InterpretResult::RUNTIME_ERROR) {
     std::exit(70);
   }
+}
 
+InterpretResult Runner::run(const std::string& code) {
+  std::cout << "Der Lox: Running.\n";
+  std::cout << "===================================\n";
+  std::cout << code << "\n";
+  std::cout << "===================================\n";
+  // Lexing
+  std::vector<Token>* tokens = new std::vector<Token>();
+  Lexer* lexer = new Lexer();
+  lexer->scan(code, tokens);
+  delete lexer;
+
+  // Parsing
+  std::vector<Statement>* statements = new std::vector<Statement>();
+  Parser* parser = new Parser();
+  parser->parse(*tokens, statements);
+  delete parser;
+
+  // Operations on the AST
+  // Compiling
+  Chunk* chunk = new Chunk();
+  Compiler* compiler = new Compiler();
+  compiler->compile(*statements, chunk);
+  delete compiler;
+
+  // Remove redundancies
+  // Everything is compiled and actually ready for interpretation.
+  delete statements;
+  delete tokens;
+
+  // Interpretation
+  InterpretResult result = vm->interpret(chunk);
+
+  // Cleanup
+  delete chunk;
+  return result;
 }
 
 } // namespace lox

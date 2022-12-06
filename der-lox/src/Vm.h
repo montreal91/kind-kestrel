@@ -4,6 +4,7 @@
 
 #include <string>
 
+#include "Chunk.h"
 #include "Common.h"
 
 
@@ -16,7 +17,7 @@ public:
   Vm();
   ~Vm();
 
-  InterpretResult interpret(const std::string& code);
+  InterpretResult interpret(Chunk* bytecode);
 };
 
 } // namespace __internal__
