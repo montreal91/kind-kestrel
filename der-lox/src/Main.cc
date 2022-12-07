@@ -2,11 +2,11 @@
 #include <iostream>
 #include <string>
 
-#include "Runner.h"
+#include "Interpreter.h"
 
 
 int main(int argc, const char* argv[]) {
-  lox::Runner* runner = new lox::Runner();
+  lox::Interpreter* runner = new lox::Interpreter();
 
   if (argc == 1) {
     runner->run_repl();

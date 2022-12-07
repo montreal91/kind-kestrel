@@ -3,11 +3,12 @@
 #include <iostream>
 #include <sstream>
 
+#include "Interpreter.h"
+
 #include "Chunk.h"
 #include "Compiler.h"
 #include "Lexer.h"
 #include "Parser.h"
-#include "Runner.h"
 #include "Statement.h"
 #include "Token.h"
 #include "Vm.h"
@@ -18,15 +19,15 @@ namespace lox {
 using namespace __internal__;
 
 
-Runner::Runner() {
+Interpreter::Interpreter() {
   vm = new Vm();
 }
 
-Runner::~Runner() {
+Interpreter::~Interpreter() {
   delete vm;
 }
 
-void Runner::run_repl() {
+void Interpreter::run_repl() {
   std::cout << "Lox REPL.\n";
   std::cout << "Type \\q to exit.\n";
   std::cout << "> ";
@@ -40,7 +41,7 @@ void Runner::run_repl() {
   }
 }
 
-void Runner::run_file(const std::string& path) {
+void Interpreter::run_file(const std::string& path) {
   std::filesystem::path file_path(path);
   if (!std::filesystem::exists(file_path)) {
     std::cerr << "File [" << path << "] not found.\n";
@@ -63,7 +64,7 @@ void Runner::run_file(const std::string& path) {
   }
 }
 
-InterpretResult Runner::run(const std::string& code) {
+InterpretResult Interpreter::run(const std::string& code) {
   std::cout << "Der Lox: Running.\n";
   std::cout << "===================================\n";
   std::cout << code << "\n";
