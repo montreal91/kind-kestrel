@@ -4,12 +4,14 @@
 
 #include <string>
 
+#include "Printable.h"
+
 
 namespace lox {
 namespace __internal__ {
 
 
-class Token {
+class Token : public Printable {
 public:
   enum Type {
     COMMA, DOT, MINUS, PLUS, SEMI, SLASH, STAR,
@@ -36,6 +38,8 @@ public:
   const std::string value;
   const int row;
   const int column;
+
+  virtual std::string __str__() const override;
 };
 
 } // namespace __internal__
