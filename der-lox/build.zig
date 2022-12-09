@@ -19,6 +19,7 @@ pub fn build(b: *std.build.Builder) void {
     "src/Interpreter.cc",
     "src/Lexer.cc",
     "src/Parser.cc",
+    "src/Printable.cc",
     "src/Token.cc",
     "src/Vm.cc",
   }, &.{
