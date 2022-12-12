@@ -19,6 +19,8 @@ value(value),
 column(column),
 row(row) {}
 
+Token::~Token() {}
+
 std::string Token::__str__() const {
   std::string res = "Token ";
   res.append(type_to_string(this->type));

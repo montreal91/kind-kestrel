@@ -13,7 +13,36 @@ namespace __internal__ {
 
 class Lexer {
 public:
-  bool scan(const std::string& code, std::vector<Token>* tokens);
+  Lexer(const std::string& code);
+  ~Lexer();
+
+  // I admit that this interface is kinda weird,
+  // but I don't want to mess with shared pointers at the moment
+  bool scan(std::vector<Token>* tokens);
+
+
+private:
+  size_t pos;
+  size_t line;
+  size_t col;
+
+  const std::string& code;
+
+
+  // void init_lexer(const std::string& code);
+  void proceed();
+  void new_line();
+  void skip();
+
+  Token parse_symbolic_token();
+  Token parse_number_literal();
+  Token parse_string_literal();
+  Token parse_identifier_or_keyword();
+
+  bool is_at_end() const;
+  bool is_lox_symbol() const;
+  bool is_number_start() const;
+  bool is_string_start() const;
 };
 
 } // namespace __internal__

@@ -33,6 +33,7 @@ public:
   };
 
   Token(Type type, const std::string& value, int row, int column);
+  virtual ~Token();
 
   const Type type;
   const std::string value;

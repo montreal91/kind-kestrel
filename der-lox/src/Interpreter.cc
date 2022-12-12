@@ -71,8 +71,8 @@ InterpretResult Interpreter::run(const std::string& code) {
   std::cout << "===================================\n";
   // Lexing
   std::vector<Token>* tokens = new std::vector<Token>();
-  Lexer* lexer = new Lexer();
-  lexer->scan(code, tokens);
+  Lexer* lexer = new Lexer(code);
+  lexer->scan(tokens);
   delete lexer;
 
   // Parsing
