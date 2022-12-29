@@ -3,6 +3,7 @@
 #define DERLOX_LEXER_H
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "Token.h"
@@ -32,7 +33,11 @@ private:
   // void init_lexer(const std::string& code);
   void proceed();
   void new_line();
-  void skip();
+  void skip_whitespace();
+  void skip_comment();
+
+  char peek() const;
+  char peek_next() const;
 
   Token parse_symbolic_token();
   Token parse_number_literal();
@@ -43,6 +48,7 @@ private:
   bool is_lox_symbol() const;
   bool is_number_start() const;
   bool is_string_start() const;
+  bool is_identifier_start() const;
 };
 
 } // namespace __internal__

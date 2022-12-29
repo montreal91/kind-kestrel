@@ -27,6 +27,28 @@ static std::string type_to_string(Token::Type type) {
     case Token::Type::LESSER: return "LESSER";
     case Token::Type::LESSER_EQUAL: return "LESSER_EQUAL";
 
+    case Token::Type::NUMBER: return "NUMBER";
+    case Token::Type::STRING: return "STRING";
+    case Token::Type::IDENTIFIER: return "IDENTIFIER";
+
+    case Token::Type::AND: return "AND";
+    case Token::Type::CLASS: return "CLASS";
+    case Token::Type::ELSE: return "ELSE";
+    case Token::Type::FALSE: return "FALSE";
+    case Token::Type::FUN: return "FUN";
+    case Token::Type::FOR: return "FOR";
+    case Token::Type::IF: return "IF";
+    case Token::Type::NIL: return "NIL";
+    case Token::Type::OR: return "OR";
+    case Token::Type::PRINT: return "PRINT";
+    case Token::Type::RETURN: return "RETURN";
+    case Token::Type::SUPER: return "SUPER";
+    case Token::Type::THIS: return "THIS";
+    case Token::Type::TRUE: return "TRUE";
+    case Token::Type::VAR: return "VAR";
+    case Token::Type::WHILE: return "WHILE";
+
+    case Token::Type::ERROR: return "ERROR";
     case Token::Type::END_OF_FILE: return "END_OF_FILE";
     default: return "UNKNOWN"; // Unreachable
   }
