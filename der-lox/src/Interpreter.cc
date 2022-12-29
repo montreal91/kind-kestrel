@@ -75,6 +75,11 @@ InterpretResult Interpreter::run(const std::string& code) {
   lexer->scan(tokens);
   delete lexer;
 
+  std::cout << "Der Lox: Tokens:\n";
+  for (Token& token : *tokens) {
+    print(token);
+  }
+
   // Parsing
   std::vector<Statement>* statements = new std::vector<Statement>();
   Parser* parser = new Parser();

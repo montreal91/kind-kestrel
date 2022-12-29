@@ -19,7 +19,6 @@ Vm::~Vm() {
 }
 
 InterpretResult Vm::interpret(Chunk* chunk) {
-  std::cout << "Der Lox VM: Interpreting the Lox Bytecode.\n\n";
   return InterpretResult::OK;
 }
 

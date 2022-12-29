@@ -32,12 +32,12 @@ public:
     END_OF_FILE, ERROR,
   };
 
-  Token(Type type, const std::string& value, int row, int column);
+  Token(Type type, const std::string& value, int line, int column);
   virtual ~Token();
 
   const Type type;
   const std::string value;
-  const int row;
+  const int line;
   const int column;
 
   virtual std::string __str__() const override;

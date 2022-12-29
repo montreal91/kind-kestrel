@@ -1,11 +1,13 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "Printable.h"
 
 namespace lox {
 namespace __internal__ {
+
 
 void print(const Printable& printable, const std::string& endl) {
   // I'm not interested into printing printables into other streams, so...
@@ -13,7 +15,7 @@ void print(const Printable& printable, const std::string& endl) {
 }
 
 void print(const Printable& printable) {
-  // print(printable, "\n");
+  print(printable, "\n");
 }
 
 } // namespace __internal__
