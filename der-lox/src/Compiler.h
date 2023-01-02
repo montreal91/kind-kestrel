@@ -2,8 +2,6 @@
 #ifndef DERLOX_COMPILER_H
 #define DERLOX_COMPILER_H
 
-// #include <cstdint>
-// #include <string>
 #include <vector>
 
 #include "Chunk.h"

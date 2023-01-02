@@ -69,40 +69,32 @@ InterpretResult Interpreter::run(const std::string& code) {
   std::cout << "===================================\n";
   std::cout << code << "\n";
   std::cout << "===================================\n";
+
   // Lexing
-  std::vector<Token>* tokens = new std::vector<Token>();
-  Lexer* lexer = new Lexer(code);
-  lexer->scan(tokens);
-  delete lexer;
+  std::vector<Token> tokens;
+  Lexer lexer(code);
+  lexer.scan(&tokens);
 
   std::cout << "Der Lox: Tokens:\n";
-  for (Token& token : *tokens) {
+  for (Token& token : tokens) {
     print(token);
   }
 
   // Parsing
-  std::vector<Statement>* statements = new std::vector<Statement>();
-  Parser* parser = new Parser();
-  parser->parse(*tokens, statements);
-  delete parser;
+  std::vector<Statement> statements;
+  Parser parser;
+  parser.parse(tokens, &statements);
 
   // Operations on the AST
-  // Compiling
-  Chunk* chunk = new Chunk();
-  Compiler* compiler = new Compiler();
-  compiler->compile(*statements, chunk);
-  delete compiler;
 
-  // Remove redundancies
-  // Everything is compiled and actually ready for interpretation.
-  delete statements;
-  delete tokens;
+  // Compiling
+  Chunk chunk;
+  Compiler compiler;
+  compiler.compile(statements, &chunk);
 
   // Interpretation
-  InterpretResult result = vm->interpret(chunk);
+  InterpretResult result = vm->interpret(&chunk);
 
-  // Cleanup
-  delete chunk;
   return result;
 }
 
