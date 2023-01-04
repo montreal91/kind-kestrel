@@ -66,9 +66,7 @@ int main(int argc, const char* argv[]) {
     runfile(argv[1]);
   } else {
     fprintf(stderr, "Usage: clox [path]\n");
-    exit(64);
   }
 
-  freeVM();
   return 0;
 }
