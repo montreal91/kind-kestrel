@@ -34,6 +34,7 @@ static Entry* findEntry(Entry* entries, int capacity, ObjString* key) {
         // Empty entry.
         return tombstone != NULL ? tombstone : entry;
       } else {
+        // We found a tombstone.
         if (tombstone == NULL) tombstone = entry;
       }
     } else if (entry->key == key) {
@@ -41,7 +42,7 @@ static Entry* findEntry(Entry* entries, int capacity, ObjString* key) {
       return entry;
     }
 
-    index = (index + 1) * capacity;
+    index = (index + 1) % capacity;
   }
 }
 
@@ -113,5 +114,31 @@ void tableAddAll(Table* from, Table* to) {
     if (entry->key != NULL) {
       tableSet(to, entry->key, entry->value);
     }
+  }
+}
+
+ObjString* tableFindString(Table* table, const char* chars, int length, uint32_t hash) {
+  if (table->count == 0) return NULL;
+
+  uint32_t index = hash % table->capacity;
+
+  for (;;) {
+    Entry* entry = &table->entries[index];
+
+    if (entry->key == NULL) {
+      if (IS_NIL(entry->value)) {
+        return NULL;
+      }
+    }
+    else if (
+      entry->key->length == length &&
+      entry->key->hash == hash &&
+      memcmp(entry->key->chars, chars, length) == 0
+    ) {
+      // We found it.
+      return entry->key;
+    }
+
+    index = (index + 1) % table->capacity;
   }
 }
