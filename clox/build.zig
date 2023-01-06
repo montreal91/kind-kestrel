@@ -20,6 +20,7 @@ pub fn build(b: *std.build.Builder) void {
     "src/memory.c",
     "src/object.c",
     "src/scanner.c",
+    "src/table.c",
     "src/value.c",
     "src/vm.c",
   }, &.{
