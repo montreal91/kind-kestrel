@@ -13,11 +13,13 @@ pub fn build(b: *std.build.Builder) void {
   clox.addIncludeDir("src/");
   clox.addCSourceFiles(&.{
     "src/main.c",
+
     "src/chunk.c",
-    "src/compiler.c",
-    "src/scanner.c",
-    "src/memory.c",
     "src/debug.c",
+    "src/compiler.c",
+    "src/memory.c",
+    "src/object.c",
+    "src/scanner.c",
     "src/value.c",
     "src/vm.c",
   }, &.{
