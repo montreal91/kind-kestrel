@@ -1,0 +1,3 @@
+var mtl = "Montreal";
+var can = "Canadiens";
+print mtl + " " + can;
