@@ -1,0 +1,16 @@
+
+var tmblr = true;
+
+if (tmblr) {
+  print "Tumblr is on";
+} else {
+  print "Tumblr is off";
+}
+
+tmblr = !tmblr;
+
+if (tmblr) {
+  print "Tumblr is on";
+} else {
+  print "Tumblr is off";
+}

@@ -59,6 +59,13 @@ Parser parser;
 Compiler* current = NULL;
 Chunk* compilingChunk;
 
+static void expression();
+static void statement();
+static void declaration();
+static ParseRule* getRule();
+static void emitByte(uint8_t byte);
+static void emitBytes(uint8_t byte1, uint8_t byte2);
+
 
 static Chunk* currentChunk() {
   return compilingChunk;
@@ -125,8 +132,27 @@ static void emitByte(uint8_t byte) {
   writeChunk(currentChunk(), byte, parser.previous.line);
 }
 
+static int emitJump(uint8_t instruction) {
+  emitByte(instruction);
+  emitByte(0xff);
+  emitByte(0xff);
+  return currentChunk()->count - 2;
+}
+
 static void emitReturn() {
   emitByte(OP_RETURN);
+}
+
+static void patchJump(int offset) {
+  // -2 to adjust the bytecode for the jump offset itself.
+  int jump = currentChunk()->count - offset - 2;
+
+  if (jump > UINT16_MAX) {
+    error("Too much code to jump over.");
+  }
+
+  currentChunk()->code[offset] = (jump >> 8) & 0xff;
+  currentChunk()->code[offset + 1] = jump & 0xff;
 }
 
 static uint8_t makeConstant(Value value) {
@@ -165,13 +191,6 @@ static void endScope() {
     current->localCount--;
   }
 }
-
-static void expression();
-static void statement();
-static void declaration();
-static ParseRule* getRule();
-static void emitByte(uint8_t byte);
-static void emitBytes(uint8_t byte1, uint8_t byte2);
 
 static void parsePrecedence(Precedence precedence) {
   advance();
@@ -305,6 +324,24 @@ static void expressionStatement() {
   emitByte(OP_POP);
 }
 
+static void ifStatement() {
+  consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
+  expression();
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+
+  int thenJump = emitJump(OP_JUMP_IF_FALSE);
+  emitByte(OP_POP);
+  statement();
+
+  int elseJump = emitJump(OP_JUMP);
+
+  patchJump(thenJump);
+  emitByte(OP_POP);
+
+  if (match(TOKEN_ELSE)) statement();
+  patchJump(elseJump);
+}
+
 static void printStatement() {
   expression();
   consume(TOKEN_SEMICOLON, "Expect ';' after value.");
@@ -346,11 +383,16 @@ static void declaration() {
 static void statement() {
   if (match(TOKEN_PRINT)) {
     printStatement();
-  } else if (match(TOKEN_LEFT_BRACE)) {
+  }
+  else if (match(TOKEN_IF)) {
+    ifStatement();
+  }
+  else if (match(TOKEN_LEFT_BRACE)) {
     beginScope();
     block();
     endScope();
-  } else {
+  }
+  else {
     expressionStatement();
   }
 }
@@ -363,6 +405,8 @@ static void emitBytes(uint8_t byte1, uint8_t byte2) {
 static void emitConstant(Value value) {
   emitBytes(OP_CONSTANT, makeConstant(value));
 }
+
+
 
 static void initCompiler(Compiler* compiler) {
   compiler->localCount = 0;
