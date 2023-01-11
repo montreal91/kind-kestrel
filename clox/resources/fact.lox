@@ -1,0 +1,11 @@
+
+fun fact(n) {
+  if (n < 1) {
+    return 1;
+  }
+  return n * fact(n - 1);
+}
+
+var start = clock();
+print fact(4);
+print clock() - start;

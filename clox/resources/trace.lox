@@ -1,0 +1,14 @@
+fun a() {
+  print "Call 'a'";
+  b();
+}
+fun b() {
+  print "Call 'b'";
+  c();
+}
+fun c() {
+  print "Call 'c'";
+  c("too", "many");
+}
+
+a();
