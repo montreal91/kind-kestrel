@@ -1,3 +1,6 @@
 zig-cache/
 zig-out/
 .vscode/
+target/
+cmake-build-debug/
+.idea/
