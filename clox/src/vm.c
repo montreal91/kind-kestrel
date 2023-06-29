@@ -117,6 +117,11 @@ static bool call(ObjClosure* closure, int argCount) {
 static bool callValue(Value callee, int argCount) {
   if (IS_OBJ(callee)) {
     switch (OBJ_TYPE(callee)) {
+      case OBJ_CLASS: {
+        ObjClass* klass = AS_CLASS(callee);
+        vm.stackTop[-argCount - 1] = OBJ_VAL(newInstance(klass));
+        return true;
+      }
       case OBJ_NATIVE: {
         NativeFn native = AS_NATIVE(callee);
         Value result = native(argCount, vm.stackTop - argCount);
