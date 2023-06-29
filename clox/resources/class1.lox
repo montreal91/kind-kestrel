@@ -1,3 +1,15 @@
 class Brioche {}
 print Brioche;
 print Brioche();
+
+class Eclair {}
+var eclair = Eclair();
+eclair.filling = "Pastry Creme";
+print eclair.filling;
+
+class Pair {}
+
+var pair = Pair();
+pair.first = 1;
+pair.second = 2;
+print pair.first + pair.second; // 3.
