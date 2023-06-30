@@ -1,0 +1,8 @@
+class Brunch {
+  bacon() {}
+  eggs() {}
+}
+
+var b = Brunch();
+b.bacon();
+b.eggs();
