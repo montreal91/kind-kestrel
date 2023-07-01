@@ -15,3 +15,15 @@ class Scone {
 
 var scone = Scone();
 scone.topping("berries", "cream");
+
+class Nested {
+  method() {
+    fun function() {
+      print this;
+    }
+
+    return function;
+  }
+}
+
+Nested().method()();
