@@ -27,6 +27,7 @@ static Obj* allocateObject(size_t size, ObjType type) {
 
 ObjClass* newClass(ObjString* name) {
   ObjClass* klass = ALLOCATE_OBJ(ObjClass, OBJ_CLASS);
+  initTable((&klass->methods));
   klass->name = name;
   return klass;
 }
@@ -65,6 +66,13 @@ ObjNative* newNative(NativeFn function) {
   ObjNative* native = ALLOCATE_OBJ(ObjNative, OBJ_NATIVE);
   native->function = function;
   return native;
+}
+
+ObjBoundMethod* newBoundMethod(Value receiver, ObjClosure* method) {
+  ObjBoundMethod* bound = ALLOCATE_OBJ(ObjBoundMethod, OBJ_BOUND_METHOD);
+  bound->receiver = receiver;
+  bound->method = method;
+  return bound;
 }
 
 static ObjString* allocateString(char* chars, int length, uint32_t hash) {
@@ -161,6 +169,10 @@ void printObject(Value value) {
     }
     case OBJ_INSTANCE: {
       printf("%s instance", AS_INSTANCE(value)->klass->name->chars);
+      break;
+    }
+    case OBJ_BOUND_METHOD: {
+      printFunction(AS_BOUND_METHOD(value)->method->function);
       break;
     }
   }
