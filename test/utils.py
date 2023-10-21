@@ -11,16 +11,11 @@ class LoxCommandResult(NamedTuple):
 
 def run_lox(lox, file):
     cmd = f"{lox} {file}"
-    process = subprocess.Popen(
-        cmd,
-        shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+    process = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
-    process.wait(timeout=5)
-
-    out = "\n".join([line.decode() for line in process.stdout])
-    err = "\n".join([line.decode() for line in process.stderr])
+    out = process.stdout.decode()
+    err = process.stderr.decode()
 
     return LoxCommandResult(
         stdout=out, stderr=err, return_code=process.returncode
