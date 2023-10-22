@@ -26,7 +26,7 @@ static char* readFile(const char* path) {
   FILE* file = fopen(path, "rb");
 
   if (file == NULL) {
-    fprintf(stderr, "Could not open file \"%s\".\n");
+    fprintf(stderr, "Could not open file \"%s\".\n", path);
     exit(74);
   }
 
@@ -38,7 +38,7 @@ static char* readFile(const char* path) {
   size_t bytesRead = fread(buffer, sizeof(char), fileSize, file);
 
   if (bytesRead < fileSize) {
-    fprintf(stderr, "Could not read file \"%s\".\n");
+    fprintf(stderr, "Could not read file \"%s\".\n", path);
     exit(74);
   }
 
@@ -48,7 +48,7 @@ static char* readFile(const char* path) {
   return buffer;
 }
 
-static void runfile(const char* path) {
+static void runFile(const char* path) {
   char* source = readFile(path);
   InterpretResult result = interpret(source);
   free(source);
@@ -63,12 +63,12 @@ int main(int argc, const char* argv[]) {
   if (argc == 1) {
     repl();
   } else if (argc == 2) {
-    runfile(argv[1]);
+    runFile(argv[1]);
   } else {
     fprintf(stderr, "Usage: clox [path]\n");
     exit(64);
   }
 
   freeVM();
-  return 0;
+  exit(0);
 }
