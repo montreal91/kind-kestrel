@@ -122,7 +122,32 @@ static void blackenObject(Obj* object) {
 
 static void freeObject(Obj* object) {
 #ifdef DEBUG_LOG_GC
-  printf("%p free type %d\n", (void*)object, object->type);
+  switch (object->type) {
+    case OBJ_BOUND_METHOD:
+      printf("%p free type %s\n", (void*)object, "OBJ_BOUND_METHOD");
+      break;
+    case OBJ_CLASS:
+      printf("%p free type %s\n", (void*)object, "OBJ_CLASS");
+      break;
+    case OBJ_CLOSURE:
+      printf("%p free type %s\n", (void*)object, "OBJ_CLOSURE");
+      break;
+    case OBJ_FUNCTION:
+      printf("%p free type %s\n", (void*)object, "OBJ_FUNCTION");
+      break;
+    case OBJ_INSTANCE:
+      printf("%p free type %s\n", (void*)object, "OBJ_INSTANCE");
+      break;
+    case OBJ_NATIVE:
+      printf("%p free type %s\n", (void*)object, "OBJ_NATIVE");
+      break;
+    case OBJ_STRING:
+      printf("%p free type %s\n", (void*)object, "OBJ_STRING");
+      break;
+    case OBJ_UPVALUE:
+      printf("%p free type %s\n", (void*)object, "OBJ_UPVALUE");
+      break;
+  }
 #endif
   switch (object->type) {
     case OBJ_CLASS: {
