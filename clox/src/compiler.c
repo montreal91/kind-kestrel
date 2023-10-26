@@ -483,13 +483,13 @@ static void classDeclaration() {
   uint8_t nameConstant = identifierConstant(&parser.previous);
   declareVariable();
 
+  emitBytes(OP_CLASS, nameConstant);
+  defineVariable(nameConstant);
+
   ClassCompiler classCompiler;
   classCompiler.hasSuperclass = false;
   classCompiler.enclosing = currentClass;
   currentClass = &classCompiler;
-
-  emitBytes(OP_CLASS, nameConstant);
-  defineVariable(nameConstant);
 
   if (match(TOKEN_LESS)) {
     consume(TOKEN_IDENTIFIER, "Expect superclass name.");
@@ -499,14 +499,15 @@ static void classDeclaration() {
       error("A class can't inherit from itself.");
     }
 
+    beginScope();
+    addLocal(syntheticToken("super"));
+    defineVariable(0);
+
     namedVariable(className, false);
     emitByte(OP_INHERIT);
     classCompiler.hasSuperclass = true;
   }
 
-  beginScope();
-  addLocal(syntheticToken("super"));
-  defineVariable(0);
 
   namedVariable(className, false);
   consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
@@ -808,6 +809,23 @@ static void this_(bool canAssign) {
   variable(false);
 }
 
+static void super_(bool canAssign) {
+  if (currentClass == NULL) {
+    error("Can't use 'super' outside of a class.");
+  }
+  else if (!currentClass->hasSuperclass) {
+    error("Can't use 'super' in a class with no superclass.");
+  }
+
+  consume(TOKEN_DOT, "Expect '.' after 'super'.");
+  consume(TOKEN_IDENTIFIER, "Expect superclass method name.");
+  uint8_t name = identifierConstant(&parser.previous);
+
+  namedVariable(syntheticToken("this"), false);
+  namedVariable(syntheticToken("super"), false);
+  emitBytes(OP_GET_SUPER, name);
+}
+
 static void binary(bool canAssign) {
   TokenType operatorType = parser.previous.type;
   ParseRule* rule = getRule(operatorType);
@@ -925,7 +943,7 @@ ParseRule rules[] = {
   [TOKEN_OR]              = {NULL,      or_,      PREC_OR},
   [TOKEN_PRINT]           = {NULL,      NULL,     PREC_NONE},
   [TOKEN_RETURN]          = {NULL,      NULL,     PREC_NONE},
-  [TOKEN_SUPER]           = {NULL,      NULL,     PREC_NONE},
+  [TOKEN_SUPER]           = {super_,    NULL,     PREC_NONE},
   [TOKEN_THIS]            = {this_,     NULL,     PREC_NONE},
   [TOKEN_TRUE]            = {literal,   NULL,     PREC_NONE},
   [TOKEN_VAR]             = {NULL,      NULL,     PREC_NONE},

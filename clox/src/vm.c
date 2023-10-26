@@ -508,6 +508,15 @@ static InterpretResult run() {
         pop();  // Subclass
         break;
       }
+      case OP_GET_SUPER: {
+        ObjString* name = READ_STRING();
+        ObjClass* superclass = AS_CLASS(pop());
+
+        if (!bindMethod(superclass, name)) {
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        break;
+      }
       case OP_CLASS: {
         push(OBJ_VAL(newClass(READ_STRING())));
         break;

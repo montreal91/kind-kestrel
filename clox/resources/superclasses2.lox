@@ -14,4 +14,6 @@ class B < A {
   }
 }
 
-class C < B {} // expected: A method
+class C < B {}
+
+C().test(); // expected: A method
