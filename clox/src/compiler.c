@@ -76,6 +76,7 @@ typedef struct {
 
 typedef struct ClassCompiler {
   struct ClassCompiler* enclosing;
+  bool hasSuperclass;
 } ClassCompiler;
 
 Parser parser;
@@ -389,6 +390,13 @@ static void defineVariable(uint8_t global) {
   emitBytes(OP_DEFINE_GLOBAL, global);
 }
 
+static Token syntheticToken(const char* text) {
+  Token token;
+  token.start = text;
+  token.length = (int)strlen(text);
+  return token;
+}
+
 static void and_(bool canAssign) {
   int endJump = emitJump(OP_JUMP_IF_FALSE);
 
@@ -476,6 +484,7 @@ static void classDeclaration() {
   declareVariable();
 
   ClassCompiler classCompiler;
+  classCompiler.hasSuperclass = false;
   classCompiler.enclosing = currentClass;
   currentClass = &classCompiler;
 
@@ -492,7 +501,12 @@ static void classDeclaration() {
 
     namedVariable(className, false);
     emitByte(OP_INHERIT);
+    classCompiler.hasSuperclass = true;
   }
+
+  beginScope();
+  addLocal(syntheticToken("super"));
+  defineVariable(0);
 
   namedVariable(className, false);
   consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
@@ -503,6 +517,10 @@ static void classDeclaration() {
 
   consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
   emitByte(OP_POP);
+
+  if (classCompiler.hasSuperclass) {
+    endScope();
+  }
 
   currentClass = currentClass->enclosing;
 }
