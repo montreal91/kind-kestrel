@@ -4,3 +4,4 @@ zig-out/
 target/
 cmake-build*
 .idea/
+build/
