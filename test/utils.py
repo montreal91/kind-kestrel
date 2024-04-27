@@ -6,7 +6,7 @@ from typing import NamedTuple
 class LoxCommandResult(NamedTuple):
     stdout: str
     stderr: str
-    return_code: int
+    exit_code: int
 
 
 def run_lox(lox, file):
@@ -18,5 +18,5 @@ def run_lox(lox, file):
     err = process.stderr.decode()
 
     return LoxCommandResult(
-        stdout=out, stderr=err, return_code=process.returncode
+        stdout=out, stderr=err, exit_code=process.returncode
     )
