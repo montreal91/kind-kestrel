@@ -1,225 +1,531 @@
 package org.example
 
-import java.io.DataOutputStream
-import java.io.FileOutputStream
-
-const val OP_RETURN: Byte = 0xb1.toByte()
-const val OP_ALOAD_0: Byte = 0x2a.toByte()
-const val OP_INVOKESPECIAL: Byte = 0xB7.toByte()
-const val OP_GETSTATIC: Byte = 0xb2.toByte()
-const val OP_LDC: Byte = 0x12.toByte()
-const val OP_INVOKEVIRTUAL: Byte = 0xb6.toByte()
+import java.io.File
+import kotlin.experimental.or
 
 
-fun main() {
-  // Define the class name and file name
-  val className = "HelloWorld"
-  val fileName = "$className.class"
+enum class Opcode(val value: Byte) {
+  // Opcodes stored alphabetically by mnemonics
+  OP_ALOAD_0(0x2a.toByte()),  // Load reference from local variable 0
+  OP_GET_STATIC(0xb2.toByte()),  // Get static field from class
+  OP_INVOKE_SPECIAL(0xb7.toByte()),  // Invoke instance method; direct invocation of instance initialization methods
+  OP_INVOKE_VIRTUAL(0xb6.toByte()),  // Invoke instance method; dispatch based on class
+  OP_LDC(0x12.toByte()),  // Push item from run-time constant pool
+  OP_RETURN(0xb1.toByte()),  // Return void fromm method
+}
 
-  DataOutputStream(FileOutputStream(fileName)).use { dos ->
-    // Magic number and version
-    dos.writeInt(0xCAFEBABE.toInt())
-    dos.writeShort(0) // Minor version
-    dos.writeShort(52) // Major version (Java SE 8)
+enum class ClassAccessFlags(val value: Short) {
+  PUBLIC(value = 0x0001),
+}
 
-    // Constant pool
-    val constantPoolCount = 27
-    dos.writeShort(constantPoolCount) // Number of entries in the constant pool
+enum class MethodAccessFlags(val value: Short) {
+  PUBLIC(value = 0x0001),
+  STATIC(value = 0x0008),
+}
 
-    // #1
-    dos.writeByte(1) // Type 1 - UTF-8
-    dos.writeUTF("HelloWorld")
+enum class ConstantType(val value: Byte) {
+  // Values are stored alphabetically by type name
+  CLASS(7.toByte()),
+  FIELD_REF(9.toByte()),
+  METHOD_REF(10.toByte()),
+  NAME_AND_TYPE(12.toByte()),
+  STRING(8.toByte()),
+  UTF_8(1.toByte()),
+}
 
-    // #2
-    dos.writeByte(1) // Type 1 - UTF-8
-    dos.writeUTF("java/lang/Object")
+fun Byte.toBytes() = listOf(this)
 
-    // #3
-    dos.writeByte(1) // Type 1 - UTF-8
-    dos.writeUTF("<init>")
+fun Short.toBytes(): List<Byte> {
+  val res = mutableListOf<Byte>()
+  res.add((this.toInt() shr 8).toByte())
+  res.add(this.toByte())
+  return res
+}
 
-    // #4
-    dos.writeByte(1) // Type 1 - UTF-8
-    dos.writeUTF("()V")
+fun Int.toBytes(): List<Byte> {
+  val result = mutableListOf<Byte>()
+  result.add((this shr 24).toByte())
+  result.add((this shr 16).toByte())
+  result.add((this shr 8).toByte())
+  result.add(this.toByte())
+  return result
+}
 
-    // #5
-    dos.writeByte(1) //Type 1 - UTF-8
-    dos.writeUTF("println")
+class Operation(val opcode: Opcode, val operands: List<ConstantPoolInfo>)
 
-    // #6
-    dos.writeByte(1)
-    dos.writeUTF("(Ljava/lang/String;)V")
+class MethodInfo(
+  val methodName: Utf8Value,
+  val methodDescriptor: Utf8Value,
+  val maxStack: Short,
+  val maxLocals: Short,
+  private val accessFlagList: List<MethodAccessFlags>,
+  val code: List<Operation>
+) {
+  val accessFlags: Short
+    get() {
+      var res: Short = 0
+      for (flag in accessFlagList) {
+        res = res or flag.value
+      }
+      return res
+    }
+}
 
-    // #7
-    dos.writeByte(1) // Type 1 - UTF-8
-    dos.writeUTF("Code")
+class InterfaceInfo
+class FieldInfo
+class AttributeInfo
 
-    // #8
-    dos.writeByte(1) // Type 1 - UTF-8
-    dos.writeUTF("LineNumberTable")
+class ClassFile(
+  val thisClassInfo: ClassInfo,
+  val superClassInfo: ClassInfo,
+  val accessFlagList: List<ClassAccessFlags>,
+  val interfaceList: List<InterfaceInfo>,
+  val fieldList: List<FieldInfo>,
+  val methodList: List<MethodInfo>,
+  val attributeList: List<AttributeInfo>,
+) {
+  val accessFlags: Short
+    get() {
+      var res: Short = 0
+      for (flag in accessFlagList) {
+        res = res or flag.value
+      }
+      return res
+    }
 
-    // #9
-    dos.writeByte(1) // Type 1 - UTF-8
-    dos.writeUTF("main")
+}
 
-    // #10
-    dos.writeByte(1) // Type 1 - UTF-8
-    dos.writeUTF("([Ljava/lang/String;)V")
+class ConstantPool {
+  private val constants: MutableList<Constant> = mutableListOf()
+  private val labelIndex: MutableMap<String, Int> = mutableMapOf()
 
-    // #11
-    dos.writeByte(1) // Type 1 - UTF-8
-    dos.writeUTF("java/lang/System")
+  init {
+    addConstantPoolInfo("Code".toUtf8Value())
+  }
 
-    // #12
-    dos.writeByte(1) // Type 1 - UTF-8
-    dos.writeUTF("out")
+  private val size: Int
+    get() = constants.size + 1
 
-    // #13
-    dos.writeByte(1) // Type 1 - UTF-8
-    dos.writeUTF("Ljava/io/PrintStream;")
+  operator fun get(label: String): Short = labelIndex[label]!!.toShort()
 
-    // #14
-    dos.writeByte(1) // Type 1 - UTF-8
-    dos.writeUTF("java/io/PrintStream")
+  fun addConstantPoolInfo(constantPoolInfo: ConstantPoolInfo) {
+    if (labelIndex.containsKey(constantPoolInfo.label)) {
+      return
+    }
 
-    // #15
-    dos.writeByte(1) // Type 1 - UTF-8
-    dos.writeUTF("Hello, World!")
+    when (constantPoolInfo) {
+      is ClassInfo -> addClassInfo(constantPoolInfo)
+      is ConstantValue -> addConstantValue(constantPoolInfo)
+      is FieldRefInfo -> addFieldRefInfo(constantPoolInfo)
+      is MethodRefInfo -> addMethodRefInfo(constantPoolInfo)
+      is NameAndTypeInfo -> addNameAndTypeInfo(constantPoolInfo)
+      is StringRefInfo -> addStringRefInfo(constantPoolInfo)
+    }
+  }
 
-    // #16
-    dos.writeByte(7) // Class
-    dos.writeShort(1) // HelloWorld
+  fun toBytes(): List<Byte> {
+    val res: MutableList<Byte> = mutableListOf()
+    res.addAll(size.toShort().toBytes())
 
-    // #17
-    dos.writeByte(7) // Class
-    dos.writeShort(2) // java/lang/Object
+    for (constant in constants) {
+      res.addAll(constant.toBytes())
+    }
 
-    // #18
-    dos.writeByte(7) // Class
-    dos.writeShort(11) // java/lang/System
+    return res
+  }
 
-    // #19
-    dos.writeByte(7)  // Class
-    dos.writeShort(14) // java/io/PrintStream
+  private fun addClassInfo(info: ClassInfo) {
+    addConstantPoolInfo(info.className)
+    addConstant(
+      info.label,
+      Constant(info.type, 1, getIndexAsByteArray(info.className.label))
+    )
+  }
 
-    // #20
-    dos.writeByte(12) // NameAndType
-    dos.writeShort(3) // "<init>"
-    dos.writeShort(4) // ()V
+  private fun addConstantValue(constantValue: ConstantValue) = when (constantValue) {
+    is Utf8Value -> addConstant(
+      constantValue.label,
+      Constant(constantValue.type, constantValue.size, constantValue.value)
+    )
+    else -> {}
+  }
 
-    // #21
-    dos.writeByte(12) // NameAndType
-    dos.writeShort(12) // out
-    dos.writeShort(13) // Ljava/io/PrintStream
+  private fun addFieldRefInfo(info: FieldRefInfo) {
+    addConstantPoolInfo(info.classInfo)
+    addConstantPoolInfo(info.nameAndType)
 
-    // #22
-    dos.writeByte(12) // Type 12 - NameAndType
-    dos.writeShort(5) // println
-    dos.writeShort(6) // (Ljava/lang/String;)V
+    val constant = Constant(
+      info.type,
+      2,
+      getTwoIndexesAsByteArray(info.classInfo.label, info.nameAndType.label)
+    )
+    addConstant(info.label, constant)
+  }
 
-    // #23
-    dos.writeByte(10) // Methodref
-    dos.writeShort(17) // java/lang/Object."<init>"
-    dos.writeShort(20) // ()V
-    val objectConstructorReference: Short = 23
+  private fun addMethodRefInfo(info: MethodRefInfo) {
+    addConstantPoolInfo(info.classInfo)
+    addConstantPoolInfo(info.nameAndType)
 
-    // #24
-    dos.writeByte(10) // Methodref
-    dos.writeShort(19) // java/io/PrintStream.println
-    dos.writeShort(22) // (Ljava/lang/String;)V
-    val printLnMethodRef: Short = 24
+    val constant = Constant(
+      info.type,
+      2,
+      getTwoIndexesAsByteArray(info.classInfo.label, info.nameAndType.label)
+    )
+    addConstant(info.label, constant)
+  }
 
-    // #25
-    dos.writeByte(9) // Fieldref
-    dos.writeShort(18) // java/lang/System.out
-    dos.writeShort(21) // Ljava/io/PrintStream
-    val systemOutField: Short = 25
+  private fun addNameAndTypeInfo(info: NameAndTypeInfo) {
+    addConstantPoolInfo(info.name)
+    addConstantPoolInfo(info.descriptor)
 
-    // #26 Hello, World! string
-    dos.writeByte(8)
-    dos.writeShort(15)
-    val greetingStringRef: Short = 26
+    val value = getTwoIndexesAsByteArray(info.name.label, info.descriptor.label)
+    addConstant(info.label, Constant(info.type, 1, value))
+  }
 
-    // ----------------------------------------------------------------------
-    // The main class access flags
-    dos.writeShort(1) // Public
+  private fun addStringRefInfo(info: StringRefInfo) {
+    addConstantPoolInfo(info.stringConstant)
+    val value = getIndexAsByteArray(info.stringConstant.label)
+    addConstant(info.label, Constant(info.type, 1, value))
+  }
 
-    // This class
-    dos.writeShort(16) // Index of this class (HelloWorld)
-    dos.writeShort(17) // Index of super class (java/lang/Object)
+  private fun addConstant(label: String, constant: Constant) {
+    constants.add(constant)
+    labelIndex[label] = constants.size
+  }
 
-    // Interfaces
-    dos.writeShort(0) // No interfaces
+  // This function assumes that label exists in labelIndex
+  private fun getIndexAsByteArray(label: String): ByteArray {
+    return this[label].toBytes().toByteArray()
+  }
 
-    // Fields
-    dos.writeShort(0) // No fields
+  private fun getTwoIndexesAsByteArray(label1: String, label2: String): ByteArray {
+    val byteArray1 = getIndexAsByteArray(label1)
+    val byteArray2 = getIndexAsByteArray(label2)
 
-    // Methods
-    dos.writeShort(2) // Number of methods
+    val result = ByteArray(size = byteArray1.size + byteArray2.size)
 
-    // public HelloWorld();
-    dos.writeShort(1) // Method access flags: ACC_PUBLIC
-    dos.writeShort(3) // Index to constant pool entry for constructor name
-    dos.writeShort(4) // Index to constant pool entry for constructor descriptor
-    dos.writeShort(1) // attributes_count (just one code attribute)
+    byteArray1.copyInto(result)
+    byteArray2.copyInto(result, destinationOffset = byteArray1.size)
 
-    // Code attribute
-    val constructorCode = byteArrayOf(
-      OP_ALOAD_0,
-      OP_INVOKESPECIAL,
-      getHighByteFromShort(objectConstructorReference),
-      objectConstructorReference.toByte(),
-      OP_RETURN) // Return bytecode instruction (for void methods)
-    dos.writeShort(7) // attribute_name_index: index to constant pool entry for "Code"
-    dos.writeInt(constructorCode.size + 12) // attribute_length: size of the Code attribute
-    dos.writeShort(1) // max_stack
-    dos.writeShort(1) // max_locals
-    dos.writeInt(constructorCode.size) // code_length: size of the bytecode instructions
-    dos.write(constructorCode) // bytecode instructions
-
-    // exception_table_length: 0 (no exception handlers)
-    dos.writeShort(0)
-
-    // attributes_count: 0 (no additional attributes)
-    dos.writeShort(0)
-    // ---------------------------------------------------------------------------------------------
-
-    // public static main(String[] args);
-    dos.writeShort(9) // Method access flags: ACC_PUBLIC, ACC_STATIC
-    dos.writeShort(9) // Index to constant pool entry for main
-    dos.writeShort(10) // Index to constant pool entry for main descriptor
-    dos.writeShort(1) // attributes_count (just one code attribute)
-
-    // Code attribute
-    val mainCode = byteArrayOf(
-      OP_GETSTATIC,
-      getHighByteFromShort(systemOutField),
-      systemOutField.toByte(),
-      OP_LDC,
-      greetingStringRef.toByte(),
-      OP_INVOKEVIRTUAL,
-      getHighByteFromShort(printLnMethodRef),
-      printLnMethodRef.toByte(),
-      OP_RETURN) // Return bytecode instruction (for void methods)
-    dos.writeShort(7) // attribute_name_index: index to constant pool entry for "Code"
-    dos.writeInt(mainCode.size + 12) // attribute_length: size of the Code attribute
-    dos.writeShort(2) // max_stack
-    dos.writeShort(1) // max_locals
-    dos.writeInt(mainCode.size) // code_length: size of the bytecode instructions
-    dos.write(mainCode) // bytecode instructions
-
-    // exception_table_length: 0 (no exception handlers)
-    dos.writeShort(0)
-
-    // attributes_count: 0 (no additional attributes)
-    dos.writeShort(0)
-    // ---------------------------------------------------------------------------------------------
-
-    // Class file attributes
-    dos.writeShort(0)
-
-    println("HelloWorld class file generated successfully: $fileName")
+    return result
   }
 }
 
-fun getHighByteFromShort(value: Short) = (value.toInt() shr 8).toByte()
+fun composeConstantPool(classFile: ClassFile): ConstantPool {
+  val constantPool = ConstantPool()
+
+  constantPool.addConstantPoolInfo(classFile.thisClassInfo)
+  constantPool.addConstantPoolInfo(classFile.superClassInfo)
+
+  for (method in classFile.methodList) {
+    constantPool.addConstantPoolInfo(method.methodName)
+    constantPool.addConstantPoolInfo(method.methodDescriptor)
+
+    for (operation in method.code) {
+      for (operand in operation.operands) {
+        constantPool.addConstantPoolInfo(operand)
+      }
+    }
+  }
+
+  return constantPool
+}
+
+const val MAGIC_NUMBER = 0xCAFEBABE.toInt()
+const val MINOR_VERSION = 0.toShort()
+const val MAJOR_VERSION = 55.toShort()
+
+fun compileOperation(operation: Operation, constantPool: ConstantPool): List<Byte> {
+  val res = mutableListOf(operation.opcode.value)
+  when (operation.opcode) {
+    Opcode.OP_ALOAD_0 -> {}
+    Opcode.OP_GET_STATIC -> {
+      res.addAll(constantPool[operation.operands[0].label].toBytes())
+    }
+    Opcode.OP_INVOKE_SPECIAL -> {
+      res.addAll(constantPool[operation.operands[0].label].toBytes())
+    }
+    Opcode.OP_INVOKE_VIRTUAL -> {
+      res.addAll(constantPool[operation.operands[0].label].toBytes())
+    }
+    Opcode.OP_LDC -> {
+      res.addAll(constantPool[operation.operands[0].label].toByte().toBytes())
+    }
+    Opcode.OP_RETURN -> {}
+  }
+  return res
+}
+
+fun compileCode(operations: List<Operation>, constantPool: ConstantPool): List<Byte> {
+  val res = mutableListOf<Byte>()
+  for (operation in operations) {
+    res.addAll(compileOperation(operation, constantPool))
+  }
+  return res
+}
+
+fun compileMethodToByteCode(methodInfo: MethodInfo, constantPool: ConstantPool): List<Byte> {
+  val res = mutableListOf<Byte>()
+  res.addAll(methodInfo.accessFlags.toBytes())
+  res.addAll(constantPool[methodInfo.methodName.label].toBytes())
+  res.addAll(constantPool[methodInfo.methodDescriptor.label].toBytes())
+  res.addAll(1.toShort().toBytes()) // For now, we'll compile just one code attribute
+
+  val codeAttributeName = "Code"
+  res.addAll(constantPool[codeAttributeName].toBytes())
+
+  val codeItself = compileCode(methodInfo.code, constantPool)
+  val attributeLength = (codeItself.size + 12).toBytes()
+  res.addAll(attributeLength)
+  res.addAll(methodInfo.maxStack.toBytes())
+  res.addAll(methodInfo.maxLocals.toBytes())
+  res.addAll(codeItself.size.toBytes())
+  res.addAll(codeItself)
+  res.addAll(0.toShort().toBytes()) // For now, exception table length is 0
+  res.addAll(0.toShort().toBytes()) // For now, there are no additional attributes to a method
+  return res
+}
+
+fun compileInterfaceToByteCode(interfaceInfo: InterfaceInfo, constantPool: ConstantPool): List<Byte> {
+  // To be implemented
+  return listOf()
+}
+
+fun compileFieldToByteCode(fieldRefInfo: FieldInfo, constantPool: ConstantPool): List<Byte> {
+  // To be implemented
+  return listOf()
+}
+
+fun compileAttributeToByteCode(attributeRefInfo: AttributeInfo, constantPool: ConstantPool): List<Byte> {
+  // To be implemented
+  return listOf()
+}
+
+fun compileClassToBytecode(classFile: ClassFile): ByteArray {
+  val res = mutableListOf<Byte>()
+
+  res.addAll(MAGIC_NUMBER.toBytes())
+  res.addAll(MINOR_VERSION.toBytes())
+  res.addAll(MAJOR_VERSION.toBytes())
+
+  val constantPool = composeConstantPool(classFile = classFile)
+  res.addAll(constantPool.toBytes())
+
+  res.addAll(classFile.accessFlags.toBytes())
+  res.addAll(constantPool[classFile.thisClassInfo.label].toBytes())
+  res.addAll(constantPool[classFile.superClassInfo.label].toBytes())
+
+  // Compile interfaces
+  res.addAll(classFile.interfaceList.size.toShort().toBytes())
+  for (anInterface in classFile.interfaceList) {
+    res.addAll(compileInterfaceToByteCode(interfaceInfo = anInterface, constantPool = constantPool))
+  }
+
+  // Compile fields
+  res.addAll(classFile.fieldList.size.toShort().toBytes())
+  for (fieldRef in classFile.fieldList) {
+    res.addAll(compileFieldToByteCode(fieldRefInfo = fieldRef, constantPool = constantPool))
+  }
+
+  // Compile methods
+  res.addAll(classFile.methodList.size.toShort().toBytes())
+  for (method in classFile.methodList) {
+    res.addAll(compileMethodToByteCode(methodInfo = method, constantPool = constantPool))
+  }
+
+  // Compile attributes
+  res.addAll(classFile.attributeList.size.toShort().toBytes())
+  for (attribute in classFile.attributeList) {
+    res.addAll(compileAttributeToByteCode(attribute, constantPool = constantPool))
+  }
+
+  return res.toByteArray()
+}
+
+sealed class ConstantPoolInfo {
+  abstract val type: ConstantType
+  abstract val label: String
+  override fun toString() = "[$type] $label"
+}
+
+abstract class ConstantValue(
+  override val type: ConstantType,
+  override val label: String,
+  open val value: ByteArray
+) : ConstantPoolInfo()
+
+class Utf8Value(
+  label: String,
+  value: ByteArray,
+  val size: Short,
+) : ConstantValue(type = ConstantType.UTF_8, label = label, value = value)
+
+class NameAndTypeInfo(
+  override val label: String,
+  val name: Utf8Value,
+  val descriptor: Utf8Value
+) : ConstantPoolInfo() {
+  override val type: ConstantType
+    get() = ConstantType.NAME_AND_TYPE
+}
+
+class ClassInfo(
+  override val label: String,
+  val className: Utf8Value,
+) : ConstantPoolInfo() {
+
+  override val type: ConstantType
+    get() = ConstantType.CLASS
+}
+
+class FieldRefInfo(
+  override val label: String,
+  val classInfo: ClassInfo,
+  val nameAndType: NameAndTypeInfo
+) : ConstantPoolInfo() {
+  override val type: ConstantType
+    get() = ConstantType.FIELD_REF
+}
+
+class MethodRefInfo(
+  override val label: String,
+  val classInfo: ClassInfo,
+  val nameAndType: NameAndTypeInfo
+) : ConstantPoolInfo() {
+  override val type: ConstantType
+    get() = ConstantType.METHOD_REF
+}
+
+class StringRefInfo(override val label: String, val stringConstant: Utf8Value) : ConstantPoolInfo() {
+  override val type: ConstantType
+    get() = ConstantType.STRING
+}
+
+// <init>:()V
+val constructor = "<init>".toUtf8Value()
+val voidDescriptor = "()V".toUtf8Value()
+val objectClass = "java/lang/Object".toClassInfo()
+
+val initializerNameAndType = NameAndTypeInfo(label = "<init>:V()", descriptor = voidDescriptor, name = constructor)
+
+val objectInitializerMethodRef = MethodRefInfo(
+  label = "Object.<init>()V",
+  classInfo = objectClass,
+  nameAndType = initializerNameAndType
+)
+
+val initMethodInfo = MethodInfo(
+  methodName = constructor,
+  methodDescriptor = voidDescriptor,
+  accessFlagList = listOf(MethodAccessFlags.PUBLIC),
+  maxStack = 1,
+  maxLocals = 1,
+  code = listOf(
+    Operation(Opcode.OP_ALOAD_0, listOf()),
+    Operation(Opcode.OP_INVOKE_SPECIAL, listOf(objectInitializerMethodRef)),
+    Operation(Opcode.OP_RETURN, listOf()),
+  )
+)
+
+val mainMethodName = "main".toUtf8Value()
+val mainMethodDescriptor = "([Ljava/lang/String;)V".toUtf8Value()
+val systemClassRef = "java/lang/System".toClassInfo()
+val systemOutName = "out".toUtf8Value()
+val systemOutType = "Ljava/io/PrintStream;".toUtf8Value()
+
+val systemOutNameAndType = NameAndTypeInfo(
+  label = "systemOutNameAndType",
+  name = systemOutName,
+  descriptor = systemOutType
+)
+
+val systemOutFieldRef = FieldRefInfo(
+  label = "SystemOut",
+  classInfo = systemClassRef, // System class info
+  nameAndType = systemOutNameAndType, //
+)
+
+val greetingString = "Hello, World of JVM".toUtf8Value()
+val greetingStringRef = StringRefInfo("greetingStringRef", greetingString)
+
+val printString = "println".toUtf8Value()
+
+val printDescriptor = "(Ljava/lang/String;)V".toUtf8Value()
+val printStreamClassRef = "java/io/PrintStream".toClassInfo()
+
+val printlnNameAndType = NameAndTypeInfo(
+  label = "printlnNameAndType",
+  name = printString,
+  descriptor = printDescriptor
+)
+
+val printlnMethodRef = MethodRefInfo(
+  label = "printlnMethodRef",
+  classInfo = printStreamClassRef,
+  nameAndType = printlnNameAndType
+)
+
+val mainMethodInfo = MethodInfo(
+  methodName = mainMethodName,
+  methodDescriptor = mainMethodDescriptor,
+  accessFlagList = listOf(MethodAccessFlags.PUBLIC, MethodAccessFlags.STATIC),
+  maxLocals = 1,
+  maxStack = 2,
+  code = listOf(
+    Operation(Opcode.OP_GET_STATIC, listOf(systemOutFieldRef)),
+    Operation(Opcode.OP_LDC, listOf(greetingStringRef)),
+    Operation(Opcode.OP_INVOKE_VIRTUAL, listOf(printlnMethodRef)),
+    Operation(Opcode.OP_RETURN, listOf()),
+  )
+)
+
+fun String.toUtf8Value() = Utf8Value(
+  label = this,
+  size = this.length.toShort(),
+  value = this.toByteArray(Charsets.UTF_8),
+)
+
+fun String.toClassInfo() = ClassInfo(label = this + "_classInfo", className = this.toUtf8Value())
+
+val helloWorldClass = ClassFile(
+  thisClassInfo = "HelloWorld".toClassInfo(),
+  superClassInfo = "java/lang/Object".toClassInfo(),
+  accessFlagList = listOf(ClassAccessFlags.PUBLIC),
+  interfaceList = listOf(),
+  fieldList = listOf(),
+  methodList = listOf(initMethodInfo, mainMethodInfo),
+  attributeList = listOf()
+)
+
+fun ByteArray.toShort() = ((this[0].toInt() shl 8) or (this[1].toInt() and 0xff)).toShort()
+
+class Constant(private val type: ConstantType, private val size: Short, private val value: ByteArray) {
+  fun toBytes(): List<Byte> {
+    val res = mutableListOf(type.value)
+    if (type == ConstantType.UTF_8) {
+      res.addAll(size.toBytes())
+    }
+    res.addAll(value.toList())
+    return res
+  }
+
+  override fun toString(): String = when (type) {
+    ConstantType.UTF_8 -> "Constant UTF-8: [" + this.value.toString(Charsets.UTF_8) + "]"
+    ConstantType.CLASS -> "Constant Class: [" + this.value.toShort() + "]"
+    ConstantType.FIELD_REF -> "Constant Field: ["+ this.value.toShort() + " " + this.value.copyOfRange(2, 4).toShort() + "]"
+    ConstantType.METHOD_REF -> "Constant MethodRef: ["+ this.value.toShort() + " " + this.value.copyOfRange(2, 4).toShort() + "]"
+    ConstantType.NAME_AND_TYPE -> "Constant NameAndType: ["+ this.value.toShort() + " " + this.value.copyOfRange(2, 4).toShort() + "]"
+    ConstantType.STRING -> "Constant String: [" + this.value.toShort() + "]"
+  }
+}
+
+val bytecode = compileClassToBytecode(helloWorldClass)
+
+fun ByteArray.writeToFile(filePathName: String) {
+  val file = File("$filePathName.class")
+  file.writeBytes(array = this)
+}
+
+fun main() {
+  bytecode.writeToFile(filePathName = "HelloWorld")
+}
