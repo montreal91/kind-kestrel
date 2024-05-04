@@ -33,5 +33,5 @@ java {
 
 application {
   // Define the main class for the application.
-  mainClass = "org.example.InitialBytecodeGeneratorKt"
+  mainClass = "org.example.rlc.application.RudnyLoxCompilerKt"
 }
