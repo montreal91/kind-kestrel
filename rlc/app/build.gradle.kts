@@ -1,3 +1,4 @@
+@file:Suppress("UnstableApiUsage")
 
 plugins {
   // Apply the org.jetbrains.kotlin.jvm Plugin to add support for Kotlin.
@@ -18,7 +19,7 @@ testing {
   suites {
     // Configure the built-in test suite
     val test by getting(JvmTestSuite::class) {
-      // Use Kotlin Test test framework
+      // Use Kotlin Test framework
       useKotlinTest("1.9.22")
     }
   }
@@ -26,11 +27,11 @@ testing {
 
 java {
   toolchain {
-    languageVersion = JavaLanguageVersion.of(17)
+    languageVersion = JavaLanguageVersion.of(11)
   }
 }
 
 application {
   // Define the main class for the application.
-  mainClass = "org.example.AppKt"
+  mainClass = "org.example.rlc.application.RudnyLoxCompilerKt"
 }
