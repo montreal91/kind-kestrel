@@ -1,5 +1,2 @@
 // comment
-// print
-"Hello, world!";
-// lol
-"Hello " + "world";
+print "Hello, World";

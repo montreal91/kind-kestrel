@@ -25,6 +25,9 @@ fun compile(pathName: String) {
     println(token)
   }
   if (scanner.hasErrors) {
+    for (error in scanner.getErrors()) {
+      System.err.println(error)
+    }
     exitProcess(status = 65)
   }
 }

@@ -1,5 +1,33 @@
 package org.example.rlc.frontend
 
+private val keywords = mapOf(
+  Pair("and", Token.Type.AND),
+  Pair("class", Token.Type.CLASS),
+  Pair("else", Token.Type.ELSE),
+  Pair("false", Token.Type.FALSE),
+  Pair("for", Token.Type.FOR),
+  Pair("fun", Token.Type.FUN),
+  Pair("if", Token.Type.IF),
+  Pair("nil", Token.Type.NIL),
+  Pair("or", Token.Type.OR),
+  Pair("print", Token.Type.PRINT),
+  Pair("return", Token.Type.RETURN),
+  Pair("super", Token.Type.SUPER),
+  Pair("this", Token.Type.THIS),
+  Pair("true", Token.Type.TRUE),
+  Pair("var", Token.Type.VAR),
+  Pair("while", Token.Type.WHILE),
+)
+
+private val singleSymbolTokens = mapOf(
+  Pair('+', Token.Type.PLUS),
+)
+
+private fun Char.isIdentifierStart(): Boolean = when {
+  (this == '_' || this.isLetter()) -> true
+  else -> false
+}
+
 class Scanner(private val text: String) {
   val hasErrors get() = errors.isNotEmpty()
 
@@ -29,8 +57,8 @@ class Scanner(private val text: String) {
     while (!atEnd) {
       skipWhitespace()
 
-      when (peek) {
-        '/' -> {
+      when {
+        peek == '/' -> {
           if (peekNext == '/') {
             skipComment()
           }
@@ -39,84 +67,98 @@ class Scanner(private val text: String) {
             advance()
           }
         }
-        '(' -> {
+        peek == '(' -> {
           tokens.add(Token(Token.Type.LEFT_PAREN, peek.toString(), currentLineNumber))
           advance()
         }
-        ')' -> {
+        peek == ')' -> {
           tokens.add(Token(Token.Type.RIGHT_PAREN, peek.toString(), currentLineNumber))
           advance()
         }
-        '{' -> {
+        peek == '{' -> {
           tokens.add(Token(Token.Type.LEFT_BRACE, peek.toString(), currentLineNumber))
           advance()
         }
-        '}' -> {
+        peek == '}' -> {
           tokens.add(Token(Token.Type.RIGHT_BRACE, peek.toString(), currentLineNumber))
           advance()
         }
-        ',' -> {
+        peek == ',' -> {
           tokens.add(Token(Token.Type.COMMA, peek.toString(), currentLineNumber))
           advance()
         }
-        '.' -> {
+        peek == '.' -> {
           tokens.add(Token(Token.Type.DOT, peek.toString(), currentLineNumber))
           advance()
         }
-        '-' -> {
+        peek == '-' -> {
           tokens.add(Token(Token.Type.MINUS, peek.toString(), currentLineNumber))
           advance()
         }
-        '+' -> {
+        peek == '+' -> {
           tokens.add(Token(Token.Type.PLUS, peek.toString(), currentLineNumber))
           advance()
         }
-        ';' -> {
+        peek == ';' -> {
           tokens.add(Token(Token.Type.SEMICOLON, peek.toString(), currentLineNumber))
           advance()
         }
-        '*' -> {
+        peek == '*' -> {
           tokens.add(Token(Token.Type.STAR, peek.toString(), currentLineNumber))
           advance()
         }
-        '!' -> {
-          advance()
+        peek == '!' -> {
           if (peekNext == '=') {
             tokens.add(Token(Token.Type.BANG_EQUAL, "!=", currentLineNumber))
             advance()
+            advance()
           } else {
             tokens.add(Token(Token.Type.BANG, "!", currentLineNumber))
+            advance()
           }
         }
-        '=' -> {
-          advance()
+        peek == '=' -> {
           if (peekNext == '=') {
             tokens.add(Token(Token.Type.EQUAL_EQUAL, "==", currentLineNumber))
             advance()
+            advance()
           } else {
             tokens.add(Token(Token.Type.EQUAL, "=", currentLineNumber))
+            advance()
           }
         }
-        '>' -> {
-          advance()
+        peek == '>' -> {
           if (peekNext == '=') {
             tokens.add(Token(Token.Type.GREATER_EQUAL, ">=", currentLineNumber))
             advance()
+            advance()
           } else {
             tokens.add(Token(Token.Type.GREATER, ">", currentLineNumber))
+            advance()
           }
         }
-        '<' -> {
-          advance()
+        peek == '<' -> {
           if (peekNext == '=') {
             tokens.add(Token(Token.Type.LESS_EQUAL, "<=", currentLineNumber))
             advance()
+            advance()
           } else {
             tokens.add(Token(Token.Type.LESS, "<", currentLineNumber))
+            advance()
           }
         }
-        '"' -> parseString()
-        else -> parseAlphaNumericToken()
+        peek == '"' -> parseString()
+        peek == 0.toChar() -> continue
+        peek.isDigit() -> parseNumber()
+        peek.isIdentifierStart() -> parseAlphaNumericToken()
+        else -> {
+          tokens.add(Token(Token.Type.ERROR, peek.toString(), currentLineNumber))
+          errors.add(LoxCompileError(
+            message = "Unexpected character: $peek.",
+            lineNumber = currentLineNumber
+          ))
+          advance()
+        }
       }
     }
 
@@ -134,9 +176,35 @@ class Scanner(private val text: String) {
   }
 
   private fun parseNumber() {
+    val start = currentChar
+    while (!atEnd && peek.isDigit()) {
+      advance()
+    }
+    if (peek == '.' && peekNext.isDigit()) {
+      advance()
+      while (!atEnd && peek.isDigit()) {
+        advance()
+      }
+    }
+
+    tokens.add(Token(
+      type = Token.Type.NUMBER,
+      value = text.substring(start, currentChar),
+      lineNumber = currentLineNumber
+    ))
   }
 
   private fun parseKeyWordOrIdentifier() {
+    val start = currentChar
+    while (!atEnd && (peek.isLetterOrDigit() || peek == '_')) {
+      advance()
+    }
+    val value = text.substring(start, currentChar)
+
+    when (keywords.containsKey(value)) {
+      true -> tokens.add(Token(type = keywords[value]!!, value, currentLineNumber))
+      false -> tokens.add(Token(type = Token.Type.IDENTIFIER, value, currentLineNumber))
+    }
   }
 
   private fun parseString() {
@@ -148,26 +216,16 @@ class Scanner(private val text: String) {
     }
 
     if (atEnd || peek == '\n') {
-      tokens.add(Token(Token.Type.ERROR, "", currentLineNumber))
-      errors.add(LoxCompileError("Unexpected end of the string literal.", currentLineNumber))
+      tokens.add(Token(type = Token.Type.ERROR, value =  "", lineNumber = currentLineNumber))
+      errors.add(LoxCompileError(
+        message = "Unexpected end of the string literal.",
+        lineNumber = currentLineNumber
+      ))
     }
     else if (peek == '"') {
       tokens.add(Token(Token.Type.STRING, text.substring(start, currentChar), currentLineNumber))
     }
-    advance()
-  }
-
-  private fun match(expected: Char): Boolean {
-    if (atEnd) {
-      return false;
-    }
-
-    if (peek != expected) {
-      return false
-    }
-
-    advance()
-    return true
+    advance() // consume the last comma
   }
 
   private fun skipWhitespace() {
