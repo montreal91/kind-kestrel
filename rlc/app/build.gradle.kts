@@ -32,6 +32,5 @@ java {
 }
 
 application {
-  // Define the main class for the application.
   mainClass = "org.example.rlc.application.RudnyLoxCompilerKt"
 }

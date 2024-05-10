@@ -1,6 +1,6 @@
 package org.example.rlc.jvm.backend
 
-import java.io.File
+import java.io.File // TODO: Use Kotlin Native instead
 
 fun Byte.toBytes() = listOf(this)
 
