@@ -19,14 +19,35 @@ private val keywords = mapOf(
   Pair("while", Token.Type.WHILE),
 )
 
-private val singleSymbolTokens = mapOf(
+private val punctuatorStart = mapOf(
   Pair('+', Token.Type.PLUS),
+  Pair('-', Token.Type.MINUS),
+  Pair('*', Token.Type.STAR),
+  Pair('(', Token.Type.LEFT_PAREN),
+  Pair(')', Token.Type.RIGHT_PAREN),
+  Pair('{', Token.Type.LEFT_BRACE),
+  Pair('}', Token.Type.RIGHT_BRACE),
+  Pair(',', Token.Type.COMMA),
+  Pair(';', Token.Type.SEMICOLON),
+  Pair('.', Token.Type.DOT),
+  Pair('!', Token.Type.BANG),
+  Pair('=', Token.Type.EQUAL),
+  Pair('>', Token.Type.GREATER),
+  Pair('<', Token.Type.LESS),
 )
 
-private fun Char.isIdentifierStart(): Boolean = when {
-  (this == '_' || this.isLetter()) -> true
-  else -> false
-}
+private val doubleCharPunctuators = mapOf(
+  Pair('!', Token.Type.BANG_EQUAL),
+  Pair('=', Token.Type.EQUAL_EQUAL),
+  Pair('>', Token.Type.GREATER_EQUAL),
+  Pair('<', Token.Type.LESS_EQUAL),
+)
+
+private fun Char.isIdentifierStart(): Boolean = this == '_' || this.isLetter()
+
+private fun Char.isPunctuatorStart(): Boolean = this in punctuatorStart.keys
+
+private fun Char.isDoubleCharPunctuator(): Boolean = this in doubleCharPunctuators.keys
 
 class Scanner(private val text: String) {
   val hasErrors get() = errors.isNotEmpty()
@@ -67,86 +88,7 @@ class Scanner(private val text: String) {
             advance()
           }
         }
-        peek == '(' -> {
-          tokens.add(Token(Token.Type.LEFT_PAREN, peek.toString(), currentLineNumber))
-          advance()
-        }
-        peek == ')' -> {
-          tokens.add(Token(Token.Type.RIGHT_PAREN, peek.toString(), currentLineNumber))
-          advance()
-        }
-        peek == '{' -> {
-          tokens.add(Token(Token.Type.LEFT_BRACE, peek.toString(), currentLineNumber))
-          advance()
-        }
-        peek == '}' -> {
-          tokens.add(Token(Token.Type.RIGHT_BRACE, peek.toString(), currentLineNumber))
-          advance()
-        }
-        peek == ',' -> {
-          tokens.add(Token(Token.Type.COMMA, peek.toString(), currentLineNumber))
-          advance()
-        }
-        peek == '.' -> {
-          tokens.add(Token(Token.Type.DOT, peek.toString(), currentLineNumber))
-          advance()
-        }
-        peek == '-' -> {
-          tokens.add(Token(Token.Type.MINUS, peek.toString(), currentLineNumber))
-          advance()
-        }
-        peek == '+' -> {
-          tokens.add(Token(Token.Type.PLUS, peek.toString(), currentLineNumber))
-          advance()
-        }
-        peek == ';' -> {
-          tokens.add(Token(Token.Type.SEMICOLON, peek.toString(), currentLineNumber))
-          advance()
-        }
-        peek == '*' -> {
-          tokens.add(Token(Token.Type.STAR, peek.toString(), currentLineNumber))
-          advance()
-        }
-        peek == '!' -> {
-          if (peekNext == '=') {
-            tokens.add(Token(Token.Type.BANG_EQUAL, "!=", currentLineNumber))
-            advance()
-            advance()
-          } else {
-            tokens.add(Token(Token.Type.BANG, "!", currentLineNumber))
-            advance()
-          }
-        }
-        peek == '=' -> {
-          if (peekNext == '=') {
-            tokens.add(Token(Token.Type.EQUAL_EQUAL, "==", currentLineNumber))
-            advance()
-            advance()
-          } else {
-            tokens.add(Token(Token.Type.EQUAL, "=", currentLineNumber))
-            advance()
-          }
-        }
-        peek == '>' -> {
-          if (peekNext == '=') {
-            tokens.add(Token(Token.Type.GREATER_EQUAL, ">=", currentLineNumber))
-            advance()
-            advance()
-          } else {
-            tokens.add(Token(Token.Type.GREATER, ">", currentLineNumber))
-            advance()
-          }
-        }
-        peek == '<' -> {
-          if (peekNext == '=') {
-            tokens.add(Token(Token.Type.LESS_EQUAL, "<=", currentLineNumber))
-            advance()
-            advance()
-          } else {
-            tokens.add(Token(Token.Type.LESS, "<", currentLineNumber))
-            advance()
-          }
-        }
+        peek.isPunctuatorStart() -> parsePunctuator()
         peek == '"' -> parseString()
         peek == 0.toChar() -> continue
         peek.isDigit() -> parseNumber()
@@ -165,6 +107,26 @@ class Scanner(private val text: String) {
     tokens.add(Token(Token.Type.EOF, "", currentLineNumber))
 
     return tokens.toList()
+  }
+
+  private fun parsePunctuator() = when {
+    peek.isDoubleCharPunctuator() -> parseDoubleCharPunctuator()
+    else -> parseSingleCharPunctuator()
+  }
+
+  private fun parseDoubleCharPunctuator() {
+    if (peekNext == '=') {
+      tokens.add(Token(doubleCharPunctuators[peek]!!, "$peek$peekNext", currentLineNumber))
+      advance()
+      advance()
+      return
+    }
+    parseSingleCharPunctuator()
+  }
+
+  private fun parseSingleCharPunctuator() {
+    tokens.add(Token(punctuatorStart[peek]!!, "$peek", currentLineNumber))
+    advance()
   }
 
   private fun parseAlphaNumericToken() {
