@@ -2,7 +2,6 @@ package org.example.rlc.frontend
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 
 
 class ScannerTest {
@@ -76,15 +75,31 @@ class ScannerTest {
         Token(Token.Type.SLASH, "/", 1),
         Token(Token.Type.DOT, ".", 1),
         Token(Token.Type.EOF, "", 22),
-
+      ),
+    ),
+    Pair(
+      "scanner_strings.lox",
+      listOf(
+        Token(Token.Type.STRING, "", 1),
+        Token(Token.Type.STRING, "string", 2),
+        Token(Token.Type.EOF, "", 7),
       )
     ),
+    Pair(
+      "scanner_whitespace.lox",
+      listOf(
+        Token(Token.Type.IDENTIFIER, "space", 1),
+        Token(Token.Type.IDENTIFIER, "tabs", 1),
+        Token(Token.Type.IDENTIFIER, "newlines", 1),
+        Token(Token.Type.IDENTIFIER, "end", 6),
+        Token(Token.Type.EOF, "", 13),
+      )
+    )
   )
   @Test
   fun testTokenization() {
     cases.forEach{
       case ->
-        // TODO: Provide better error if file does not exist
         val text = this::class.java.classLoader.getResource(case.first)!!.readText()
         val scanner = Scanner(text)
         val actual = scanner.scan()
