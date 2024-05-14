@@ -1,11 +1,15 @@
 package org.example.rlc.frontend
 
+import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
+import org.example.rlc.frontend.ast.Grouping
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.Stmt
+import org.example.rlc.frontend.ast.Unary
+import org.example.rlc.frontend.ast.tokenTypeToLiteralType
 
 private val equalityTokens = setOf(
   Token.Type.EQUAL_EQUAL,
@@ -18,6 +22,41 @@ private val comparisonTokens = setOf(
   Token.Type.LESS,
   Token.Type.LESS_EQUAL,
 )
+
+private fun isPlusOrMinus(token: Token): Boolean {
+  return when (token.type) {
+    Token.Type.PLUS -> true
+    Token.Type.MINUS -> true
+    else -> false
+  }
+}
+
+private fun Token.isStarOrSlash() = when (this.type) {
+  Token.Type.STAR -> true
+  Token.Type.SLASH -> true
+  else -> false
+}
+
+private fun Token.isUnaryOperator() = when (this.type) {
+  Token.Type.MINUS -> true
+  Token.Type.BANG -> true
+  else -> false
+}
+
+private val terminals = setOf(
+  Token.Type.TRUE,
+  Token.Type.FALSE,
+Token.Type.NIL,
+Token.Type.THIS,
+Token.Type.NUMBER,
+Token.Type.STRING,
+Token.Type.IDENTIFIER
+)
+
+private fun Token.isTerminal() = when  {
+  terminals.contains(this.type) -> true
+  else -> false
+}
 
 class Parser(private val tokens: List<Token>) {
   val hasErrors: Boolean get() = errors.isNotEmpty()
@@ -76,7 +115,7 @@ class Parser(private val tokens: List<Token>) {
   }
 
   private fun logicOr(): Expr {
-    var leftOperand: Expr = logicAnd()
+    var leftOperand = logicAnd()
     while (!isLastToken && currentToken.type == Token.Type.OR) {
       val token = currentToken
       consume(Token.Type.OR)
@@ -88,11 +127,11 @@ class Parser(private val tokens: List<Token>) {
   }
 
   private fun logicAnd(): Expr {
-    var leftOperand: Expr = equality()
+    var leftOperand = equality()
     while (!isLastToken && currentToken.type == Token.Type.AND) {
       val token = currentToken
       consume(Token.Type.AND)
-      val rightOperand: Expr = equality()
+      val rightOperand = equality()
       leftOperand = Logical(leftOperand, token, rightOperand)
     }
 
@@ -100,29 +139,62 @@ class Parser(private val tokens: List<Token>) {
   }
 
   private fun equality(): Expr {
-    var leftOperand: Expr = comparison()
+    var leftOperand = comparison()
     while (!isLastToken && equalityTokens.contains(currentToken.type)) {
       val token = currentToken
       match(equalityTokens.toList())
-      val rightOperand: Expr = comparison()
+      val rightOperand = comparison()
       leftOperand = Logical(leftOperand, token, rightOperand)
     }
+
     return leftOperand
   }
 
   private fun comparison(): Expr {
-    return term()
+    var leftOperand = term()
+    while(!isLastToken && comparisonTokens.contains(currentToken.type)) {
+      val token = currentToken
+      match(comparisonTokens.toList())
+      val rightOperand = term()
+      leftOperand = Logical(leftOperand, token, rightOperand)
+    }
+
+    return leftOperand
   }
 
   private fun term(): Expr {
-    return factor()
+    var leftOperand = factor()
+
+    while (!isLastToken && isPlusOrMinus(currentToken)) {
+      val token = currentToken
+      match(listOf(Token.Type.PLUS, Token.Type.MINUS))
+      val rightOperand = factor()
+      leftOperand = Binary(leftOperand, token, rightOperand)
+    }
+
+    return leftOperand
   }
 
   private fun factor(): Expr {
-    return unary()
+    var leftOperand = unary()
+
+    while (!isLastToken && currentToken.isStarOrSlash()) {
+      val token = currentToken
+      match(listOf(Token.Type.STAR, Token.Type.SLASH))
+      val rightOperand = unary()
+      leftOperand = Binary(leftOperand, token, rightOperand)
+    }
+
+    return leftOperand
   }
 
   private fun unary(): Expr {
+    if (currentToken.isUnaryOperator()) {
+      val token = currentToken
+      match(listOf(Token.Type.BANG, Token.Type.MINUS))
+      return Unary(operator = token, right = unary())
+    }
+
     return call()
   }
 
@@ -131,7 +203,17 @@ class Parser(private val tokens: List<Token>) {
   }
 
   private fun primary(): Expr {
-    return Literal(currentToken.value, Literal.Type.STRING)
+    if (currentToken.isTerminal()) {
+      val token = currentToken
+      match(terminals.toList())
+      return Literal(token.value, tokenTypeToLiteralType(token.type))
+    }
+
+    match(listOf(Token.Type.LEFT_PAREN))
+    val grouping = Grouping(expression())
+    match(listOf(Token.Type.RIGHT_PAREN))
+
+    return grouping
   }
 
   private fun consume(expectedType: Token.Type) = when (expectedType == currentToken.type) {

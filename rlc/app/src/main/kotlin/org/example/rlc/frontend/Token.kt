@@ -34,4 +34,11 @@ class Token(val type: Type, val value: String, val lineNumber: Int) {
     if (lineNumber != other.lineNumber) return false
     return true
   }
+
+  override fun hashCode(): Int {
+    var result = type.hashCode()
+    result = 31 * result + value.hashCode()
+    result = 31 * result + lineNumber
+    return result
+  }
 }
