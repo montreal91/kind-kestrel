@@ -2,6 +2,7 @@ package org.example.rlc.frontend
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 
 
 class ScannerTest {
@@ -103,6 +104,7 @@ class ScannerTest {
         val text = this::class.java.classLoader.getResource(case.first)!!.readText()
         val scanner = Scanner(text)
         val actual = scanner.scan()
+        assertFalse(scanner.hasErrors)
         assertEquals(case.second, actual)
     }
   }

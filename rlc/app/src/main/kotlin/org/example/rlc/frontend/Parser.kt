@@ -46,17 +46,19 @@ private fun Token.isUnaryOperator() = when (this.type) {
 private val terminals = setOf(
   Token.Type.TRUE,
   Token.Type.FALSE,
-Token.Type.NIL,
-Token.Type.THIS,
-Token.Type.NUMBER,
-Token.Type.STRING,
-Token.Type.IDENTIFIER
+  Token.Type.NIL,
+  Token.Type.THIS,
+  Token.Type.NUMBER,
+  Token.Type.STRING,
+  Token.Type.IDENTIFIER
 )
 
-private fun Token.isTerminal() = when  {
+private fun Token.isTerminal() = when {
   terminals.contains(this.type) -> true
   else -> false
 }
+
+private class ParserException(msg: String) : Exception(msg)
 
 class Parser(private val tokens: List<Token>) {
   val hasErrors: Boolean get() = errors.isNotEmpty()
@@ -75,35 +77,37 @@ class Parser(private val tokens: List<Token>) {
     return statements
   }
 
+  fun getErrors() = errors.toList()
+
   private fun program() {
     while (!isLastToken) {
       declaration()
     }
 
-    consume(Token.Type.EOF)
+    consume(Token.Type.EOF, message = "Expect end of input.")
   }
 
   private fun declaration() {
     statement()
   }
 
-  private fun statement() = when(currentToken.type) {
+  private fun statement() = when (currentToken.type) {
     Token.Type.PRINT -> printStatement()
     else -> exprStatement()
   }
 
   private fun printStatement() {
-    consume(Token.Type.PRINT)
+    consume(Token.Type.PRINT, "Expect print statement")
     val expr = expression()
-    consume(Token.Type.SEMICOLON)
+    consume(Token.Type.SEMICOLON, message = "Expect ';' after value.")
     statements.add(PrintStmt(expr))
 
   }
 
   private fun exprStatement() {
     val expr = expression()
-    consume(Token.Type.SEMICOLON)
-    statements.add(ExprStmt(expr));
+    consume(Token.Type.SEMICOLON, message = "Expect ';' after value.")
+    statements.add(ExprStmt(expr))
   }
 
   private fun expression(): Expr {
@@ -118,7 +122,7 @@ class Parser(private val tokens: List<Token>) {
     var leftOperand = logicAnd()
     while (!isLastToken && currentToken.type == Token.Type.OR) {
       val token = currentToken
-      consume(Token.Type.OR)
+      consume(Token.Type.OR, message = "Expect 'or' after value.")
       val rightOperand: Expr = logicAnd()
       leftOperand = Logical(leftOperand, token, rightOperand)
     }
@@ -130,7 +134,7 @@ class Parser(private val tokens: List<Token>) {
     var leftOperand = equality()
     while (!isLastToken && currentToken.type == Token.Type.AND) {
       val token = currentToken
-      consume(Token.Type.AND)
+      consume(Token.Type.AND, message = "Expect 'and' after value.")
       val rightOperand = equality()
       leftOperand = Logical(leftOperand, token, rightOperand)
     }
@@ -152,7 +156,7 @@ class Parser(private val tokens: List<Token>) {
 
   private fun comparison(): Expr {
     var leftOperand = term()
-    while(!isLastToken && comparisonTokens.contains(currentToken.type)) {
+    while (!isLastToken && comparisonTokens.contains(currentToken.type)) {
       val token = currentToken
       match(comparisonTokens.toList())
       val rightOperand = term()
@@ -209,18 +213,19 @@ class Parser(private val tokens: List<Token>) {
       return Literal(token.value, tokenTypeToLiteralType(token.type))
     }
 
-    match(listOf(Token.Type.LEFT_PAREN))
-    val grouping = Grouping(expression())
-    match(listOf(Token.Type.RIGHT_PAREN))
+    if (match(listOf(Token.Type.LEFT_PAREN))) {
+      val grouping = Grouping(expression())
+      match(listOf(Token.Type.RIGHT_PAREN))
+      return grouping
+    }
 
-    return grouping
+    throw error(message = "Expect expression.", token = currentToken)
   }
 
-  private fun consume(expectedType: Token.Type) = when (expectedType == currentToken.type) {
+  private fun consume(expectedType: Token.Type, message: String) = when (expectedType == currentToken.type) {
     true -> advance()
-    else -> error("Unexpected token. Expected type: $expectedType", currentToken)
+    else -> throw error(message = message, token = currentToken)
   }
-
 
   private fun advance() {
     if (index < tokens.size) {
@@ -236,11 +241,11 @@ class Parser(private val tokens: List<Token>) {
       }
     }
 
-    error("Unexpected token.", currentToken)
     return false
   }
 
-  private fun error(message: String, token: Token) {
-    errors.add(LoxCompileError(message = message, token.lineNumber))
+  private fun error(message: String, token: Token): ParserException {
+    errors.add(LoxCompileError(message = message, token))
+    return ParserException("")
   }
 }
