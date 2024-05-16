@@ -50,8 +50,19 @@ class ParserTest {
 
   private val negative = listOf(
     NegativeTestCase(
-      fileName = "parser_leading_dot.lox",
+      fileName = "parser_bad_leading_dot.lox",
       expectedErrors = listOf("[line 2] Error at '.': Expect expression.")
+    ),
+    NegativeTestCase(
+      fileName = "parser_bad_print.lox",
+      expectedErrors = listOf("[line 2] Error at ';': Expect expression.")
+    ),
+    // TODO: explore this error case;
+    // Frankly speaking, if this compiler passes lox testsuite, then I don't care.
+    // But for my own language, I would like to achieve 100% branch test coverage.
+    NegativeTestCase(
+      fileName = "parser_bad_or.lox",
+      expectedErrors = listOf("[line 2] Error at end. : Expect expression.")
     )
   )
 
@@ -73,7 +84,7 @@ class ParserTest {
       val text = this::class.java.classLoader.getResource(case.fileName)!!.readText()
       val scanner = Scanner(text)
       val parser = Parser(tokens = scanner.scan())
-      val ast = parser.parse()
+      parser.parse()
       assertEquals(expected = true, actual = parser.hasErrors)
       assertEquals(expected = case.expectedErrors, actual = parser.getErrorMessages())
     }

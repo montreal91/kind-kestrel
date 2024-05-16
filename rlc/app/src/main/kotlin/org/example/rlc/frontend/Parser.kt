@@ -23,8 +23,8 @@ private val comparisonTokens = setOf(
   Token.Type.LESS_EQUAL,
 )
 
-private fun isPlusOrMinus(token: Token): Boolean {
-  return when (token.type) {
+private fun Token.isPlusOrMinus(): Boolean {
+  return when (this.type) {
     Token.Type.PLUS -> true
     Token.Type.MINUS -> true
     else -> false
@@ -88,7 +88,11 @@ class Parser(private val tokens: List<Token>) {
   }
 
   private fun declaration() {
-    statement()
+    try {
+      statement()
+    } catch (e: ParserException) {
+      synchronize()
+    }
   }
 
   private fun statement() = when (currentToken.type) {
@@ -101,7 +105,6 @@ class Parser(private val tokens: List<Token>) {
     val expr = expression()
     consume(Token.Type.SEMICOLON, message = "Expect ';' after value.")
     statements.add(PrintStmt(expr))
-
   }
 
   private fun exprStatement() {
@@ -146,7 +149,7 @@ class Parser(private val tokens: List<Token>) {
     var leftOperand = comparison()
     while (!isLastToken && equalityTokens.contains(currentToken.type)) {
       val token = currentToken
-      match(equalityTokens.toList())
+      matchAny(equalityTokens.toList())
       val rightOperand = comparison()
       leftOperand = Logical(leftOperand, token, rightOperand)
     }
@@ -158,7 +161,7 @@ class Parser(private val tokens: List<Token>) {
     var leftOperand = term()
     while (!isLastToken && comparisonTokens.contains(currentToken.type)) {
       val token = currentToken
-      match(comparisonTokens.toList())
+      matchAny(comparisonTokens.toList())
       val rightOperand = term()
       leftOperand = Logical(leftOperand, token, rightOperand)
     }
@@ -169,9 +172,9 @@ class Parser(private val tokens: List<Token>) {
   private fun term(): Expr {
     var leftOperand = factor()
 
-    while (!isLastToken && isPlusOrMinus(currentToken)) {
+    while (!isLastToken && currentToken.isPlusOrMinus()) {
       val token = currentToken
-      match(listOf(Token.Type.PLUS, Token.Type.MINUS))
+      matchAny(listOf(Token.Type.PLUS, Token.Type.MINUS))
       val rightOperand = factor()
       leftOperand = Binary(leftOperand, token, rightOperand)
     }
@@ -184,7 +187,7 @@ class Parser(private val tokens: List<Token>) {
 
     while (!isLastToken && currentToken.isStarOrSlash()) {
       val token = currentToken
-      match(listOf(Token.Type.STAR, Token.Type.SLASH))
+      matchAny(listOf(Token.Type.STAR, Token.Type.SLASH))
       val rightOperand = unary()
       leftOperand = Binary(leftOperand, token, rightOperand)
     }
@@ -195,7 +198,7 @@ class Parser(private val tokens: List<Token>) {
   private fun unary(): Expr {
     if (currentToken.isUnaryOperator()) {
       val token = currentToken
-      match(listOf(Token.Type.BANG, Token.Type.MINUS))
+      matchAny(listOf(Token.Type.BANG, Token.Type.MINUS))
       return Unary(operator = token, right = unary())
     }
 
@@ -209,13 +212,13 @@ class Parser(private val tokens: List<Token>) {
   private fun primary(): Expr {
     if (currentToken.isTerminal()) {
       val token = currentToken
-      match(terminals.toList())
+      matchAny(terminals.toList())
       return Literal(token.value, tokenTypeToLiteralType(token.type))
     }
 
-    if (match(listOf(Token.Type.LEFT_PAREN))) {
+    if (matchAny(listOf(Token.Type.LEFT_PAREN))) {
       val grouping = Grouping(expression())
-      match(listOf(Token.Type.RIGHT_PAREN))
+      matchAny(listOf(Token.Type.RIGHT_PAREN))
       return grouping
     }
 
@@ -233,7 +236,7 @@ class Parser(private val tokens: List<Token>) {
     }
   }
 
-  private fun match(types: List<Token.Type>): Boolean {
+  private fun matchAny(types: List<Token.Type>): Boolean {
     for (type in types) {
       if (currentToken.type == type) {
         advance()
@@ -242,6 +245,16 @@ class Parser(private val tokens: List<Token>) {
     }
 
     return false
+  }
+
+  private fun synchronize() {
+    while (!isLastToken) {
+      advance()
+
+      if (previous.type == Token.Type.SEMICOLON) {
+        return
+      }
+    }
   }
 
   private fun error(message: String, token: Token): ParserException {

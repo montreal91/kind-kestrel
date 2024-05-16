@@ -172,7 +172,7 @@ class Scanner(private val text: String) {
     if (atEnd || peek == '\n') {
       tokens.add(Token(type = Token.Type.ERROR, value =  "", lineNumber = currentLineNumber))
       errors.add(LoxCompileError(
-        message = "Unexpected end of the string literal.",
+        message = "Unterminated string.",
         token = Token(Token.Type.ERROR, peek.toString(), currentLineNumber)
       ))
     }
