@@ -1,10 +1,13 @@
 package org.example.rlc.application
 
+import org.example.rlc.frontend.Parser
 import org.example.rlc.frontend.Scanner
+import org.example.rlc.jvm.backend.CodeGenerator
+import org.example.rlc.jvm.middleware.AstToClassFileIrConverter
 import java.io.File
 import kotlin.system.exitProcess
 
-fun readFile(pathName: String): String {
+private fun readFile(pathName: String): String {
   val file = File(pathName)
 
   if (!file.exists()) {
@@ -15,21 +18,26 @@ fun readFile(pathName: String): String {
   return file.readText()
 }
 
-fun compile(pathName: String) {
+private fun compile(pathName: String) {
   val programText = readFile(pathName)
   val scanner = Scanner(programText)
+  val parser = Parser(scanner.scan())
+  val ast = parser.parse()
 
-  val tokens = scanner.scan()
-
-  for (token in tokens) {
-    println(token)
-  }
-  if (scanner.hasErrors) {
+  if (scanner.hasErrors or parser.hasErrors) {
     for (error in scanner.getErrors()) {
       System.err.println(error)
     }
+
+    for (error in parser.getErrors()) {
+      System.err.println(error)
+    }
+
     exitProcess(status = 65)
   }
+
+  val classes = AstToClassFileIrConverter(pathName).convert(ast)
+  CodeGenerator(buildOutputDir = ".").compileAll(classes)
 }
 
 fun main(args: Array<String>) {

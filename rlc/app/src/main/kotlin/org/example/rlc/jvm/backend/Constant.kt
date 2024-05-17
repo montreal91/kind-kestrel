@@ -1,6 +1,6 @@
 package org.example.rlc.jvm.backend
 
-import org.example.rlc.jvm.im.ConstantType
+import org.example.rlc.jvm.ir.ConstantType
 
 class Constant(private val type: ConstantType, private val size: Short, private val value: ByteArray) {
   fun toBytes(): List<Byte> {

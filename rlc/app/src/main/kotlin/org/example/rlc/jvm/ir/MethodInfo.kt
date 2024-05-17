@@ -1,4 +1,4 @@
-package org.example.rlc.jvm.im
+package org.example.rlc.jvm.ir
 
 import kotlin.experimental.or
 

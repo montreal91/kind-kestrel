@@ -1,4 +1,4 @@
-package org.example.rlc.jvm.im
+package org.example.rlc.jvm.ir
 
 enum class ClassAccessFlags(val value: Short) {
   PUBLIC(value = 0x0001),

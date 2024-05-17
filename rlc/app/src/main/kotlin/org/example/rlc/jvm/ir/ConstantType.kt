@@ -1,4 +1,4 @@
-package org.example.rlc.jvm.im
+package org.example.rlc.jvm.ir
 
 enum class ConstantType(val value: Byte) {
   // Values are stored alphabetically by type name

@@ -1,13 +1,13 @@
 package org.example.rlc.jvm.backend
 
-import org.example.rlc.jvm.im.ClassInfo
-import org.example.rlc.jvm.im.ConstantPoolInfo
-import org.example.rlc.jvm.im.ConstantValue
-import org.example.rlc.jvm.im.FieldRefInfo
-import org.example.rlc.jvm.im.MethodRefInfo
-import org.example.rlc.jvm.im.NameAndTypeInfo
-import org.example.rlc.jvm.im.StringRefInfo
-import org.example.rlc.jvm.im.Utf8Value
+import org.example.rlc.jvm.ir.ClassInfo
+import org.example.rlc.jvm.ir.ConstantPoolInfo
+import org.example.rlc.jvm.ir.ConstantValue
+import org.example.rlc.jvm.ir.FieldRefInfo
+import org.example.rlc.jvm.ir.MethodRefInfo
+import org.example.rlc.jvm.ir.NameAndTypeInfo
+import org.example.rlc.jvm.ir.StringRefInfo
+import org.example.rlc.jvm.ir.Utf8Value
 
 
 class ConstantPool {

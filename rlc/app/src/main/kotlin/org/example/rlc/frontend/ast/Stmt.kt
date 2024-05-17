@@ -4,3 +4,5 @@ sealed class Stmt
 
 class ExprStmt(val expr: Expr): Stmt()
 class PrintStmt(val expr: Expr): Stmt()
+
+typealias Ast = List<Stmt>

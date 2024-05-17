@@ -1,4 +1,4 @@
-package org.example.rlc.jvm.im
+package org.example.rlc.jvm.ir
 
 enum class Opcode(val value: Byte) {
   // Opcodes stored alphabetically by mnemonics

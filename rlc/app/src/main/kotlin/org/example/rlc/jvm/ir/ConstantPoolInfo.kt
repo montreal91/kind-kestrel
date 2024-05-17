@@ -1,4 +1,4 @@
-package org.example.rlc.jvm.im
+package org.example.rlc.jvm.ir
 
 sealed class ConstantPoolInfo {
   abstract val type: ConstantType

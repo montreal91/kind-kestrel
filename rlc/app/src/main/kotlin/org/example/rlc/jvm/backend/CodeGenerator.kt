@@ -1,14 +1,14 @@
 package org.example.rlc.jvm.backend
 
-import org.example.rlc.jvm.im.AttributeInfo
-import org.example.rlc.jvm.im.ClassFile
-import org.example.rlc.jvm.im.FieldInfo
-import org.example.rlc.jvm.im.InterfaceInfo
-import org.example.rlc.jvm.im.MethodInfo
-import org.example.rlc.jvm.im.Opcode
-import org.example.rlc.jvm.im.Operation
+import org.example.rlc.jvm.ir.AttributeInfo
+import org.example.rlc.jvm.ir.ClassFile
+import org.example.rlc.jvm.ir.FieldInfo
+import org.example.rlc.jvm.ir.InterfaceInfo
+import org.example.rlc.jvm.ir.MethodInfo
+import org.example.rlc.jvm.ir.Opcode
+import org.example.rlc.jvm.ir.Operation
 
-class CodeGenerator(private val rootDirectory: String) {
+class CodeGenerator(private val buildOutputDir: String) {
   private val constantPool = ConstantPool()
 
   fun compileAll(classes: List<ClassFile>) {
@@ -18,9 +18,9 @@ class CodeGenerator(private val rootDirectory: String) {
   private fun classToFile(classFile: ClassFile) {
     val bytecode = compileClassToBytecode(classFile)
 
-    val filepath = when (rootDirectory == "") {
+    val filepath = when (buildOutputDir == "") {
       true -> classFile.thisClassInfo.className.label
-      false -> rootDirectory + "/" + classFile.thisClassInfo.className.label
+      false -> buildOutputDir + "/" + classFile.thisClassInfo.className.label
     }
 
     bytecode.writeToFile(filepath)
