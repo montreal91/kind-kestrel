@@ -39,6 +39,12 @@ class MethodRefInfo(
     get() = ConstantType.METHOD_REF
 }
 
+class DoubleValue(
+  label: String,
+  value: ByteArray,
+) : ConstantValue(type = ConstantType.DOUBLE, label = label, value = value)
+
+
 class Utf8Value(
   label: String,
   value: ByteArray,

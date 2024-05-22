@@ -26,3 +26,9 @@ fun Int.toBytes(): List<Byte> {
   result.add(this.toByte())
   return result
 }
+
+fun Long.toBytes(): List<Byte> = List(size = 8) {
+  i -> (this shr (i * 8) and 0xFF).toByte()
+}
+
+fun Double.toBytes(): List<Byte> = this.toBits().toBytes()
