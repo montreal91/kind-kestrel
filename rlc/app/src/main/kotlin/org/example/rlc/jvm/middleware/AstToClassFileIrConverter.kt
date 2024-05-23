@@ -12,40 +12,68 @@ import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.jvm.backend.ConstantPool
+import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
+import org.example.rlc.jvm.ir.MethodRefInfo
 import org.example.rlc.jvm.ir.NameAndTypeInfo
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.Operation
-import org.example.rlc.jvm.ir.Utf8Value
 import org.example.rlc.jvm.ir.toClassInfo
 import org.example.rlc.jvm.ir.toDoubleValue
 import org.example.rlc.jvm.ir.toStringRefInfo
 import org.example.rlc.jvm.ir.toUtf8Value
+
+import java.io.File // TODO(Replace with kotlin-native API)
 
 private data class Context(
   val className: String,
   val methodName: String
 )
 
+enum class RuntimeType {
+  DOUBLE, STRING, BOOLEAN, NIL, REFERENCE
+}
+
+class LoxValue(val type: RuntimeType)
+
+
 class AstToClassFileIrConverter(pathFile: String) {
   private val constructor = "<init>".toUtf8Value()
   private val noArgsVoidDescriptor = "()V".toUtf8Value()
-  private val objectClass = "java/lang/Object.class".toClassInfo()
+  private val objectClass = "java/lang/Object".toClassInfo()
   private val loxMainClassName: String
   private val classes = mutableListOf<ClassFile>()
   private val constantPool = ConstantPool()
   private val currentCode = mutableListOf<Operation>()
 
   init {
-    val fileName = pathFile.substringAfterLast(delimiter = '/')
+    val fileName = pathFile.substringAfterLast(delimiter = File.separatorChar)
     loxMainClassName = fileName.substringBeforeLast(delimiter = '.') + "Lox"
+    println("PATH Separator: [${File.separatorChar}]")
+    println("PATH:           [$pathFile]")
+    println("FileName:       [$fileName]")
+    println("LoxMainClass:   [$loxMainClassName]")
   }
 
   fun convert(roots: Ast): List<ClassFile> {
     roots.forEach { root -> visit(root) }
-    return classes
+    finalizeClass()
+    return classes.toList()
+  }
+
+  private fun finalizeClass() {
+    val c = ClassFile(
+      thisClassInfo = loxMainClassName.toClassInfo(),
+      superClassInfo = objectClass,
+      accessFlagList = listOf(ClassAccessFlags.PUBLIC),
+      attributeList = listOf(),
+      fieldList = listOf(),
+      interfaceList = listOf(),
+      methodList = listOf(constructor(), publicStaticVoidMain())
+    )
+    classes.add(c)
   }
 
   private fun visit(stmt: Stmt) = when (stmt) {
@@ -53,13 +81,15 @@ class AstToClassFileIrConverter(pathFile: String) {
     is PrintStmt -> visitPrintStmt(stmt)
   }
 
-  private fun visitExprStmt(exprStmt: ExprStmt): Unit = visitExpr(exprStmt.expr)
+  private fun visitExprStmt(exprStmt: ExprStmt) {
+    visitExpr(exprStmt.expr)
+  }
 
   private fun visitPrintStmt(printStmt: PrintStmt) {
     visitExpr(printStmt.expr)
   }
 
-  private fun visitExpr(expr: Expr): Unit = when (expr) {
+  private fun visitExpr(expr: Expr): LoxValue = when (expr) {
     is Binary -> visitBinary(expr)
     is Grouping -> visitGrouping(expr)
     is Literal -> visitLiteral(expr)
@@ -79,32 +109,84 @@ class AstToClassFileIrConverter(pathFile: String) {
     }
   }
 
-  private fun visitBinary(expr: Binary) {
-    visitExpr(expr.left)
-    visitExpr(expr.right)
-    when (expr.operator.type) {
-      Token.Type.PLUS ->
-    }
+  private fun visitBinary(expr: Binary): LoxValue {
+    val left = visitExpr(expr.left)
+    val right = visitExpr(expr.right)
+    return compileBinary(left, right, expr.operator.type)
   }
-  private fun visitLogical(expr: Logical) {}
-  private fun visitUnary(expr: Unary) {}
+
+  private fun visitLogical(expr: Logical): LoxValue {
+    TODO("Not implemented yet.")
+  }
+
+  private fun visitUnary(expr: Unary): LoxValue {
+    TODO("Not implemented yet.")
+  }
 
   private fun visitGrouping(expr: Grouping) = visitExpr(expr.expression)
 
-  private fun compileNumber(literal: Literal) {
+  private fun compileNumber(literal: Literal): LoxValue {
+    val value = literal.value.toDouble().toDoubleValue()
     val operation = Operation(
       opcode = Opcode.OP_LDC,
-      operands = listOf(literal.value.toDouble().toDoubleValue()),
+      operands = listOf(value),
     )
     currentCode.add(operation)
+    return LoxValue(RuntimeType.DOUBLE)
   }
 
-  private fun compileString(literal: Literal) {
+  private fun compileString(literal: Literal): LoxValue {
+    val value = literal.value.toStringRefInfo()
     val operation = Operation(
-      operands = listOf(literal.value.toStringRefInfo()),
+      operands = listOf(value),
       opcode = Opcode.OP_LDC,
     )
     currentCode.add(operation)
+    return LoxValue(RuntimeType.STRING)
+  }
+
+  private fun compileBinary(left: LoxValue, right: LoxValue, operator: Token.Type): LoxValue {
+    if (left.type == RuntimeType.STRING || right.type == RuntimeType.STRING) {
+      if (operator != Token.Type.PLUS) {
+        return compileRuntimeError(left, right, operator)
+      }
+
+      return compileStringConcat(left, right)
+    }
+
+    if (left.type != RuntimeType.DOUBLE || right.type != RuntimeType.DOUBLE) {
+      return compileRuntimeError(left, right, operator)
+    }
+
+    when (operator) {
+      Token.Type.PLUS -> currentCode.add(Operation(opcode = Opcode.OP_DADD, operands = emptyList()))
+      Token.Type.MINUS -> currentCode.add(Operation(opcode = Opcode.OP_DSUB, operands = emptyList()))
+      Token.Type.STAR -> currentCode.add(Operation(opcode = Opcode.OP_DMUL, operands = emptyList()))
+      Token.Type.SLASH -> currentCode.add(Operation(opcode = Opcode.OP_DDIV, operands = emptyList()))
+      else -> compileRuntimeError(left, right, operator)
+    }
+
+    return LoxValue(type = RuntimeType.DOUBLE)
+  }
+
+  private fun compileRuntimeError(left: LoxValue, right: LoxValue, operator: Token.Type): LoxValue {
+    TODO("Not yet implemented")
+  }
+
+  private fun compileStringConcat(left: LoxValue, right: LoxValue): LoxValue {
+    TODO("Not implemented yet.")
+  }
+
+  private fun publicStaticVoidMain(): MethodInfo {
+    currentCode.add(Operation(opcode = Opcode.OP_RETURN, operands = emptyList()))
+    return MethodInfo(
+      methodName = "main".toUtf8Value(),
+      methodDescriptor = "([Ljava/lang/String;)V".toUtf8Value(),
+      maxStack = 10, // TODO(calculate required maxStack)
+      maxLocals = 2,
+      accessFlagList = listOf(MethodAccessFlags.PUBLIC, MethodAccessFlags.STATIC),
+      code = currentCode.toList()
+    )
   }
 
   private fun constructor(): MethodInfo {
@@ -112,9 +194,11 @@ class AstToClassFileIrConverter(pathFile: String) {
       label = "<init>:V()", descriptor = noArgsVoidDescriptor, name = constructor
     )
 
+    val objConstructor = MethodRefInfo(label = "11111", classInfo = "java/lang/Object".toClassInfo(), nameAndType = initializerNameAndType)
+
     val code = listOf(
       Operation(Opcode.OP_ALOAD_0, listOf()),
-      Operation(Opcode.OP_INVOKE_SPECIAL, listOf(initializerNameAndType)),
+      Operation(Opcode.OP_INVOKE_SPECIAL, listOf(objConstructor)),
       Operation(Opcode.OP_RETURN, listOf())
     )
 

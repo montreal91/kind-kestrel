@@ -146,6 +146,11 @@ class CodeGenerator(private val buildOutputDir: String) {
         res.addAll(constantPool[operation.operands[0].label].toByte().toBytes())
       }
       Opcode.OP_RETURN -> {}
+      Opcode.OP_DADD -> {}
+      Opcode.OP_DDIV -> {}
+      Opcode.OP_DMUL -> {}
+      Opcode.OP_DNEG -> {}
+      Opcode.OP_DSUB -> {}
     }
     return res
   }
