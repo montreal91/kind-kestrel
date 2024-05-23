@@ -92,12 +92,12 @@ class Scanner(private val text: String) {
         peek == '"' -> parseString()
         peek == 0.toChar() -> continue
         peek.isDigit() -> parseNumber()
-        peek.isIdentifierStart() -> parseAlphaNumericToken()
+        peek.isIdentifierStart() -> parseKeyWordOrIdentifier()
         else -> {
           tokens.add(Token(Token.Type.ERROR, peek.toString(), currentLineNumber))
           errors.add(LoxCompileError(
             message = "Unexpected character: $peek.",
-            lineNumber = currentLineNumber
+            token = Token(Token.Type.ERROR, peek.toString(), currentLineNumber)
           ))
           advance()
         }
@@ -127,14 +127,6 @@ class Scanner(private val text: String) {
   private fun parseSingleCharPunctuator() {
     tokens.add(Token(punctuatorStart[peek]!!, "$peek", currentLineNumber))
     advance()
-  }
-
-  private fun parseAlphaNumericToken() {
-    if (peek.isDigit()) {
-      parseNumber()
-    } else {
-      parseKeyWordOrIdentifier()
-    }
   }
 
   private fun parseNumber() {
@@ -180,8 +172,8 @@ class Scanner(private val text: String) {
     if (atEnd || peek == '\n') {
       tokens.add(Token(type = Token.Type.ERROR, value =  "", lineNumber = currentLineNumber))
       errors.add(LoxCompileError(
-        message = "Unexpected end of the string literal.",
-        lineNumber = currentLineNumber
+        message = "Unterminated string.",
+        token = Token(Token.Type.ERROR, peek.toString(), currentLineNumber)
       ))
     }
     else if (peek == '"') {
