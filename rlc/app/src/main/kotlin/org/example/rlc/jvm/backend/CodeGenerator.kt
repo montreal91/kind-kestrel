@@ -90,8 +90,13 @@ class CodeGenerator(private val buildOutputDir: String) {
   }
 
   private fun compileFieldToByteCode(fieldRefInfo: FieldInfo): List<Byte> {
-    // To be implemented
-    return listOf()
+    val res = mutableListOf<Byte>()
+    res.addAll(fieldRefInfo.accessFlags.toBytes())
+    res.addAll(constantPool[fieldRefInfo.fieldName.label].toBytes())
+    res.addAll(constantPool[fieldRefInfo.fieldDescriptor.label].toBytes())
+
+    res.addAll(0.toShort().toBytes()) // No field attributes
+    return res
   }
 
   private fun compileInterfaceToByteCode(interfaceInfo: InterfaceInfo): List<Byte> {
@@ -133,6 +138,12 @@ class CodeGenerator(private val buildOutputDir: String) {
     val res = mutableListOf(operation.opcode.value)
     when (operation.opcode) {
       Opcode.OP_ALOAD_0 -> {}
+      Opcode.OP_ALOAD_1 -> {}
+      Opcode.OP_DADD -> {}
+      Opcode.OP_DDIV -> {}
+      Opcode.OP_DMUL -> {}
+      Opcode.OP_DNEG -> {}
+      Opcode.OP_DSUB -> {}
       Opcode.OP_GET_STATIC -> {
         res.addAll(constantPool[operation.operands[0].label].toBytes())
       }
@@ -146,12 +157,11 @@ class CodeGenerator(private val buildOutputDir: String) {
         res.addAll(constantPool[operation.operands[0].label].toByte().toBytes())
       }
       Opcode.OP_RETURN -> {}
-      Opcode.OP_DADD -> {}
-      Opcode.OP_DDIV -> {}
-      Opcode.OP_DMUL -> {}
-      Opcode.OP_DNEG -> {}
-      Opcode.OP_DSUB -> {}
+      Opcode.OP_PUTFIELD -> {
+        res.addAll((constantPool[operation.operands[0].label].toBytes()))
+      }
     }
+
     return res
   }
 }

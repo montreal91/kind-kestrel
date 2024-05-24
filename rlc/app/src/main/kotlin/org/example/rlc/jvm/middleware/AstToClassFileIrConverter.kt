@@ -20,6 +20,7 @@ import org.example.rlc.jvm.ir.MethodRefInfo
 import org.example.rlc.jvm.ir.NameAndTypeInfo
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.Operation
+import org.example.rlc.jvm.ir.objectConstructor
 import org.example.rlc.jvm.ir.toClassInfo
 import org.example.rlc.jvm.ir.toDoubleValue
 import org.example.rlc.jvm.ir.toStringRefInfo
@@ -44,7 +45,7 @@ class AstToClassFileIrConverter(pathFile: String) {
   private val noArgsVoidDescriptor = "()V".toUtf8Value()
   private val objectClass = "java/lang/Object".toClassInfo()
   private val loxMainClassName: String
-  private val classes = mutableListOf<ClassFile>()
+  private val classes = mutableListOf(loxClass)
   private val constantPool = ConstantPool()
   private val currentCode = mutableListOf<Operation>()
 
@@ -99,10 +100,7 @@ class AstToClassFileIrConverter(pathFile: String) {
 
   private fun visitLiteral(expr: Literal) = when (expr.type) {
     Literal.Type.NUMBER -> compileNumber(expr)
-    Literal.Type.BOOLEAN -> {
-      TODO()
-    }
-
+    Literal.Type.BOOLEAN -> LoxValue(RuntimeType.NIL)  // TODO()
     Literal.Type.STRING -> compileString(expr)
     Literal.Type.NIL_TYPE -> {
       TODO()
@@ -190,15 +188,9 @@ class AstToClassFileIrConverter(pathFile: String) {
   }
 
   private fun constructor(): MethodInfo {
-    val initializerNameAndType = NameAndTypeInfo(
-      label = "<init>:V()", descriptor = noArgsVoidDescriptor, name = constructor
-    )
-
-    val objConstructor = MethodRefInfo(label = "11111", classInfo = "java/lang/Object".toClassInfo(), nameAndType = initializerNameAndType)
-
     val code = listOf(
       Operation(Opcode.OP_ALOAD_0, listOf()),
-      Operation(Opcode.OP_INVOKE_SPECIAL, listOf(objConstructor)),
+      Operation(Opcode.OP_INVOKE_SPECIAL, listOf(objectConstructor)),
       Operation(Opcode.OP_RETURN, listOf())
     )
 
