@@ -1,5 +1,6 @@
 package org.example.rlc.jvm.middleware
 
+import java.io.File
 import org.example.rlc.frontend.Token
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
@@ -16,17 +17,13 @@ import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
-import org.example.rlc.jvm.ir.MethodRefInfo
-import org.example.rlc.jvm.ir.NameAndTypeInfo
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.Operation
+import org.example.rlc.jvm.ir.ShortConstantOperation
+import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.objectConstructor
 import org.example.rlc.jvm.ir.toClassInfo
-import org.example.rlc.jvm.ir.toDoubleValue
-import org.example.rlc.jvm.ir.toStringRefInfo
 import org.example.rlc.jvm.ir.toUtf8Value
-
-import java.io.File // TODO(Replace with kotlin-native API)
 
 private data class Context(
   val className: String,
@@ -45,7 +42,7 @@ class AstToClassFileIrConverter(pathFile: String) {
   private val noArgsVoidDescriptor = "()V".toUtf8Value()
   private val objectClass = "java/lang/Object".toClassInfo()
   private val loxMainClassName: String
-  private val classes = mutableListOf(loxClass)
+  private val classes = mutableListOf(loxClass())
   private val constantPool = ConstantPool()
   private val currentCode = mutableListOf<Operation>()
 
@@ -124,22 +121,10 @@ class AstToClassFileIrConverter(pathFile: String) {
   private fun visitGrouping(expr: Grouping) = visitExpr(expr.expression)
 
   private fun compileNumber(literal: Literal): LoxValue {
-    val value = literal.value.toDouble().toDoubleValue()
-    val operation = Operation(
-      opcode = Opcode.OP_LDC,
-      operands = listOf(value),
-    )
-    currentCode.add(operation)
     return LoxValue(RuntimeType.DOUBLE)
   }
 
   private fun compileString(literal: Literal): LoxValue {
-    val value = literal.value.toStringRefInfo()
-    val operation = Operation(
-      operands = listOf(value),
-      opcode = Opcode.OP_LDC,
-    )
-    currentCode.add(operation)
     return LoxValue(RuntimeType.STRING)
   }
 
@@ -156,14 +141,6 @@ class AstToClassFileIrConverter(pathFile: String) {
       return compileRuntimeError(left, right, operator)
     }
 
-    when (operator) {
-      Token.Type.PLUS -> currentCode.add(Operation(opcode = Opcode.OP_DADD, operands = emptyList()))
-      Token.Type.MINUS -> currentCode.add(Operation(opcode = Opcode.OP_DSUB, operands = emptyList()))
-      Token.Type.STAR -> currentCode.add(Operation(opcode = Opcode.OP_DMUL, operands = emptyList()))
-      Token.Type.SLASH -> currentCode.add(Operation(opcode = Opcode.OP_DDIV, operands = emptyList()))
-      else -> compileRuntimeError(left, right, operator)
-    }
-
     return LoxValue(type = RuntimeType.DOUBLE)
   }
 
@@ -176,7 +153,7 @@ class AstToClassFileIrConverter(pathFile: String) {
   }
 
   private fun publicStaticVoidMain(): MethodInfo {
-    currentCode.add(Operation(opcode = Opcode.OP_RETURN, operands = emptyList()))
+    currentCode.add(SimpleOperation(opcode = Opcode.OP_RETURN))
     return MethodInfo(
       methodName = "main".toUtf8Value(),
       methodDescriptor = "([Ljava/lang/String;)V".toUtf8Value(),
@@ -189,9 +166,9 @@ class AstToClassFileIrConverter(pathFile: String) {
 
   private fun constructor(): MethodInfo {
     val code = listOf(
-      Operation(Opcode.OP_ALOAD_0, listOf()),
-      Operation(Opcode.OP_INVOKE_SPECIAL, listOf(objectConstructor)),
-      Operation(Opcode.OP_RETURN, listOf())
+      SimpleOperation(Opcode.OP_ALOAD_0),
+      ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, objectConstructor),
+      SimpleOperation(Opcode.OP_RETURN)
     )
 
     return MethodInfo(

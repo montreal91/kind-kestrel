@@ -42,7 +42,7 @@ private fun compile(pathName: String) {
 
 fun main(args: Array<String>) {
   if (args.size != 1) {
-    System.err.println("Usage: rlc path")
+    System.err.println("Usage: rlc [path]")
     exitProcess(status = 64)
   }
 

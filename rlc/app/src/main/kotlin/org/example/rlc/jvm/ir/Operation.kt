@@ -1,5 +1,8 @@
 package org.example.rlc.jvm.ir
 
-class Operation(val opcode: Opcode, val operands: List<ConstantPoolInfo>) {
-  constructor(opcode: Opcode) : this(opcode, listOf())
-}
+sealed class Operation(val opcode: Opcode)
+
+class SimpleOperation(opcode: Opcode) : Operation(opcode)
+class ControlFlowOperation(opcode: Opcode, val jumpTo: Int) : Operation(opcode)
+class ByteConstantOperation(opcode: Opcode, val constant: ConstantPoolInfo) : Operation(opcode)
+class ShortConstantOperation(opcode: Opcode, val constant: ConstantPoolInfo) : Operation(opcode)
