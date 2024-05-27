@@ -15,6 +15,7 @@ import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.jvm.backend.ConstantPool
 import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
+import org.example.rlc.jvm.ir.CodeAttribute
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
 import org.example.rlc.jvm.ir.Opcode
@@ -157,10 +158,16 @@ class AstToClassFileIrConverter(pathFile: String) {
     return MethodInfo(
       methodName = "main".toUtf8Value(),
       methodDescriptor = "([Ljava/lang/String;)V".toUtf8Value(),
-      maxStack = 10, // TODO(calculate required maxStack)
-      maxLocals = 2,
       accessFlagList = listOf(MethodAccessFlags.PUBLIC, MethodAccessFlags.STATIC),
-      code = currentCode.toList()
+      attributes = listOf(
+        CodeAttribute(
+          maxStack = 10,
+          maxLocals = 2,
+          code = currentCode.toList(),
+          exceptionTable = 0,
+          attributes = listOf()
+        )
+      )
     )
   }
 
@@ -174,10 +181,16 @@ class AstToClassFileIrConverter(pathFile: String) {
     return MethodInfo(
       methodName = constructor,
       methodDescriptor = noArgsVoidDescriptor,
-      maxStack = 1,
-      maxLocals = 1,
       accessFlagList = listOf(MethodAccessFlags.PUBLIC),
-      code = code
+      attributes = listOf(
+        CodeAttribute(
+          maxStack = 1,
+          maxLocals = 1,
+          code = code,
+          exceptionTable = 0,
+          attributes = listOf()
+        )
+      )
     )
   }
 }

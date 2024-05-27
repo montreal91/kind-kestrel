@@ -2,6 +2,7 @@ package org.example.rlc.jvm.middleware
 
 import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
+import org.example.rlc.jvm.ir.CodeAttribute
 import org.example.rlc.jvm.ir.ControlFlowOperation
 import org.example.rlc.jvm.ir.FieldAccessFlags
 import org.example.rlc.jvm.ir.FieldInfo
@@ -71,22 +72,28 @@ private fun nameRef() = FieldRefInfo(
   ),
 )
 
-private fun loxClassConstructor() = MethodInfo(
-  methodName = constructorMethodName,
-  methodDescriptor = "(Ljava/lang/String;)V".toUtf8Value(),
-  maxStack = 2,
-  maxLocals = 2,
-  accessFlagList = listOf(MethodAccessFlags.NONE),
-  code = listOf(
-    SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, objectConstructor),
-    SimpleOperation(Opcode.OP_ALOAD_0),
-    SimpleOperation(Opcode.OP_ALOAD_1),
-    ShortConstantOperation(opcode = Opcode.OP_PUTFIELD, constant = nameRef()),
-    SimpleOperation(Opcode.OP_RETURN)
+private fun loxClassConstructor(): MethodInfo {
+  val code = CodeAttribute(
+    maxStack = 2,
+    maxLocals = 2,
+    code = listOf(
+      SimpleOperation(Opcode.OP_ALOAD_0),
+      ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, objectConstructor),
+      SimpleOperation(Opcode.OP_ALOAD_0),
+      SimpleOperation(Opcode.OP_ALOAD_1),
+      ShortConstantOperation(opcode = Opcode.OP_PUTFIELD, constant = nameRef()),
+      SimpleOperation(Opcode.OP_RETURN)
+    ),
+    exceptionTable = 0,
+    attributes = listOf(),
   )
-)
-
+  return MethodInfo(
+    methodName = constructorMethodName,
+    methodDescriptor = "(Ljava/lang/String;)V".toUtf8Value(),
+    accessFlagList = listOf(MethodAccessFlags.NONE),
+    attributes = listOf(code),
+  )
+}
 private fun stringEquals(): MethodRefInfo {
   val nameInfo = "equals".toUtf8Value()
   val typeInfo = "(Ljava/lang/Object;)Z".toUtf8Value()
@@ -101,24 +108,32 @@ private fun stringEquals(): MethodRefInfo {
   )
 }
 
-private fun loxClassEqualsMethod() = MethodInfo(
-  methodName = "equals".toUtf8Value(),
-  methodDescriptor = "(Ljava/lang/Object;)Z".toUtf8Value(),
-  maxStack = 2,
-  maxLocals = 2,
-  accessFlagList = listOf(MethodAccessFlags.PUBLIC),
-  code = listOf(
-    SimpleOperation(Opcode.OP_ALOAD_1),
-    ShortConstantOperation(Opcode.OP_INSTANCEOF, loxClassInfo()),
-    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 10),
-    SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, nameRef()),
-    SimpleOperation(Opcode.OP_ALOAD_1),
-    ShortConstantOperation(Opcode.OP_CHECKCAST, loxClassInfo()),
-    ShortConstantOperation(Opcode.OP_GETFIELD, nameRef()),
-    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, stringEquals()),
-    SimpleOperation(Opcode.OP_IRETURN),
-    SimpleOperation(Opcode.OP_ICONST_0),
-    SimpleOperation(Opcode.OP_IRETURN),
+private fun loxClassEqualsMethod(): MethodInfo {
+  val code = CodeAttribute(
+    maxStack = 2,
+    maxLocals = 2,
+    code = listOf(
+      SimpleOperation(Opcode.OP_ALOAD_1),
+      ShortConstantOperation(Opcode.OP_INSTANCEOF, loxClassInfo()),
+      ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 10),
+      SimpleOperation(Opcode.OP_ALOAD_0),
+      ShortConstantOperation(Opcode.OP_GETFIELD, nameRef()),
+      SimpleOperation(Opcode.OP_ALOAD_1),
+      ShortConstantOperation(Opcode.OP_CHECKCAST, loxClassInfo()),
+      ShortConstantOperation(Opcode.OP_GETFIELD, nameRef()),
+      ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, stringEquals()),
+      SimpleOperation(Opcode.OP_IRETURN),
+      SimpleOperation(Opcode.OP_ICONST_0),
+      SimpleOperation(Opcode.OP_IRETURN),
+    ),
+    attributes = listOf(),
+    exceptionTable = 0,
   )
-)
+  return MethodInfo(
+    methodName = "equals".toUtf8Value(),
+    methodDescriptor = "(Ljava/lang/Object;)Z".toUtf8Value(),
+    accessFlagList = listOf(MethodAccessFlags.PUBLIC),
+    attributes = listOf(code)
+  )
+}
+

@@ -14,14 +14,6 @@ class ConstantPool {
   private val constants: MutableList<Constant> = mutableListOf()
   private val labelIndex: MutableMap<String, Int> = mutableMapOf()
 
-  init {
-    addConstantPoolInfo(Utf8Value(
-      label= CODE,
-      value = CODE.toByteArray(Charsets.UTF_8),
-      size = CODE.length.toShort()
-    ))
-  }
-
   private val size: Int
     get() = constants.size + 1
 
