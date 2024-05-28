@@ -94,6 +94,7 @@ private fun loxClassConstructor(): MethodInfo {
     attributes = listOf(code),
   )
 }
+
 private fun stringEquals(): MethodRefInfo {
   val nameInfo = "equals".toUtf8Value()
   val typeInfo = "(Ljava/lang/Object;)Z".toUtf8Value()
@@ -136,4 +137,3 @@ private fun loxClassEqualsMethod(): MethodInfo {
     attributes = listOf(code)
   )
 }
-

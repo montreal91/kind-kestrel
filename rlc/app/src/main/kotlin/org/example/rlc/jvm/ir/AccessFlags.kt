@@ -13,4 +13,5 @@ enum class MethodAccessFlags(val value: Short) {
 
 enum class FieldAccessFlags(val value: Short) {
   FINAL(value = 0x0010),
+  STATIC(value = 0x0008),
 }
