@@ -1,7 +1,5 @@
 package org.example.rlc.jvm.ir
 
-import org.example.rlc.jvm.backend.toBytes
-
 fun String.toUtf8Value() = Utf8Value(
   label = this,
   size = this.length.toShort(),
@@ -15,4 +13,12 @@ fun String.toStringRefInfo() = StringRefInfo(
   stringConstant = this.toUtf8Value()
 )
 
-fun Double.toDoubleValue() = DoubleValue(label = this.toString(), value = this.toBytes().toByteArray())
+private fun doubleToJvmConstant(value: Double): ByteArray {
+  val bits = value.toBits() // Convert the double to its raw bits
+  return ByteArray(8) { i -> ((bits shr (56 - i * 8)) and 0xFF).toByte() }
+}
+
+fun Double.toDoubleValue() = DoubleValue(
+  label = this.toString(),
+  value = doubleToJvmConstant(value = this)
+)

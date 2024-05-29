@@ -3,16 +3,24 @@ package org.example.rlc.jvm.backend
 import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.ConstantPoolInfo
 import org.example.rlc.jvm.ir.ConstantValue
+import org.example.rlc.jvm.ir.DoubleValue
 import org.example.rlc.jvm.ir.FieldRefInfo
 import org.example.rlc.jvm.ir.MethodRefInfo
 import org.example.rlc.jvm.ir.NameAndTypeInfo
 import org.example.rlc.jvm.ir.StringRefInfo
 import org.example.rlc.jvm.ir.Utf8Value
+import org.example.rlc.jvm.ir.toDoubleValue
 
 
 class ConstantPool {
   private val constants: MutableList<Constant> = mutableListOf()
   private val labelIndex: MutableMap<String, Int> = mutableMapOf()
+
+  private var offset = 0
+
+  init {
+    addConstantPoolInfo(5.12.toDoubleValue())
+  }
 
   private val size: Int
     get() = constants.size + 1
@@ -58,7 +66,14 @@ class ConstantPool {
       constantValue.label,
       Constant(constantValue.type, constantValue.size, constantValue.value)
     )
-    else -> {}
+    is DoubleValue -> {
+      val constant = Constant(constantValue.type, constantValue.value.size.toShort(), constantValue.value)
+      addConstant(constantValue.label, constant)
+    }
+
+    else -> {
+      throw IllegalArgumentException("Unexpected constant value type ${constantValue.value}")
+    }
   }
 
   private fun addFieldRefInfo(info: FieldRefInfo) {
@@ -101,7 +116,7 @@ class ConstantPool {
 
   private fun addConstant(label: String, constant: Constant) {
     constants.add(constant)
-    labelIndex[label] = constants.size
+    labelIndex[label] = size
   }
 
   // This function assumes that label exists in labelIndex

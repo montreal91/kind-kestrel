@@ -137,7 +137,11 @@ internal class ClassCompiler {
     res.addAll(constantPool[codeAttribute.attributeName.label].toBytes())
 
     val codeCompilationResult = compileCode(codeAttribute.code)
-    codeAttribute.addAttribute(codeCompilationResult.stackMapTableAttribute)
+
+    if (!codeCompilationResult.stackMapTableAttribute.isEmpty()) {
+      codeAttribute.addAttribute(codeCompilationResult.stackMapTableAttribute)
+    }
+
     val codeItself = codeCompilationResult.bytes
     val attributeBytes = mutableListOf<Byte>()
 
@@ -192,7 +196,7 @@ internal class ClassCompiler {
       ind = (ind + bytes.size.toShort()).toShort()
     }
 
-    val stackTable = mutableListOf<StackMapFrame>()
+    val stackTable = mutableMapOf<Short, StackMapFrame>()
     for ((i, operation) in operations.withIndex()) {
       if (operation !is ControlFlowOperation) {
         continue
@@ -206,12 +210,12 @@ internal class ClassCompiler {
       )
 
       // Here we have to add a stackTable entry
-      stackTable.add(SameFrame(offset.toByte()))
+      stackTable[offset] = SameFrame(offset.toByte())
     }
 
     return CodeCompilationResult(
       bytes = res.toList(),
-      stackMapTableAttribute = StackMapTableAttribute(stackTable.toList())
+      stackMapTableAttribute = StackMapTableAttribute(stackTable.values.toList())
     )
   }
 

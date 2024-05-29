@@ -7,7 +7,6 @@ sealed class StackMapFrame(val tag: Byte) {
   abstract fun toBytes(): List<Byte>
 }
 
-
 class SameFrame(tag: Byte) : StackMapFrame(tag) {
   override fun toBytes(): List<Byte> {
     return listOf(tag)
@@ -16,8 +15,9 @@ class SameFrame(tag: Byte) : StackMapFrame(tag) {
 
 class StackMapTableAttribute(
   val frames: List<StackMapFrame>
-) : AttributeInfo(stackMapTableAttributeName)
-
+) : AttributeInfo(stackMapTableAttributeName) {
+  fun isEmpty() = frames.isEmpty()
+}
 
 class CodeAttribute(
   val maxStack: Short,
@@ -29,5 +29,6 @@ class CodeAttribute(
   private val computedAttributes = mutableListOf<AttributeInfo>()
 
   val allAttributes: List<AttributeInfo> get() = attributes + computedAttributes
+
   fun addAttribute(attribute: AttributeInfo) = computedAttributes.add(attribute)
 }

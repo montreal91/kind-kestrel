@@ -13,11 +13,8 @@ import org.example.rlc.jvm.ir.NameAndTypeInfo
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
-import org.example.rlc.jvm.ir.loxDoubleClassInfo
-import org.example.rlc.jvm.ir.loxDoubleConstructorInfo
 import org.example.rlc.jvm.ir.toClassInfo
 import org.example.rlc.jvm.ir.toUtf8Value
-import org.example.rlc.jvm.ir.valueFieldRefInfo
 
 
 /***

@@ -14,10 +14,6 @@ import org.example.rlc.jvm.ir.NameAndTypeInfo
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
-import org.example.rlc.jvm.ir.constructorMethodName
-import org.example.rlc.jvm.ir.javaLangObjectClassInfo
-import org.example.rlc.jvm.ir.javaStringDescriptor
-import org.example.rlc.jvm.ir.objectConstructor
 import org.example.rlc.jvm.ir.toClassInfo
 import org.example.rlc.jvm.ir.toUtf8Value
 

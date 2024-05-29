@@ -5,8 +5,23 @@ enum class Opcode(val value: Byte) {
   OP_ALOAD_0(0x2A.toByte()),  // Load reference from local variable 0
   OP_ALOAD_1(0x2B.toByte()),  // Load reference from local variable 1
 
+  // Load reference from local variable 2
+  OP_ALOAD_2(0x2C.toByte()),
+
+  // Load reference from local variable 3
+  OP_ALOAD_3(0x2D.toByte()),
+
   // Return reference from method
   OP_ARETURN(0xB0.toByte()),
+
+  // Store reference into local variable
+  OP_ASTORE_2(0x4D.toByte()),
+
+  // Store reference into local variable
+  OP_ASTORE_3(0x4E.toByte()),
+
+  // Throw exception or error
+  OP_ATHROW(0xBF.toByte()),
 
   // Check whether object is of given type
   // Takes two bytes as an operand
@@ -53,6 +68,10 @@ enum class Opcode(val value: Byte) {
   // Push item from run-time constant pool
   // Takes one byte as an operand
   OP_LDC(0x12.toByte()),
+
+  // Push long or double from run-time constant pool (wide index)
+  // Takes two bytes as an operand
+  OP_LDC_2W(0x14.toByte()),
 
   // Create new object
   // Takes two bytes as an operand

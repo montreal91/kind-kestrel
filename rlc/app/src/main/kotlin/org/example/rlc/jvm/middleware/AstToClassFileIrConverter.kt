@@ -1,7 +1,6 @@
 package org.example.rlc.jvm.middleware
 
 import java.io.File
-import org.example.rlc.frontend.Token
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.Expr
@@ -22,7 +21,6 @@ import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.Operation
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
-import org.example.rlc.jvm.ir.objectConstructor
 import org.example.rlc.jvm.ir.toClassInfo
 import org.example.rlc.jvm.ir.toUtf8Value
 
@@ -35,15 +33,18 @@ enum class RuntimeType {
   DOUBLE, STRING, BOOLEAN, NIL, REFERENCE
 }
 
-class LoxValue(val type: RuntimeType)
-
 
 class AstToClassFileIrConverter(pathFile: String) {
   private val constructor = "<init>".toUtf8Value()
   private val noArgsVoidDescriptor = "()V".toUtf8Value()
   private val objectClass = "java/lang/Object".toClassInfo()
   private val loxMainClassName: String
-  private val classes = mutableListOf(loxClass(), loxObject(), loxDouble())
+  private val classes = mutableListOf(
+    loxClass(),
+    loxObject(),
+    loxDouble(),
+    loxRuntimeError(),
+  )
   private val constantPool = ConstantPool()
   private val currentCode = mutableListOf<Operation>()
 
@@ -70,7 +71,7 @@ class AstToClassFileIrConverter(pathFile: String) {
       attributeList = listOf(),
       fieldList = listOf(),
       interfaceList = listOf(),
-      methodList = listOf(constructor(), publicStaticVoidMain())
+      methodList = listOf(constructor(), publicStaticVoidMain(), addMethod())
     )
     classes.add(c)
   }
@@ -88,7 +89,7 @@ class AstToClassFileIrConverter(pathFile: String) {
     visitExpr(printStmt.expr)
   }
 
-  private fun visitExpr(expr: Expr): LoxValue = when (expr) {
+  private fun visitExpr(expr: Expr) = when (expr) {
     is Binary -> visitBinary(expr)
     is Grouping -> visitGrouping(expr)
     is Literal -> visitLiteral(expr)
@@ -98,58 +99,41 @@ class AstToClassFileIrConverter(pathFile: String) {
 
   private fun visitLiteral(expr: Literal) = when (expr.type) {
     Literal.Type.NUMBER -> compileNumber(expr)
-    Literal.Type.BOOLEAN -> LoxValue(RuntimeType.NIL)  // TODO()
+    Literal.Type.BOOLEAN -> {}  // TODO()
     Literal.Type.STRING -> compileString(expr)
     Literal.Type.NIL_TYPE -> {
       TODO()
     }
   }
 
-  private fun visitBinary(expr: Binary): LoxValue {
-    val left = visitExpr(expr.left)
-    val right = visitExpr(expr.right)
-    return compileBinary(left, right, expr.operator.type)
-  }
-
-  private fun visitLogical(expr: Logical): LoxValue {
+  private fun visitBinary(expr: Binary) {
     TODO("Not implemented yet.")
   }
 
-  private fun visitUnary(expr: Unary): LoxValue {
+  private fun visitLogical(expr: Logical) {
     TODO("Not implemented yet.")
   }
 
-  private fun visitGrouping(expr: Grouping) = visitExpr(expr.expression)
-
-  private fun compileNumber(literal: Literal): LoxValue {
-    return LoxValue(RuntimeType.DOUBLE)
+  private fun visitUnary(expr: Unary) {
+    TODO("Not implemented yet.")
   }
 
-  private fun compileString(literal: Literal): LoxValue {
-    return LoxValue(RuntimeType.STRING)
+  private fun visitGrouping(expr: Grouping) {
+    visitExpr(expr.expression)
   }
 
-  private fun compileBinary(left: LoxValue, right: LoxValue, operator: Token.Type): LoxValue {
-    if (left.type == RuntimeType.STRING || right.type == RuntimeType.STRING) {
-      if (operator != Token.Type.PLUS) {
-        return compileRuntimeError(left, right, operator)
-      }
+  private fun compileNumber(literal: Literal) {
+    val ops = listOf(
+      ShortConstantOperation(Opcode.OP_NEW, loxDoubleClassInfo),
+      SimpleOperation(Opcode.OP_DUP),
+      ShortConstantOperation(Opcode.OP_LDC_2W, literal.toConstant()),
+      ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxDoubleConstructorInfo)
+    )
 
-      return compileStringConcat(left, right)
-    }
-
-    if (left.type != RuntimeType.DOUBLE || right.type != RuntimeType.DOUBLE) {
-      return compileRuntimeError(left, right, operator)
-    }
-
-    return LoxValue(type = RuntimeType.DOUBLE)
+    currentCode.addAll(ops)
   }
 
-  private fun compileRuntimeError(left: LoxValue, right: LoxValue, operator: Token.Type): LoxValue {
-    TODO("Not yet implemented")
-  }
-
-  private fun compileStringConcat(left: LoxValue, right: LoxValue): LoxValue {
+  private fun compileString(literal: Literal) {
     TODO("Not implemented yet.")
   }
 
