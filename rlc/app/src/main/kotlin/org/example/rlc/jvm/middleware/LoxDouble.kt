@@ -68,7 +68,7 @@ private fun loxDoubleConstructor(): MethodInfo {
 
   val loxObjectConstructor = MethodRefInfo(
     label = "LoxObject.\"<init>\":(LLoxClass;)V",
-    classInfo = loxDoubleClassInfo,
+    classInfo = loxObjectClassInfo,
     nameAndType = NameAndTypeInfo(
       label = "\"<init>\":(LLoxClass;)V",
       name = "<init>".toUtf8Value(),
@@ -87,7 +87,7 @@ private fun loxDoubleConstructor(): MethodInfo {
   )
 
   val codeAttribute = CodeAttribute(
-    maxStack = 3,
+    maxStack = 5,
     maxLocals = 3,
     attributes = listOf(),
     code = code,

@@ -9,6 +9,7 @@ import org.example.rlc.jvm.ir.toUtf8Value
 
 internal val loxRuntimeError = "LoxRuntimeError".toClassInfo()
 internal val loxDoubleClassInfo = "LoxDouble".toClassInfo()
+internal val loxObjectClassInfo = "LoxObject".toClassInfo()
 
 internal val loxDoubleConstructorInfo = MethodRefInfo(
   label = "LoxDouble.\"<init>\":(D)V",
