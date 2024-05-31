@@ -9,7 +9,6 @@ import org.example.rlc.jvm.ir.MethodRefInfo
 import org.example.rlc.jvm.ir.NameAndTypeInfo
 import org.example.rlc.jvm.ir.StringRefInfo
 import org.example.rlc.jvm.ir.Utf8Value
-import org.example.rlc.jvm.ir.toDoubleValue
 
 
 class ConstantPool {
@@ -17,10 +16,6 @@ class ConstantPool {
   private val labelIndex: MutableMap<String, Int> = mutableMapOf()
 
   private var offset = 0
-
-  init {
-    addConstantPoolInfo(5.12.toDoubleValue())
-  }
 
   private val size: Int
     get() = constants.size + 1 + offset

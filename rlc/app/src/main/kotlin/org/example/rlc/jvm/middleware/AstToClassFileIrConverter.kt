@@ -1,5 +1,6 @@
 package org.example.rlc.jvm.middleware
 
+import org.example.rlc.frontend.Token
 import java.io.File
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
@@ -17,6 +18,7 @@ import org.example.rlc.jvm.ir.ClassFile
 import org.example.rlc.jvm.ir.CodeAttribute
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
+import org.example.rlc.jvm.ir.MethodRefInfo
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.Operation
 import org.example.rlc.jvm.ir.ShortConstantOperation
@@ -47,6 +49,7 @@ class AstToClassFileIrConverter(pathFile: String) {
   )
   private val constantPool = ConstantPool()
   private val currentCode = mutableListOf<Operation>()
+  private val methodRefs = mutableMapOf<Token.Type, MethodRefInfo>()
 
   init {
     val fileName = pathFile.substringAfterLast(delimiter = File.separatorChar)
@@ -71,7 +74,14 @@ class AstToClassFileIrConverter(pathFile: String) {
       attributeList = listOf(),
       fieldList = listOf(),
       interfaceList = listOf(),
-      methodList = listOf(constructor(), publicStaticVoidMain(), addMethod())
+      methodList = listOf(
+        constructor(),
+        publicStaticVoidMain(),
+        addMethod(),
+        numberMagicMethod(methodName = "__sub__"),
+        numberMagicMethod(methodName = "__mul__"),
+        numberMagicMethod(methodName = "__div__"),
+      )
     )
 
     classes.add(c)
@@ -87,7 +97,9 @@ class AstToClassFileIrConverter(pathFile: String) {
   }
 
   private fun visitPrintStmt(printStmt: PrintStmt) {
+    currentCode.add(ShortConstantOperation(Opcode.OP_GETSTATIC, systemOutField))
     visitExpr(printStmt.expr)
+    currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, printMethodRef))
   }
 
   private fun visitExpr(expr: Expr) = when (expr) {
@@ -108,7 +120,20 @@ class AstToClassFileIrConverter(pathFile: String) {
   }
 
   private fun visitBinary(expr: Binary) {
-    TODO("Not implemented yet.")
+    visitExpr(expr.left)
+    visitExpr(expr.right)
+
+    val methodRef = when (expr.operator.type) {
+      Token.Type.PLUS -> getArithmeticMethodRef(Token.Type.PLUS)
+      Token.Type.MINUS -> getArithmeticMethodRef(Token.Type.MINUS)
+      Token.Type.STAR -> getArithmeticMethodRef(Token.Type.STAR)
+      Token.Type.SLASH -> getArithmeticMethodRef(Token.Type.SLASH)
+      else -> throw RuntimeException(
+        "Unsupported binary operator ${expr.operator}"
+      )
+    }
+
+    currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_STATIC, methodRef))
   }
 
   private fun visitLogical(expr: Logical) {
@@ -176,6 +201,21 @@ class AstToClassFileIrConverter(pathFile: String) {
           attributes = listOf()
         )
       )
+    )
+  }
+
+  private fun getArithmeticMethodRef(operation: Token.Type): MethodRefInfo {
+    return methodRefs.getOrPut(operation) {createArithmeticMethodRef(operation)}
+  }
+
+  private fun createArithmeticMethodRef(operation: Token.Type): MethodRefInfo {
+    val nameAndType = arithmeticOperations[operation]
+    val label = loxMainClassName + "." + nameAndType!!.label
+
+    return MethodRefInfo(
+      label = label,
+      classInfo = loxMainClassName.toClassInfo(),
+      nameAndType = nameAndType
     )
   }
 }

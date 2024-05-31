@@ -26,6 +26,8 @@ internal fun runtimeErrorConstructorRef(): MethodRefInfo {
   )
 }
 
+// Add method is a bit different because
+// Lox supports concatenation of strings with + operator
 internal fun addMethod(): MethodInfo {
   val methodRefInfo = MethodRefInfo(
     label = "LoxDouble.__add__:(LLoxDouble;)LLoxDouble;",
@@ -33,6 +35,63 @@ internal fun addMethod(): MethodInfo {
     nameAndType = NameAndTypeInfo(
       label = "__add__:(LLoxDouble;)LLoxDouble;",
       name = "__add__".toUtf8Value(),
+      descriptor = "(LLoxDouble;)LLoxDouble;".toUtf8Value()
+    )
+  )
+
+
+  // This code will change after a while
+  val code = listOf(
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(Opcode.OP_INSTANCEOF, loxDoubleClassInfo),
+    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 16),
+    SimpleOperation(Opcode.OP_ALOAD_1),
+    ShortConstantOperation(Opcode.OP_INSTANCEOF, loxDoubleClassInfo),
+    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 16),
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(Opcode.OP_CHECKCAST, loxDoubleClassInfo),
+    SimpleOperation(Opcode.OP_ASTORE_2),
+    SimpleOperation(Opcode.OP_ALOAD_1),
+    ShortConstantOperation(Opcode.OP_CHECKCAST, loxDoubleClassInfo),
+    SimpleOperation(Opcode.OP_ASTORE_3),
+    SimpleOperation(Opcode.OP_ALOAD_2),
+    SimpleOperation(Opcode.OP_ALOAD_3),
+    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, methodRefInfo),
+    SimpleOperation(Opcode.OP_ARETURN),
+    ShortConstantOperation(Opcode.OP_NEW, loxRuntimeError),
+    SimpleOperation(Opcode.OP_DUP),
+    ByteConstantOperation(Opcode.OP_LDC, "String Both operands should be double.".toStringRefInfo()),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, runtimeErrorConstructorRef()),
+    SimpleOperation(Opcode.OP_ATHROW),
+  )
+
+  val codeAttribute = CodeAttribute(
+    maxStack = 3,
+    maxLocals = 4,
+    code = code,
+    exceptionTable = 0,
+    attributes = listOf(),
+  )
+
+  return MethodInfo(
+    methodName = "__add__".toUtf8Value(),
+    methodDescriptor = "(LLoxObject;LLoxObject;)LLoxObject;".toUtf8Value(),
+    accessFlagList = listOf(
+      MethodAccessFlags.STATIC,
+      MethodAccessFlags.FINAL,
+      MethodAccessFlags.PRIVATE,
+    ),
+    attributes = listOf(codeAttribute)
+  )
+}
+
+internal fun numberMagicMethod(methodName: String): MethodInfo {
+  val methodRefInfo = MethodRefInfo(
+    label = "LoxDouble.${methodName}:(LLoxDouble;)LLoxDouble;",
+    classInfo = loxDoubleClassInfo,
+    nameAndType = NameAndTypeInfo(
+      label = "${methodName}:(LLoxDouble;)LLoxDouble;",
+      name = methodName.toUtf8Value(),
       descriptor = "(LLoxDouble;)LLoxDouble;".toUtf8Value()
     )
   )
@@ -70,7 +129,7 @@ internal fun addMethod(): MethodInfo {
   )
 
   return MethodInfo(
-    methodName = "__add__".toUtf8Value(),
+    methodName = methodName.toUtf8Value(),
     methodDescriptor = "(LLoxObject;LLoxObject;)LLoxObject;".toUtf8Value(),
     accessFlagList = listOf(
       MethodAccessFlags.STATIC,

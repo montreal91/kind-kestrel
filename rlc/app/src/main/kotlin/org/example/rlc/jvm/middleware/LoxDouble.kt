@@ -32,6 +32,18 @@ import org.example.rlc.jvm.ir.toUtf8Value
  *     return new LoxDouble(value + other.value);
  *   }
  *
+ *   LoxDouble __sub__(LoxDouble other) {
+ *     return new LoxDouble(value - other.value);
+ *   }
+ *
+ *   LoxDouble __mul__(LoxDouble other) {
+ *     return new LoxDouble(value * other.value);
+ *   }
+ *
+ *   LoxDouble __div__(LoxDouble other) {
+ *     return new LoxDouble(value / other.value);
+ *   }
+ *
  *   @Override
  *   public String toString() {
  *     return Double.toString(this.value);
@@ -45,7 +57,14 @@ internal fun loxDouble() = ClassFile(
   accessFlagList = listOf(ClassAccessFlags.SUPER),
   attributeList = listOf(),
   fieldList = listOf(valueFieldInfo()),
-  methodList = listOf(loxDoubleConstructor(), addMethodInfo(), toString()),
+  methodList = listOf(
+    loxDoubleConstructor(),
+    addArithmeticMethodInfo(methodName = "__add__", operation = Opcode.OP_DADD),
+    addArithmeticMethodInfo(methodName = "__sub__", operation = Opcode.OP_DSUB),
+    addArithmeticMethodInfo(methodName = "__mul__", operation = Opcode.OP_DMUL),
+    addArithmeticMethodInfo(methodName = "__div__", operation = Opcode.OP_DDIV),
+    toString()
+  ),
   interfaceList = listOf(),
 )
 
@@ -102,7 +121,7 @@ private fun loxDoubleConstructor(): MethodInfo {
   )
 }
 
-private fun addMethodInfo(): MethodInfo {
+private fun addArithmeticMethodInfo(methodName: String, operation: Opcode): MethodInfo {
   val code = listOf(
     ShortConstantOperation(Opcode.OP_NEW, loxDoubleClassInfo),
     SimpleOperation(Opcode.OP_DUP),
@@ -110,7 +129,7 @@ private fun addMethodInfo(): MethodInfo {
     ShortConstantOperation(Opcode.OP_GETFIELD, valueFieldRefInfo),
     SimpleOperation(Opcode.OP_ALOAD_1),
     ShortConstantOperation(Opcode.OP_GETFIELD, valueFieldRefInfo),
-    SimpleOperation(Opcode.OP_DADD),
+    SimpleOperation(operation),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxDoubleConstructorInfo),
     SimpleOperation(Opcode.OP_ARETURN)
   )
@@ -124,7 +143,7 @@ private fun addMethodInfo(): MethodInfo {
   )
 
   return MethodInfo(
-    methodName = "__add__".toUtf8Value(),
+    methodName = methodName.toUtf8Value(),
     methodDescriptor = "(LLoxDouble;)LLoxDouble;".toUtf8Value(),
     accessFlagList = listOf(MethodAccessFlags.NONE),
     attributes = listOf(codeAttribute),
