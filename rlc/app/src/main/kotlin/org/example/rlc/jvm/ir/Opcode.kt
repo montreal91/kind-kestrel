@@ -33,6 +33,9 @@ enum class Opcode(val value: Byte) {
   // Load double from local variable
   OP_DLOAD_0(0x26.toByte()),
 
+  // Load double from local variable
+  OP_DLOAD_1(0x27.toByte()),
+
   OP_DMUL(0x6B.toByte()), // Multiply double
   OP_DNEG(0x77.toByte()), // Negate double
   OP_DSUB(0x67.toByte()), // Subtract double

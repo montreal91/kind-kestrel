@@ -23,7 +23,7 @@ class ConstantPool {
   }
 
   private val size: Int
-    get() = constants.size + 1
+    get() = constants.size + 1 + offset
 
   operator fun get(label: String): Short = labelIndex[label]!!.toShort()
 
@@ -66,10 +66,8 @@ class ConstantPool {
       constantValue.label,
       Constant(constantValue.type, constantValue.size, constantValue.value)
     )
-    is DoubleValue -> {
-      val constant = Constant(constantValue.type, constantValue.value.size.toShort(), constantValue.value)
-      addConstant(constantValue.label, constant)
-    }
+
+    is DoubleValue -> addDoubleConstant(constantValue)
 
     else -> {
       throw IllegalArgumentException("Unexpected constant value type ${constantValue.value}")
@@ -116,7 +114,7 @@ class ConstantPool {
 
   private fun addConstant(label: String, constant: Constant) {
     constants.add(constant)
-    labelIndex[label] = size
+    labelIndex[label] = constants.size + offset
   }
 
   // This function assumes that label exists in labelIndex
@@ -134,5 +132,16 @@ class ConstantPool {
     byteArray2.copyInto(result, destinationOffset = byteArray1.size)
 
     return result
+  }
+
+  private fun addDoubleConstant(doubleValue: DoubleValue) {
+    val constant = Constant(
+      doubleValue.type,
+      doubleValue.value.size.toShort(),
+      doubleValue.value
+    )
+
+    addConstant(doubleValue.label, constant)
+    offset += 1
   }
 }

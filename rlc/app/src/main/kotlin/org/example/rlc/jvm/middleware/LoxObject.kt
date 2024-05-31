@@ -58,7 +58,7 @@ private fun loxDoubleClass() = FieldInfo(
 
 private fun loxObjectStaticInitializer(): MethodInfo {
   val loxClassConstructor = MethodRefInfo(
-    label = " LoxClass.\"<init>\":(Ljava/lang/String;)V",
+    label = "LoxClass.\"<init>\":(Ljava/lang/String;)V",
     classInfo = "LoxClass".toClassInfo(),
     nameAndType = NameAndTypeInfo(
       label = "\"<init>\":(Ljava/lang/String;)V",
@@ -109,7 +109,7 @@ fun loxObjectConstructor(): MethodInfo {
     nameAndType = NameAndTypeInfo(
       label = "clazz:LLoxClass;",
       name = "clazz".toUtf8Value(),
-      descriptor = "LoxClass;".toUtf8Value(),
+      descriptor = "LLoxClass;".toUtf8Value(),
     )
   )
   val code = listOf(

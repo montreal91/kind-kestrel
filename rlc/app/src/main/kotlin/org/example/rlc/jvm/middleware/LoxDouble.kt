@@ -57,11 +57,11 @@ private fun valueFieldInfo() = FieldInfo(
 
 private fun loxDoubleConstructor(): MethodInfo {
   val loxDoubleClass = FieldRefInfo(
-    label = "LoxObject.loxDoubleClass:LLoxClass;",
+    label = "LoxObject.LOX_DOUBLE_CLASS:LLoxClass;",
     classInfo = loxDoubleClassInfo,
     nameAndType = NameAndTypeInfo(
-      label = "loxDoubleClass:LLoxClass;",
-      name = "loxDoubleClass".toUtf8Value(),
+      label = "LOX_DOUBLE_CLASS:LLoxClass;",
+      name = "LOX_DOUBLE_CLASS".toUtf8Value(),
       descriptor = "LLoxClass;".toUtf8Value(),
     )
   )
@@ -81,7 +81,7 @@ private fun loxDoubleConstructor(): MethodInfo {
     ShortConstantOperation(Opcode.OP_GETSTATIC, loxDoubleClass),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxObjectConstructor),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    SimpleOperation(Opcode.OP_DLOAD_0),
+    SimpleOperation(Opcode.OP_DLOAD_1),
     ShortConstantOperation(Opcode.OP_PUTFIELD, valueFieldRefInfo),
     SimpleOperation(Opcode.OP_RETURN)
   )

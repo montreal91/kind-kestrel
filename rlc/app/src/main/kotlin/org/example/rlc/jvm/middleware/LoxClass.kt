@@ -59,10 +59,10 @@ private fun finalStringName() = FieldInfo(
 )
 
 private fun nameRef() = FieldRefInfo(
-  label = "LoxClass.name:Ljava/lang/String",
+  label = "LoxClass.name:Ljava/lang/String;",
   classInfo = loxClassInfo(),
   nameAndType = NameAndTypeInfo(
-    label = "name:Ljava/lang/String",
+    label = "name:Ljava/lang/String;",
     name = "name".toUtf8Value(),
     descriptor = javaStringDescriptor,
   ),
@@ -96,7 +96,7 @@ private fun stringEquals(): MethodRefInfo {
   val typeInfo = "(Ljava/lang/Object;)Z".toUtf8Value()
   return MethodRefInfo(
     label = "java/lang/String.equals:(Ljava/lang/Object;)Z",
-    classInfo = "String".toClassInfo(),
+    classInfo = "java/lang/String".toClassInfo(),
     nameAndType = NameAndTypeInfo(
       label = "equals:(Ljava/lang/Object;)Z",
       name = nameInfo,

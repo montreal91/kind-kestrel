@@ -73,6 +73,7 @@ class AstToClassFileIrConverter(pathFile: String) {
       interfaceList = listOf(),
       methodList = listOf(constructor(), publicStaticVoidMain(), addMethod())
     )
+
     classes.add(c)
   }
 
@@ -146,7 +147,7 @@ class AstToClassFileIrConverter(pathFile: String) {
       attributes = listOf(
         CodeAttribute(
           maxStack = 10,
-          maxLocals = 2,
+          maxLocals = 10,
           code = currentCode.toList(),
           exceptionTable = 0,
           attributes = listOf()
