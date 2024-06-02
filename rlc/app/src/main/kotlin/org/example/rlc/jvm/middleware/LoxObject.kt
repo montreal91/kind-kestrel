@@ -87,11 +87,11 @@ private fun loxObjectStaticInitializer(): MethodInfo {
   )
 
   val codeAttribute = CodeAttribute(
-    code = code,
     maxStack = 3,
-    maxLocals = 0,
-    attributes = listOf(),
-    exceptionTable = 0
+    argsSize = 2,
+    code = code,
+    exceptionTable = 0,
+    attributes = listOf()
   )
 
   return MethodInfo(
@@ -122,11 +122,11 @@ fun loxObjectConstructor(): MethodInfo {
   )
 
   val codeAttribute = CodeAttribute(
-    code = code,
     maxStack = 2,
-    maxLocals = 2,
-    attributes = listOf(),
-    exceptionTable = 0
+    argsSize = 2,
+    code = code,
+    exceptionTable = 0,
+    attributes = listOf()
   )
 
   return MethodInfo(

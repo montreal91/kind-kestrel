@@ -44,6 +44,10 @@ import org.example.rlc.jvm.ir.toUtf8Value
  *     return new LoxDouble(value / other.value);
  *   }
  *
+ *   LoxDouble __neg__() {
+ *     return new LoxDouble(- value);
+ *   }
+ *
  *   @Override
  *   public String toString() {
  *     return Double.toString(this.value);
@@ -63,6 +67,7 @@ internal fun loxDouble() = ClassFile(
     addArithmeticMethodInfo(methodName = "__sub__", operation = Opcode.OP_DSUB),
     addArithmeticMethodInfo(methodName = "__mul__", operation = Opcode.OP_DMUL),
     addArithmeticMethodInfo(methodName = "__div__", operation = Opcode.OP_DDIV),
+    addUnaryMethodInfo(methodName = "__neg__", operation = Opcode.OP_DNEG),
     toString()
   ),
   interfaceList = listOf(),
@@ -107,10 +112,10 @@ private fun loxDoubleConstructor(): MethodInfo {
 
   val codeAttribute = CodeAttribute(
     maxStack = 5,
-    maxLocals = 3,
-    attributes = listOf(),
+    argsSize = 2,
     code = code,
-    exceptionTable = 0
+    exceptionTable = 0,
+    attributes = listOf()
   )
 
   return MethodInfo(
@@ -136,7 +141,7 @@ private fun addArithmeticMethodInfo(methodName: String, operation: Opcode): Meth
 
   val codeAttribute = CodeAttribute(
     maxStack = 6,
-    maxLocals = 2,
+    argsSize = 2,
     code = code,
     exceptionTable = 0,
     attributes = listOf()
@@ -145,6 +150,33 @@ private fun addArithmeticMethodInfo(methodName: String, operation: Opcode): Meth
   return MethodInfo(
     methodName = methodName.toUtf8Value(),
     methodDescriptor = "(LLoxDouble;)LLoxDouble;".toUtf8Value(),
+    accessFlagList = listOf(MethodAccessFlags.NONE),
+    attributes = listOf(codeAttribute),
+  )
+}
+
+private fun addUnaryMethodInfo(methodName: String, operation: Opcode): MethodInfo {
+  val code = listOf(
+    ShortConstantOperation(Opcode.OP_NEW, loxDoubleClassInfo),
+    SimpleOperation(Opcode.OP_DUP),
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(Opcode.OP_GETFIELD, valueFieldRefInfo),
+    SimpleOperation(operation),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxDoubleConstructorInfo),
+    SimpleOperation(Opcode.OP_ARETURN)
+  )
+
+  val codeAttribute = CodeAttribute(
+    maxStack = 4,
+    argsSize = 2,
+    code = code,
+    exceptionTable = 0,
+    attributes = listOf()
+  )
+
+  return MethodInfo(
+    methodName = methodName.toUtf8Value(),
+    methodDescriptor = "()LLoxDouble;".toUtf8Value(),
     accessFlagList = listOf(MethodAccessFlags.NONE),
     attributes = listOf(codeAttribute),
   )
@@ -170,7 +202,7 @@ private fun toString(): MethodInfo {
 
   val codeAttribute = CodeAttribute(
     maxStack = 6,
-    maxLocals = 2,
+    argsSize = 1,
     code = code,
     exceptionTable = 0,
     attributes = listOf()

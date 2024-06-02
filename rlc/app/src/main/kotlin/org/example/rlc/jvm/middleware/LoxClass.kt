@@ -71,7 +71,7 @@ private fun nameRef() = FieldRefInfo(
 private fun loxClassConstructor(): MethodInfo {
   val code = CodeAttribute(
     maxStack = 2,
-    maxLocals = 2,
+    argsSize = 2,
     code = listOf(
       SimpleOperation(Opcode.OP_ALOAD_0),
       ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, objectConstructor),
@@ -108,7 +108,7 @@ private fun stringEquals(): MethodRefInfo {
 private fun loxClassEqualsMethod(): MethodInfo {
   val code = CodeAttribute(
     maxStack = 2,
-    maxLocals = 2,
+    argsSize = 2,
     code = listOf(
       SimpleOperation(Opcode.OP_ALOAD_1),
       ShortConstantOperation(Opcode.OP_INSTANCEOF, loxClassInfo()),
@@ -123,8 +123,8 @@ private fun loxClassEqualsMethod(): MethodInfo {
       SimpleOperation(Opcode.OP_ICONST_0),
       SimpleOperation(Opcode.OP_IRETURN),
     ),
-    attributes = listOf(),
     exceptionTable = 0,
+    attributes = listOf(),
   )
   return MethodInfo(
     methodName = "equals".toUtf8Value(),

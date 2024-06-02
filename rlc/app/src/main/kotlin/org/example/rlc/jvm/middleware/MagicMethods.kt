@@ -60,14 +60,14 @@ internal fun addMethod(): MethodInfo {
     SimpleOperation(Opcode.OP_ARETURN),
     ShortConstantOperation(Opcode.OP_NEW, loxRuntimeError),
     SimpleOperation(Opcode.OP_DUP),
-    ByteConstantOperation(Opcode.OP_LDC, "String Both operands should be double.".toStringRefInfo()),
+    ByteConstantOperation(Opcode.OP_LDC, "Both operands should be double.".toStringRefInfo()),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, runtimeErrorConstructorRef()),
     SimpleOperation(Opcode.OP_ATHROW),
   )
 
   val codeAttribute = CodeAttribute(
     maxStack = 3,
-    maxLocals = 4,
+    argsSize = 2,
     code = code,
     exceptionTable = 0,
     attributes = listOf(),
@@ -115,14 +115,14 @@ internal fun numberMagicMethod(methodName: String): MethodInfo {
     SimpleOperation(Opcode.OP_ARETURN),
     ShortConstantOperation(Opcode.OP_NEW, loxRuntimeError),
     SimpleOperation(Opcode.OP_DUP),
-    ByteConstantOperation(Opcode.OP_LDC, "String Both operands should be double.".toStringRefInfo()),
+    ByteConstantOperation(Opcode.OP_LDC, "Both operands should be double.".toStringRefInfo()),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, runtimeErrorConstructorRef()),
     SimpleOperation(Opcode.OP_ATHROW),
   )
 
   val codeAttribute = CodeAttribute(
     maxStack = 3,
-    maxLocals = 4,
+    argsSize = 2,
     code = code,
     exceptionTable = 0,
     attributes = listOf(),
@@ -139,3 +139,52 @@ internal fun numberMagicMethod(methodName: String): MethodInfo {
     attributes = listOf(codeAttribute)
   )
 }
+
+internal fun unaryMagicMethod(methodName: String): MethodInfo {
+  val methodRefInfo = MethodRefInfo(
+    label = "LoxDouble.${methodName}:()LLoxDouble;",
+    classInfo = loxDoubleClassInfo,
+    nameAndType = NameAndTypeInfo(
+      label = "${methodName}:()LLoxDouble;",
+      name = methodName.toUtf8Value(),
+      descriptor = "()LLoxDouble;".toUtf8Value()
+    )
+  )
+
+  val code = listOf(
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(Opcode.OP_INSTANCEOF, loxDoubleClassInfo),
+    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 7),
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(Opcode.OP_CHECKCAST, loxDoubleClassInfo),
+    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, methodRefInfo),
+    SimpleOperation(Opcode.OP_ARETURN),
+  )
+
+  val codeAttribute = CodeAttribute(
+    maxStack = 3,
+    argsSize = 1,
+    code = code + generateRuntimeError("Operand should be a number."),
+    exceptionTable = 0,
+    attributes = listOf(),
+  )
+
+  return MethodInfo(
+    methodName = methodName.toUtf8Value(),
+    methodDescriptor = "(LLoxObject;)LLoxObject;".toUtf8Value(),
+    accessFlagList = listOf(
+      MethodAccessFlags.STATIC,
+      MethodAccessFlags.FINAL,
+      MethodAccessFlags.PRIVATE
+    ),
+    attributes = listOf(codeAttribute)
+  )
+}
+
+private fun generateRuntimeError(message: String) = listOf(
+  ShortConstantOperation(Opcode.OP_NEW, loxRuntimeError),
+  SimpleOperation(Opcode.OP_DUP),
+  ByteConstantOperation(Opcode.OP_LDC, message.toStringRefInfo()),
+  ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, runtimeErrorConstructorRef()),
+  SimpleOperation(Opcode.OP_ATHROW),
+)

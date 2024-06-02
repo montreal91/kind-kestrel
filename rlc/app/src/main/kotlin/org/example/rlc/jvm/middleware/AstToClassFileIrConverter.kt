@@ -1,7 +1,7 @@
 package org.example.rlc.jvm.middleware
 
-import org.example.rlc.frontend.Token
 import java.io.File
+import org.example.rlc.frontend.Token
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.Expr
@@ -81,6 +81,7 @@ class AstToClassFileIrConverter(pathFile: String) {
         numberMagicMethod(methodName = "__sub__"),
         numberMagicMethod(methodName = "__mul__"),
         numberMagicMethod(methodName = "__div__"),
+        unaryMagicMethod(methodName = "__neg__"),
       )
     )
 
@@ -141,7 +142,14 @@ class AstToClassFileIrConverter(pathFile: String) {
   }
 
   private fun visitUnary(expr: Unary) {
-    TODO("Not implemented yet.")
+    visitExpr(expr = expr.right)
+
+    val methodRef = when (expr.operator.type) {
+      Token.Type.MINUS -> getUnaryMethodRef(Token.Type.MINUS)
+      else -> throw RuntimeException("Unexpected unary operator ${expr.operator}")
+    }
+
+    currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_STATIC, methodRef))
   }
 
   private fun visitGrouping(expr: Grouping) {
@@ -172,7 +180,7 @@ class AstToClassFileIrConverter(pathFile: String) {
       attributes = listOf(
         CodeAttribute(
           maxStack = 10,
-          maxLocals = 10,
+          argsSize = 1,
           code = currentCode.toList(),
           exceptionTable = 0,
           attributes = listOf()
@@ -195,7 +203,7 @@ class AstToClassFileIrConverter(pathFile: String) {
       attributes = listOf(
         CodeAttribute(
           maxStack = 1,
-          maxLocals = 1,
+          argsSize = 1,
           code = code,
           exceptionTable = 0,
           attributes = listOf()
@@ -209,7 +217,18 @@ class AstToClassFileIrConverter(pathFile: String) {
   }
 
   private fun createArithmeticMethodRef(operation: Token.Type): MethodRefInfo {
-    val nameAndType = arithmeticOperations[operation]
+    val nameAndType = binaryOperations[operation]
+    val label = loxMainClassName + "." + nameAndType!!.label
+
+    return MethodRefInfo(
+      label = label,
+      classInfo = loxMainClassName.toClassInfo(),
+      nameAndType = nameAndType
+    )
+  }
+
+  private fun getUnaryMethodRef(operation: Token.Type): MethodRefInfo {
+    val nameAndType = unaryOperations[operation]
     val label = loxMainClassName + "." + nameAndType!!.label
 
     return MethodRefInfo(

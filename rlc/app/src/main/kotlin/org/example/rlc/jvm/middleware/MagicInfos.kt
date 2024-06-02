@@ -68,33 +68,46 @@ internal val printMethodRef = MethodRefInfo(
   )
 )
 
-internal val arithmeticOperations = mapOf(
+private const val binaryOpDescriptor = "(LLoxObject;LLoxObject;)LLoxObject;"
+private const val unaryOpDescriptor = "(LLoxObject;)LLoxObject;"
+
+internal val binaryOperations = mapOf(
   Pair(
     Token.Type.PLUS, NameAndTypeInfo(
-      label = "__add__:(LLoxObject;LLoxObject;)LLoxObject;",
+      label = "__add__:${binaryOpDescriptor}",
       name = "__add__".toUtf8Value(),
-      descriptor = "(LLoxObject;LLoxObject;)LLoxObject;".toUtf8Value()
+      descriptor = binaryOpDescriptor.toUtf8Value()
     )
   ),
   Pair(
     Token.Type.MINUS, NameAndTypeInfo(
-      label = "__sub__:(LLoxObject;LLoxObject;)LLoxObject;",
+      label = "__sub__:${binaryOpDescriptor}",
       name = "__sub__".toUtf8Value(),
-      descriptor = "(LLoxObject;LLoxObject;)LLoxObject;".toUtf8Value()
+      descriptor = binaryOpDescriptor.toUtf8Value()
     )
   ),
   Pair(
     Token.Type.STAR, NameAndTypeInfo(
-      label = "__mul__:(LLoxObject;LLoxObject;)LLoxObject;",
+      label = "__mul__:${binaryOpDescriptor}",
       name = "__mul__".toUtf8Value(),
-      descriptor = "(LLoxObject;LLoxObject;)LLoxObject;".toUtf8Value()
+      descriptor = binaryOpDescriptor.toUtf8Value()
     )
   ),
   Pair(
     Token.Type.SLASH, NameAndTypeInfo(
-      label = "__div__:(LLoxObject;LLoxObject;)LLoxObject;",
+      label = "__div__:${binaryOpDescriptor}",
       name = "__div__".toUtf8Value(),
-      descriptor = "(LLoxObject;LLoxObject;)LLoxObject;".toUtf8Value()
+      descriptor = binaryOpDescriptor.toUtf8Value()
     )
   ),
+)
+
+internal val unaryOperations = mapOf(
+  Pair(
+    Token.Type.MINUS, NameAndTypeInfo(
+      label = "__neg__:${unaryOpDescriptor}",
+      name = "__neg__".toUtf8Value(),
+      descriptor = unaryOpDescriptor.toUtf8Value()
+    )
+  )
 )

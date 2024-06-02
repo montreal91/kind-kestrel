@@ -57,7 +57,7 @@ private fun constructor(): MethodInfo {
 
   val codeAttribute = CodeAttribute(
     maxStack = 2,
-    maxLocals = 2,
+    argsSize = 2,
     code = code,
     exceptionTable = 0,
     attributes = listOf()
