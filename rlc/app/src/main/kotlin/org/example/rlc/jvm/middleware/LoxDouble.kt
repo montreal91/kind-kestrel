@@ -97,7 +97,9 @@ private fun loxDoubleConstructor(): MethodInfo {
       label = "\"<init>\":(LLoxClass;)V",
       name = "<init>".toUtf8Value(),
       descriptor = "(LLoxClass;)V".toUtf8Value(),
-    )
+    ),
+    argsSize = 2,
+    returnSize = 1
   )
 
   val code = listOf(
@@ -111,7 +113,6 @@ private fun loxDoubleConstructor(): MethodInfo {
   )
 
   val codeAttribute = CodeAttribute(
-    maxStack = 5,
     argsSize = 2,
     code = code,
     exceptionTable = 0,
@@ -140,7 +141,6 @@ private fun addArithmeticMethodInfo(methodName: String, operation: Opcode): Meth
   )
 
   val codeAttribute = CodeAttribute(
-    maxStack = 6,
     argsSize = 2,
     code = code,
     exceptionTable = 0,
@@ -167,7 +167,6 @@ private fun addUnaryMethodInfo(methodName: String, operation: Opcode): MethodInf
   )
 
   val codeAttribute = CodeAttribute(
-    maxStack = 4,
     argsSize = 2,
     code = code,
     exceptionTable = 0,
@@ -190,7 +189,9 @@ private fun toString(): MethodInfo {
       label = "toString:(D)Ljava/lang/String;",
       name = "toString".toUtf8Value(),
       descriptor = "(D)Ljava/lang/String;".toUtf8Value(),
-    )
+    ),
+    argsSize = 3,
+    returnSize = 1
   )
 
   val code = listOf(
@@ -201,7 +202,6 @@ private fun toString(): MethodInfo {
   )
 
   val codeAttribute = CodeAttribute(
-    maxStack = 6,
     argsSize = 1,
     code = code,
     exceptionTable = 0,

@@ -45,7 +45,9 @@ private fun constructor(): MethodInfo {
       label = "\"<init>\":(Ljava/lang/String;)V",
       name = "<init>".toUtf8Value(),
       descriptor = "(Ljava/lang/String;)V".toUtf8Value()
-    )
+    ),
+    argsSize = 2,
+    returnSize = 1
   )
 
   val code = listOf(
@@ -56,7 +58,6 @@ private fun constructor(): MethodInfo {
   )
 
   val codeAttribute = CodeAttribute(
-    maxStack = 2,
     argsSize = 2,
     code = code,
     exceptionTable = 0,

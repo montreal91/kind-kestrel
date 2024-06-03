@@ -64,7 +64,9 @@ private fun loxObjectStaticInitializer(): MethodInfo {
       label = "\"<init>\":(Ljava/lang/String;)V",
       name = "<init>".toUtf8Value(),
       descriptor = "(Ljava/lang/String;)V".toUtf8Value(),
-    )
+    ),
+    argsSize = 2,
+    returnSize = 1
   )
 
   val loxClassField = FieldRefInfo(
@@ -87,7 +89,6 @@ private fun loxObjectStaticInitializer(): MethodInfo {
   )
 
   val codeAttribute = CodeAttribute(
-    maxStack = 3,
     argsSize = 2,
     code = code,
     exceptionTable = 0,
@@ -122,7 +123,6 @@ fun loxObjectConstructor(): MethodInfo {
   )
 
   val codeAttribute = CodeAttribute(
-    maxStack = 2,
     argsSize = 2,
     code = code,
     exceptionTable = 0,

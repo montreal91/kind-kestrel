@@ -19,7 +19,9 @@ internal val loxDoubleConstructorInfo = MethodRefInfo(
     label = "\"<init>\":(D)V",
     name = "<init>".toUtf8Value(),
     descriptor = "(D)V".toUtf8Value(),
-  )
+  ),
+  argsSize = 3,
+  returnSize = 1
 )
 
 internal val valueFieldRefInfo = FieldRefInfo(
@@ -39,7 +41,9 @@ internal val initializerNameAndType = NameAndTypeInfo(
 internal val objectConstructor = MethodRefInfo(
   label = "java/lang/Object.\"<init>\":()V",
   classInfo = "java/lang/Object".toClassInfo(),
-  nameAndType = initializerNameAndType
+  nameAndType = initializerNameAndType,
+  argsSize = 1,
+  returnSize = 1
 )
 
 internal val javaLangObjectClassInfo = "java/lang/Object".toClassInfo()
@@ -65,7 +69,9 @@ internal val printMethodRef = MethodRefInfo(
     label = "println:(Ljava/lang/Object;)V",
     name = "println".toUtf8Value(),
     descriptor = "(Ljava/lang/Object;)V".toUtf8Value(),
-  )
+  ),
+  argsSize = 2,
+  returnSize = 0
 )
 
 private const val binaryOpDescriptor = "(LLoxObject;LLoxObject;)LLoxObject;"

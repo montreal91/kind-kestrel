@@ -52,6 +52,10 @@ enum class Opcode(val value: Byte) {
   OP_ICONST_0(0x3.toByte()),  // Push int constant
   OP_IFEQ(0x99.toByte()),  // Branch if int comparison with zero succeeds
 
+  // Determine if object is of given type
+  // Takes two bytes as an operand
+  OP_INSTANCEOF(0xC1.toByte()),
+
   // Invoke instance method;
   // direct invocation of instance initialization methods;
   // Takes two bytes as an operand
@@ -65,7 +69,6 @@ enum class Opcode(val value: Byte) {
   // Takes two bytes as an operand
   OP_INVOKE_VIRTUAL(0xB6.toByte()),
 
-  OP_INSTANCEOF(0xC1.toByte()), // Determine if object is of given type
   OP_IRETURN(0xAC.toByte()),   // Return int from method
 
   // Push item from run-time constant pool
@@ -74,7 +77,7 @@ enum class Opcode(val value: Byte) {
 
   // Push long or double from run-time constant pool (wide index)
   // Takes two bytes as an operand
-  OP_LDC_2W(0x14.toByte()),
+  OP_LDC2_W(0x14.toByte()),
 
   // Create new object
   // Takes two bytes as an operand

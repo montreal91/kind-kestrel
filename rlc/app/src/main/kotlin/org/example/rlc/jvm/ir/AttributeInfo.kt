@@ -22,7 +22,6 @@ class StackMapTableAttribute(
 }
 
 class CodeAttribute(
-  val maxStack: Short,
   private val argsSize: Int,
   val code: List<Operation>,
   val exceptionTable: Any, // Replace with actual type later
@@ -30,13 +29,16 @@ class CodeAttribute(
 ): AttributeInfo(codeAttributeName) {
   private val computedAttributes = mutableListOf<AttributeInfo>()
   private val _maxLocals: Int
+  private val _maxStack: Int
 
   init {
     _maxLocals = calculateMaxLocals()
+    _maxStack = calculateMaxStack()
   }
 
   val allAttributes: List<AttributeInfo> get() = attributes + computedAttributes
   val maxLocals: Short get() = max(argsSize, _maxLocals).toShort()
+  val maxStack: Short get() = _maxStack.toShort()
 
   fun addAttribute(attribute: AttributeInfo) = computedAttributes.add(attribute)
 
@@ -45,6 +47,20 @@ class CodeAttribute(
 
     for (operation in code) {
       res = max(res, opToLocalRef(operation.opcode))
+    }
+
+    return res
+  }
+
+  private fun calculateMaxStack(): Int {
+    // This algorithm is dummy, but working and should be improved later.
+    var res = 0
+    var stackSize = 0
+
+    for (operation in code) {
+      stackSize += operation.stackModification
+      stackSize = max(a = stackSize, b = 0)
+      res = max(stackSize, res)
     }
 
     return res
@@ -78,7 +94,7 @@ class CodeAttribute(
     Opcode.OP_INSTANCEOF -> 0
     Opcode.OP_IRETURN -> 0
     Opcode.OP_LDC -> 0
-    Opcode.OP_LDC_2W -> 0
+    Opcode.OP_LDC2_W -> 0
     Opcode.OP_NEW -> 0
     Opcode.OP_PUTFIELD -> 0
     Opcode.OP_PUTSTATIC -> 0

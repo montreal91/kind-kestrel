@@ -22,7 +22,9 @@ internal fun runtimeErrorConstructorRef(): MethodRefInfo {
       label = "\"<init>\":(Ljava/lang/String;)V",
       name = "<init>".toUtf8Value(),
       descriptor = "(Ljava/lang/String;)V".toUtf8Value()
-    )
+    ),
+    argsSize = 2,
+    returnSize = 1
   )
 }
 
@@ -36,9 +38,10 @@ internal fun addMethod(): MethodInfo {
       label = "__add__:(LLoxDouble;)LLoxDouble;",
       name = "__add__".toUtf8Value(),
       descriptor = "(LLoxDouble;)LLoxDouble;".toUtf8Value()
-    )
+    ),
+    argsSize = 2,
+    returnSize = 1
   )
-
 
   // This code will change after a while
   val code = listOf(
@@ -66,7 +69,6 @@ internal fun addMethod(): MethodInfo {
   )
 
   val codeAttribute = CodeAttribute(
-    maxStack = 3,
     argsSize = 2,
     code = code,
     exceptionTable = 0,
@@ -93,7 +95,9 @@ internal fun numberMagicMethod(methodName: String): MethodInfo {
       label = "${methodName}:(LLoxDouble;)LLoxDouble;",
       name = methodName.toUtf8Value(),
       descriptor = "(LLoxDouble;)LLoxDouble;".toUtf8Value()
-    )
+    ),
+    argsSize = 2,
+    returnSize = 1
   )
 
   val code = listOf(
@@ -121,7 +125,6 @@ internal fun numberMagicMethod(methodName: String): MethodInfo {
   )
 
   val codeAttribute = CodeAttribute(
-    maxStack = 3,
     argsSize = 2,
     code = code,
     exceptionTable = 0,
@@ -148,7 +151,9 @@ internal fun unaryMagicMethod(methodName: String): MethodInfo {
       label = "${methodName}:()LLoxDouble;",
       name = methodName.toUtf8Value(),
       descriptor = "()LLoxDouble;".toUtf8Value()
-    )
+    ),
+    argsSize = 2,
+    returnSize = 1
   )
 
   val code = listOf(
@@ -162,7 +167,6 @@ internal fun unaryMagicMethod(methodName: String): MethodInfo {
   )
 
   val codeAttribute = CodeAttribute(
-    maxStack = 3,
     argsSize = 1,
     code = code + generateRuntimeError("Operand should be a number."),
     exceptionTable = 0,
@@ -181,7 +185,7 @@ internal fun unaryMagicMethod(methodName: String): MethodInfo {
   )
 }
 
-private fun generateRuntimeError(message: String) = listOf(
+internal fun generateRuntimeError(message: String) = listOf(
   ShortConstantOperation(Opcode.OP_NEW, loxRuntimeError),
   SimpleOperation(Opcode.OP_DUP),
   ByteConstantOperation(Opcode.OP_LDC, message.toStringRefInfo()),

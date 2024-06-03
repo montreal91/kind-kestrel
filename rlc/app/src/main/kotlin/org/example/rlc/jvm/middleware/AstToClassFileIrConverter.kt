@@ -160,7 +160,7 @@ class AstToClassFileIrConverter(pathFile: String) {
     val ops = listOf(
       ShortConstantOperation(Opcode.OP_NEW, loxDoubleClassInfo),
       SimpleOperation(Opcode.OP_DUP),
-      ShortConstantOperation(Opcode.OP_LDC_2W, literal.toConstant()),
+      ShortConstantOperation(Opcode.OP_LDC2_W, literal.toConstant()),
       ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxDoubleConstructorInfo)
     )
 
@@ -179,7 +179,6 @@ class AstToClassFileIrConverter(pathFile: String) {
       accessFlagList = listOf(MethodAccessFlags.PUBLIC, MethodAccessFlags.STATIC),
       attributes = listOf(
         CodeAttribute(
-          maxStack = 10,
           argsSize = 1,
           code = currentCode.toList(),
           exceptionTable = 0,
@@ -202,7 +201,6 @@ class AstToClassFileIrConverter(pathFile: String) {
       accessFlagList = listOf(MethodAccessFlags.PUBLIC),
       attributes = listOf(
         CodeAttribute(
-          maxStack = 1,
           argsSize = 1,
           code = code,
           exceptionTable = 0,
@@ -223,7 +221,9 @@ class AstToClassFileIrConverter(pathFile: String) {
     return MethodRefInfo(
       label = label,
       classInfo = loxMainClassName.toClassInfo(),
-      nameAndType = nameAndType
+      nameAndType = nameAndType,
+      argsSize = 2,
+      returnSize = 1
     )
   }
 
@@ -234,7 +234,9 @@ class AstToClassFileIrConverter(pathFile: String) {
     return MethodRefInfo(
       label = label,
       classInfo = loxMainClassName.toClassInfo(),
-      nameAndType = nameAndType
+      nameAndType = nameAndType,
+      argsSize = 1,
+      returnSize = 1
     )
   }
 }

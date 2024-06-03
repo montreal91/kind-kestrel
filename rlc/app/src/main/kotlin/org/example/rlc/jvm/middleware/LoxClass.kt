@@ -70,7 +70,6 @@ private fun nameRef() = FieldRefInfo(
 
 private fun loxClassConstructor(): MethodInfo {
   val code = CodeAttribute(
-    maxStack = 2,
     argsSize = 2,
     code = listOf(
       SimpleOperation(Opcode.OP_ALOAD_0),
@@ -101,13 +100,14 @@ private fun stringEquals(): MethodRefInfo {
       label = "equals:(Ljava/lang/Object;)Z",
       name = nameInfo,
       descriptor = typeInfo,
-    )
+    ),
+    argsSize = 2,
+    returnSize = 1
   )
 }
 
 private fun loxClassEqualsMethod(): MethodInfo {
   val code = CodeAttribute(
-    maxStack = 2,
     argsSize = 2,
     code = listOf(
       SimpleOperation(Opcode.OP_ALOAD_1),
