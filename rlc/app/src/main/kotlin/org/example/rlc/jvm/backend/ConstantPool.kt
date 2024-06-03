@@ -1,29 +1,24 @@
 package org.example.rlc.jvm.backend
 
-import org.example.rlc.jvm.im.ClassInfo
-import org.example.rlc.jvm.im.ConstantPoolInfo
-import org.example.rlc.jvm.im.ConstantValue
-import org.example.rlc.jvm.im.FieldRefInfo
-import org.example.rlc.jvm.im.MethodRefInfo
-import org.example.rlc.jvm.im.NameAndTypeInfo
-import org.example.rlc.jvm.im.StringRefInfo
-import org.example.rlc.jvm.im.Utf8Value
+import org.example.rlc.jvm.ir.ClassInfo
+import org.example.rlc.jvm.ir.ConstantPoolInfo
+import org.example.rlc.jvm.ir.ConstantValue
+import org.example.rlc.jvm.ir.DoubleValue
+import org.example.rlc.jvm.ir.FieldRefInfo
+import org.example.rlc.jvm.ir.MethodRefInfo
+import org.example.rlc.jvm.ir.NameAndTypeInfo
+import org.example.rlc.jvm.ir.StringRefInfo
+import org.example.rlc.jvm.ir.Utf8Value
 
 
 class ConstantPool {
   private val constants: MutableList<Constant> = mutableListOf()
   private val labelIndex: MutableMap<String, Int> = mutableMapOf()
 
-  init {
-    addConstantPoolInfo(Utf8Value(
-      label= CODE,
-      value = CODE.toByteArray(Charsets.UTF_8),
-      size = CODE.length.toShort()
-    ))
-  }
+  private var offset = 0
 
   private val size: Int
-    get() = constants.size + 1
+    get() = constants.size + 1 + offset
 
   operator fun get(label: String): Short = labelIndex[label]!!.toShort()
 
@@ -66,7 +61,12 @@ class ConstantPool {
       constantValue.label,
       Constant(constantValue.type, constantValue.size, constantValue.value)
     )
-    else -> {}
+
+    is DoubleValue -> addDoubleConstant(constantValue)
+
+    else -> {
+      throw IllegalArgumentException("Unexpected constant value type ${constantValue.value}")
+    }
   }
 
   private fun addFieldRefInfo(info: FieldRefInfo) {
@@ -109,7 +109,7 @@ class ConstantPool {
 
   private fun addConstant(label: String, constant: Constant) {
     constants.add(constant)
-    labelIndex[label] = constants.size
+    labelIndex[label] = constants.size + offset
   }
 
   // This function assumes that label exists in labelIndex
@@ -127,5 +127,16 @@ class ConstantPool {
     byteArray2.copyInto(result, destinationOffset = byteArray1.size)
 
     return result
+  }
+
+  private fun addDoubleConstant(doubleValue: DoubleValue) {
+    val constant = Constant(
+      doubleValue.type,
+      doubleValue.value.size.toShort(),
+      doubleValue.value
+    )
+
+    addConstant(doubleValue.label, constant)
+    offset += 1
   }
 }

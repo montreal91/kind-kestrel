@@ -1,7 +1,8 @@
 package org.example.rlc.jvm.backend
 
-import org.example.rlc.jvm.im.ConstantType
+import org.example.rlc.jvm.ir.ConstantType
 
+@OptIn(ExperimentalStdlibApi::class)
 class Constant(private val type: ConstantType, private val size: Short, private val value: ByteArray) {
   fun toBytes(): List<Byte> {
     val res = mutableListOf(type.value)
@@ -25,5 +26,6 @@ class Constant(private val type: ConstantType, private val size: Short, private 
       .toShort() + "]"
 
     ConstantType.STRING -> "Constant String: [" + this.value.toShort() + "]"
+    ConstantType.DOUBLE -> "Constant Double: [" + this.value.toHexString(HexFormat.Default) + "]"
   }
 }

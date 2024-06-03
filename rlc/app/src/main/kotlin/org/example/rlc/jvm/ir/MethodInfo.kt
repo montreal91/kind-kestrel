@@ -1,14 +1,12 @@
-package org.example.rlc.jvm.im
+package org.example.rlc.jvm.ir
 
 import kotlin.experimental.or
 
 class MethodInfo(
   val methodName: Utf8Value,
   val methodDescriptor: Utf8Value,
-  val maxStack: Short,
-  val maxLocals: Short,
   private val accessFlagList: List<MethodAccessFlags>,
-  val code: List<Operation>
+  val attributes: List<AttributeInfo>
 ) {
   val accessFlags: Short
     get() {

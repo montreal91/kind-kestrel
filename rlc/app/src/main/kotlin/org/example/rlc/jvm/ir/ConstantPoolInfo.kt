@@ -1,4 +1,5 @@
-package org.example.rlc.jvm.im
+package org.example.rlc.jvm.ir
+
 
 sealed class ConstantPoolInfo {
   abstract val type: ConstantType
@@ -28,16 +29,29 @@ class FieldRefInfo(
 ) : ConstantPoolInfo() {
   override val type: ConstantType
     get() = ConstantType.FIELD_REF
+
+  val size: Int get() = when {
+    nameAndType.descriptor.label == "D" -> 2
+    else -> 1
+  }
 }
 
 class MethodRefInfo(
   override val label: String,
   val classInfo: ClassInfo,
-  val nameAndType: NameAndTypeInfo
+  val nameAndType: NameAndTypeInfo,
+  val argsSize: Int,
+  val returnSize: Int,
 ) : ConstantPoolInfo() {
   override val type: ConstantType
     get() = ConstantType.METHOD_REF
 }
+
+class DoubleValue(
+  label: String,
+  value: ByteArray,
+) : ConstantValue(type = ConstantType.DOUBLE, label = label, value = value)
+
 
 class Utf8Value(
   label: String,

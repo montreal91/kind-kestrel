@@ -1,11 +1,11 @@
-package org.example.rlc.jvm.im
+package org.example.rlc.jvm.ir
 
 import kotlin.experimental.or
 
 class ClassFile(
   val thisClassInfo: ClassInfo,
   val superClassInfo: ClassInfo,
-  val accessFlagList: List<ClassAccessFlags>,
+  private val accessFlagList: List<ClassAccessFlags>,
   val interfaceList: List<InterfaceInfo>,
   val fieldList: List<FieldInfo>,
   val methodList: List<MethodInfo>,
