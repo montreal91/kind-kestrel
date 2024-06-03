@@ -12,7 +12,6 @@ import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
-import org.example.rlc.jvm.backend.ConstantPool
 import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
 import org.example.rlc.jvm.ir.CodeAttribute
@@ -26,15 +25,6 @@ import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.toClassInfo
 import org.example.rlc.jvm.ir.toUtf8Value
 
-private data class Context(
-  val className: String,
-  val methodName: String
-)
-
-enum class RuntimeType {
-  DOUBLE, STRING, BOOLEAN, NIL, REFERENCE
-}
-
 
 class AstToClassFileIrConverter(pathFile: String) {
   private val constructor = "<init>".toUtf8Value()
@@ -47,17 +37,12 @@ class AstToClassFileIrConverter(pathFile: String) {
     loxDouble(),
     loxRuntimeError(),
   )
-  private val constantPool = ConstantPool()
   private val currentCode = mutableListOf<Operation>()
   private val methodRefs = mutableMapOf<Token.Type, MethodRefInfo>()
 
   init {
     val fileName = pathFile.substringAfterLast(delimiter = File.separatorChar)
     loxMainClassName = fileName.substringBeforeLast(delimiter = '.') + "Lox"
-    println("PATH Separator: [${File.separatorChar}]")
-    println("PATH:           [$pathFile]")
-    println("FileName:       [$fileName]")
-    println("LoxMainClass:   [$loxMainClassName]")
   }
 
   fun convert(roots: Ast): List<ClassFile> {
