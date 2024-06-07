@@ -32,7 +32,7 @@ class AstToClassFileIrConverter(pathFile: String) {
   private val constructor = "<init>".toUtf8Value()
   private val noArgsVoidDescriptor = "()V".toUtf8Value()
   private val objectClass = "java/lang/Object".toClassInfo()
-  private val loxMainClassName: String
+  val loxMainClassName: String
   private val classes = mutableListOf(
     loxClass(),
     loxObject(),

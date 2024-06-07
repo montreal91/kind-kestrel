@@ -64,8 +64,15 @@ private fun compile(pathName: String) {
     exit(_Code = 65)
   }
 
-  val classes = AstToClassFileIrConverter(pathName).convert(ast)
+  val astConverter = AstToClassFileIrConverter(pathName)
+
+  val classes = astConverter.convert(ast)
   CodeGenerator(buildOutputDir = ".").compileAll(classes)
+  CodeGenerator(buildOutputDir = ".").compileToJar(
+    classes = classes,
+    jarName = "lox.jar",
+    mainClassName = astConverter.loxMainClassName
+  )
 }
 
 @OptIn(ExperimentalForeignApi::class)

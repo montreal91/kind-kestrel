@@ -7,6 +7,14 @@ class CodeGenerator(private val buildOutputDir: String) {
     classes.forEach(this::classToFile)
   }
 
+  fun compileToJar(classes: List<ClassFile>, jarName: String, mainClassName: String) {
+    val filepath = when (buildOutputDir == "") {
+      true -> jarName
+      false -> "$buildOutputDir/$jarName"
+    }
+    createJarFile(classes, filepath, mainClassName)
+  }
+
   private fun classToFile(classFile: ClassFile) {
     val bytecode = ClassCompiler().compileClass(classFile)
 
