@@ -1,23 +1,52 @@
+@file:OptIn(ExperimentalForeignApi::class)
+
 package org.example.rlc.application
 
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.refTo
+import kotlinx.cinterop.toKString
 import org.example.rlc.frontend.Parser
 import org.example.rlc.frontend.Scanner
 import org.example.rlc.jvm.backend.CodeGenerator
 import org.example.rlc.jvm.middleware.AstToClassFileIrConverter
-import java.io.File
-import kotlin.system.exitProcess
+import platform.posix.F_OK
+import platform.posix.access
+import platform.posix.exit
+import platform.posix.fclose
+import platform.posix.fgets
+import platform.posix.fopen
+import platform.posix.fprintf
+import platform.posix.stderr
 
-private fun readFile(pathName: String): String {
-  val file = File(pathName)
 
-  if (!file.exists()) {
-    System.err.println("Could not open file $pathName.")
-    exitProcess(status = 74)
+@OptIn(ExperimentalForeignApi::class)
+internal fun readFile(pathName: String): String {
+  try {
+    if (access(pathName, F_OK) != 0) {
+      throw RuntimeException()
+    }
+
+    val file = fopen(pathName, _Mode = "r")
+    val buffer = StringBuilder()
+    val lineBuffer = ByteArray(4096)
+
+    while (true) {
+      val line = fgets(lineBuffer.refTo(0), lineBuffer.size, file) ?: break
+      buffer.append(line.toKString())
+    }
+
+    fclose(file)
+    return buffer.toString()
+  } catch (e: Exception) {
+    fprintf(stderr, __format = "Could not open file $pathName.")
+    exit(_Code = 74)
   }
 
-  return file.readText()
+  exit(_Code = 74)
+  throw RuntimeException("This should never happen.")
 }
 
+@OptIn(ExperimentalForeignApi::class)
 private fun compile(pathName: String) {
   val programText = readFile(pathName)
   val scanner = Scanner(programText)
@@ -26,27 +55,26 @@ private fun compile(pathName: String) {
 
   if (scanner.hasErrors or parser.hasErrors) {
     for (error in scanner.getErrors()) {
-      System.err.println(error)
+      fprintf(__stream = stderr, __format=error.toString())
     }
 
     for (error in parser.getErrors()) {
-      System.err.println(error)
+      fprintf(__stream = stderr, __format=error.toString())
     }
-
-    exitProcess(status = 65)
+    exit(_Code = 65)
   }
 
   val classes = AstToClassFileIrConverter(pathName).convert(ast)
   CodeGenerator(buildOutputDir = ".").compileAll(classes)
 }
 
+@OptIn(ExperimentalForeignApi::class)
 fun main(args: Array<String>) {
   if (args.size != 1) {
-    System.err.println("Usage: rlc [path]")
-    exitProcess(status = 64)
+    fprintf(stderr, __format = "Usage: rlc [path]")
+    exit(_Code = 64)
   }
 
   compile(args[0])
-
-  exitProcess(status = 0)
+  exit(_Code = 0)
 }

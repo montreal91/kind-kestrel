@@ -1,5 +1,6 @@
 package org.example.rlc.frontend
 
+import org.example.rlc.application.readFile
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -69,7 +70,7 @@ class ParserTest {
   @Test
   fun positiveCases() {
     positive.forEach { case ->
-      val text = this::class.java.classLoader.getResource(case.fileName)!!.readText()
+      val text = readFile(pathName = "${PATH_PREFIX}\\${case.fileName}")
       val scanner = Scanner(text)
       val parser = Parser(tokens = scanner.scan())
       val ast = parser.parse()
@@ -81,7 +82,7 @@ class ParserTest {
   @Test
   fun negativeCases() {
     negative.forEach { case ->
-      val text = this::class.java.classLoader.getResource(case.fileName)!!.readText()
+      val text = readFile(pathName = "${PATH_PREFIX}/${case.fileName}")
       val scanner = Scanner(text)
       val parser = Parser(tokens = scanner.scan())
       parser.parse()

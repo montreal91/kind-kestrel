@@ -1,14 +1,32 @@
 package org.example.rlc.jvm.backend
 
-import java.io.File // TODO: Use Kotlin Native instead
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.convert
+import kotlinx.cinterop.toKString
+import kotlinx.cinterop.usePinned
+import platform.posix.fclose
+import platform.posix.fopen
+import platform.posix.fwrite
 
 fun Byte.toBytes() = listOf(this)
 
 fun ByteArray.toShort() = ((this[0].toInt() shl 8) or (this[1].toInt() and 0xff)).toShort()
 
+@OptIn(ExperimentalForeignApi::class)
 fun ByteArray.writeToFile(filePathName: String) {
-  val file = File("$filePathName.class")
-  file.writeBytes(array = this)
+  val file = fopen(
+    _Filename = "$filePathName.class",
+    _Mode = "wb"
+  ) ?: throw IllegalArgumentException("Cannot open file at $filePathName")
+
+  try {
+    this.usePinned { pinned ->
+      fwrite(pinned.addressOf(index = 0), 1.convert(), this.size.convert(), file)
+    }
+  } finally {
+    fclose(file)
+  }
 }
 
 fun Short.toBytes(): List<Byte> {
@@ -32,3 +50,10 @@ fun Long.toBytes(): List<Byte> = List(size = 8) {
 }
 
 fun Double.toBytes(): List<Byte> = this.toBits().toBytes()
+
+@OptIn(ExperimentalForeignApi::class)
+fun ByteArray.toUtf8String(): String {
+  return this.usePinned {
+    it.addressOf(index = 0).toKString()
+  }
+}
