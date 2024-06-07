@@ -14,7 +14,7 @@ class Constant(private val type: ConstantType, private val size: Short, private 
   }
 
   override fun toString(): String = when (type) {
-    ConstantType.UTF_8 -> "Constant UTF-8: [" + this.value.toString(Charsets.UTF_8) + "]"
+    ConstantType.UTF_8 -> "Constant UTF-8: [" + this.value.toUtf8String() + "]"
     ConstantType.CLASS -> "Constant Class: [" + this.value.toShort() + "]"
     ConstantType.FIELD_REF -> "Constant Field: [" + this.value.toShort() + " " + this.value.copyOfRange(2, 4)
       .toShort() + "]"

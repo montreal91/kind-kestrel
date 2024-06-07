@@ -1,5 +1,6 @@
 package org.example.rlc.frontend
 
+import org.example.rlc.application.readFile
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -101,7 +102,7 @@ class ScannerTest {
   fun testTokenization() {
     cases.forEach{
       case ->
-        val text = this::class.java.classLoader.getResource(case.first)!!.readText()
+        val text = readFile(pathName = "${PATH_PREFIX}/${case.first}")
         val scanner = Scanner(text)
         val actual = scanner.scan()
         assertFalse(scanner.hasErrors)

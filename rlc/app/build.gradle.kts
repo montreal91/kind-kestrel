@@ -1,10 +1,7 @@
 @file:Suppress("UnstableApiUsage")
 
 plugins {
-  kotlin("jvm") version "2.0.0"
-
-  // Apply the application plugin to add support for building a CLI application in Java.
-  application
+  kotlin("multiplatform") version "2.0.0"
 }
 
 repositories {
@@ -14,18 +11,32 @@ repositories {
 dependencies {
 }
 
-testing {
-  suites {
-    val test by getting(JvmTestSuite::class) {
-      useKotlinTest("2.0.0")
+kotlin {
+  mingwX64(name = "native") {
+    binaries {
+      executable(namePrefix = "rlc") {
+        entryPoint = "org.example.rlc.application.main"
+      }
     }
   }
-}
 
-kotlin {
-  jvmToolchain(jdkVersion = 11)
-}
+  sourceSets {
+    val commonMain by getting {
+      dependencies {
+        implementation(kotlin(simpleModuleName = "stdlib-common"))
+      }
+    }
+    val nativeMain by getting {
+      dependencies {
+        implementation(kotlin(simpleModuleName = "stdlib"))
+      }
+    }
 
-application {
-  mainClass = "org.example.rlc.application.RudnyLoxCompilerKt"
+    val nativeTest by getting {
+      dependencies {
+        implementation(kotlin(simpleModuleName = "test-common"))
+        implementation(kotlin(simpleModuleName = "test-annotations-common"))
+      }
+    }
+  }
 }
