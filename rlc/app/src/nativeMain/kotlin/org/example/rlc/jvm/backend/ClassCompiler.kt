@@ -18,7 +18,7 @@ import org.example.rlc.jvm.ir.StackMapTableAttribute
 internal class ClassCompiler {
   private val constantPool : ConstantPool = ConstantPool()
 
-  fun compileClass(classFile: ClassFile): ByteArray {
+  fun compileClass(classFile: ClassFile): List<Byte> {
     val res = mutableListOf<Byte>()
 
     res.addAll(MAGIC_NUMBER.toBytes())
@@ -59,7 +59,7 @@ internal class ClassCompiler {
 
     res.addAll(constantPoolIndex, constantPool.toBytes())
 
-    return res.toByteArray()
+    return res.toList()
   }
 
   private fun composeConstantPool(classFile: ClassFile) {

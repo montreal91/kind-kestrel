@@ -36,7 +36,16 @@ fun Short.toBytes(): List<Byte> {
   return res
 }
 
-fun Int.toBytes(): List<Byte> {
+internal fun Int.toBytes(): List<Byte> {
+  val result = mutableListOf<Byte>()
+  result.add((this shr 24).toByte())
+  result.add((this shr 16).toByte())
+  result.add((this shr 8).toByte())
+  result.add(this.toByte())
+  return result
+}
+
+internal fun UInt.toBytes(): List<Byte> {
   val result = mutableListOf<Byte>()
   result.add((this shr 24).toByte())
   result.add((this shr 16).toByte())
