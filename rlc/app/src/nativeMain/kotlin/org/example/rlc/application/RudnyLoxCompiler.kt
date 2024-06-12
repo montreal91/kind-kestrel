@@ -28,10 +28,10 @@ internal fun readFile(pathName: String): String {
 
     val file = fopen(pathName, _Mode = "r")
     val buffer = StringBuilder()
-    val lineBuffer = ByteArray(4096)
+    val lineBuffer = ByteArray(size = 4096)
 
     while (true) {
-      val line = fgets(lineBuffer.refTo(0), lineBuffer.size, file) ?: break
+      val line = fgets(lineBuffer.refTo(index = 0), lineBuffer.size, file) ?: break
       buffer.append(line.toKString())
     }
 
@@ -46,6 +46,11 @@ internal fun readFile(pathName: String): String {
   throw RuntimeException("This should never happen.")
 }
 
+private fun outputFileName(inputFileName: String): String {
+  val loxFileName = inputFileName.substringAfterLast(delimiter = "/")
+  return loxFileName.substringBeforeLast(delimiter = ".") + ".jar"
+}
+
 @OptIn(ExperimentalForeignApi::class)
 private fun compile(pathName: String) {
   val programText = readFile(pathName)
@@ -55,17 +60,22 @@ private fun compile(pathName: String) {
 
   if (scanner.hasErrors or parser.hasErrors) {
     for (error in scanner.getErrors()) {
-      fprintf(__stream = stderr, __format=error.toString())
+      fprintf(__stream = stderr, __format = error.toString())
     }
 
     for (error in parser.getErrors()) {
-      fprintf(__stream = stderr, __format=error.toString())
+      fprintf(__stream = stderr, __format = error.toString())
     }
     exit(_Code = 65)
   }
 
-  val classes = AstToClassFileIrConverter(pathName).convert(ast)
-  CodeGenerator(buildOutputDir = ".").compileAll(classes)
+  val astConverter = AstToClassFileIrConverter()
+
+  val classes = astConverter.convert(ast)
+  CodeGenerator(buildOutputDir = ".").compileToJar(
+    classes = classes,
+    jarName = outputFileName(pathName)
+  )
 }
 
 @OptIn(ExperimentalForeignApi::class)

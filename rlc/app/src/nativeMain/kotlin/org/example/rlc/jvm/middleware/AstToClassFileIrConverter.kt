@@ -1,7 +1,5 @@
 package org.example.rlc.jvm.middleware
 
-import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.toKString
 import org.example.rlc.frontend.Token
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
@@ -23,16 +21,15 @@ import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.Operation
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
+import org.example.rlc.jvm.ir.loxMainClassName
 import org.example.rlc.jvm.ir.toClassInfo
 import org.example.rlc.jvm.ir.toUtf8Value
-import platform.posix.getenv
 
 
-class AstToClassFileIrConverter(pathFile: String) {
+class AstToClassFileIrConverter {
   private val constructor = "<init>".toUtf8Value()
   private val noArgsVoidDescriptor = "()V".toUtf8Value()
   private val objectClass = "java/lang/Object".toClassInfo()
-  private val loxMainClassName: String
   private val classes = mutableListOf(
     loxClass(),
     loxObject(),
@@ -42,21 +39,10 @@ class AstToClassFileIrConverter(pathFile: String) {
   private val currentCode = mutableListOf<Operation>()
   private val methodRefs = mutableMapOf<Token.Type, MethodRefInfo>()
 
-  init {
-    val fileName = pathFile.substringAfterLast(delimiter = separatorChar)
-    loxMainClassName = fileName.substringBeforeLast(delimiter = '.') + "Lox"
-  }
-
   fun convert(roots: Ast): List<ClassFile> {
     roots.forEach { root -> visit(root) }
     finalizeClass()
     return classes.toList()
-  }
-
-  @OptIn(ExperimentalForeignApi::class)
-  private val separatorChar: Char  get() {
-    val separator = getenv(_VarName = "PATH_SEPARATOR")?.toKString()
-    return separator?.firstOrNull() ?: ':'
   }
 
   private fun finalizeClass() {

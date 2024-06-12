@@ -8,6 +8,8 @@ build
 .idea/
 *.class
 *.log
+*.jar
+*.zip
 
 # Ignore test java classes in resources
 app/src/main/resources/*.java

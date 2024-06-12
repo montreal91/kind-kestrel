@@ -3,18 +3,23 @@ package org.example.rlc.jvm.backend
 import org.example.rlc.jvm.ir.ClassFile
 
 class CodeGenerator(private val buildOutputDir: String) {
-  fun compileAll(classes: List<ClassFile>) {
-    classes.forEach(this::classToFile)
-  }
-
-  private fun classToFile(classFile: ClassFile) {
-    val bytecode = ClassCompiler().compileClass(classFile)
-
-    val filepath = when (buildOutputDir == "") {
-      true -> classFile.thisClassInfo.className.label
-      false -> buildOutputDir + "/" + classFile.thisClassInfo.className.label
+  fun compileToJar(classes: List<ClassFile>, jarName: String) {
+    val outputJar = when (buildOutputDir == "") {
+      true -> jarName
+      false -> "$buildOutputDir/$jarName"
     }
 
-    bytecode.writeToFile(filepath)
+    createJarFile(compile(classes), outputJar)
+  }
+
+  private fun compile(classes: List<ClassFile>): List<CompiledBinaryFile> {
+    val compiledClasses = mutableListOf<CompiledBinaryFile>()
+
+    classes.forEach { classFile ->
+      // Finally actual code generation is where it belongs.
+      compiledClasses.add(ClassCompiler().compileClass(classFile))
+    }
+
+    return compiledClasses
   }
 }

@@ -19,4 +19,9 @@ class ClassFile(
       }
       return res
     }
+
+  val filename: String
+    get() {
+      return thisClassInfo.className.label + ".class"
+    }
 }
