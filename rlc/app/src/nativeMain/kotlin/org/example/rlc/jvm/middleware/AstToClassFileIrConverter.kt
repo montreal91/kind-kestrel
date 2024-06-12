@@ -1,7 +1,5 @@
 package org.example.rlc.jvm.middleware
 
-import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.toKString
 import org.example.rlc.frontend.Token
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
@@ -26,7 +24,6 @@ import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.loxMainClassName
 import org.example.rlc.jvm.ir.toClassInfo
 import org.example.rlc.jvm.ir.toUtf8Value
-import platform.posix.getenv
 
 
 class AstToClassFileIrConverter {
@@ -46,12 +43,6 @@ class AstToClassFileIrConverter {
     roots.forEach { root -> visit(root) }
     finalizeClass()
     return classes.toList()
-  }
-
-  @OptIn(ExperimentalForeignApi::class)
-  private val separatorChar: Char  get() {
-    val separator = getenv(_VarName = "PATH_SEPARATOR")?.toKString()
-    return separator?.firstOrNull() ?: '/'
   }
 
   private fun finalizeClass() {

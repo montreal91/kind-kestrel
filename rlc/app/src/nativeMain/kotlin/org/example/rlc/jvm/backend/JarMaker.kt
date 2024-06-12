@@ -4,7 +4,6 @@ import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.refTo
-import org.example.rlc.jvm.ir.ClassFile
 import org.example.rlc.jvm.ir.loxMainClassName
 import org.example.rlc.jvm.ir.toUtf8Value
 import platform.posix.FILE
@@ -12,18 +11,19 @@ import platform.posix.fclose
 import platform.posix.fopen
 import platform.posix.fwrite
 
-
-val manifesto = """
-        Manifest-Version: 1.0
-        Main-Class: $loxMainClassName
-
-        """.trimIndent()
+/**
+ * This file contains sorta bad code, but its only purpose is to put bytecode in a jar file.
+ *
+ * It is totally internal and isolated from the other parts of compiler,
+ * so it doesn't really matter.
+ * I'll improve it if I find enough time and motivation.
+ */
 
 @OptIn(ExperimentalForeignApi::class)
-internal fun createJarFile(classFiles: List<ClassFile>, outputJar: String) {
+internal fun createJarFile(classFiles: List<CompiledBinaryFile>, outputJar: String) {
 
   memScoped {
-    val systemFile = fopen(outputJar, "wb") ?: error("Failed to open file for writing")
+    val systemFile = fopen(outputJar, _Mode = "wb") ?: error("Failed to open file for writing")
     try {
       val jarFile = buildJarFile(classFiles)
       writeByteArrayToFile(systemFile, jarFile.toBytes())
@@ -33,10 +33,16 @@ internal fun createJarFile(classFiles: List<ClassFile>, outputJar: String) {
   }
 }
 
-private fun buildJarFile(classFiles: List<ClassFile>): JarFile {
+private val manifesto = """
+        Manifest-Version: 1.0
+        Main-Class: $loxMainClassName
+
+        """.trimIndent()
+
+private fun buildJarFile(classFiles: List<CompiledBinaryFile>): JarFile {
   val jarFile = JarFile()
   for (file in classFiles) {
-    jarFile.addEntry(classFileToJarEntry(file))
+    jarFile.addEntry(compiledFileToJarEntry(file))
   }
 
   return jarFile
@@ -196,8 +202,8 @@ private class JarFile {
   }
 }
 
-private fun classFileToJarEntry(classFile: ClassFile) = createJarEntry(
-  classFile.filename, ClassCompiler().compileClass(classFile)
+private fun compiledFileToJarEntry(binaryFile: CompiledBinaryFile) = createJarEntry(
+  binaryFile.fileName, binaryFile.binary
 )
 
 private fun createJarEntry(fileName: String, content: List<Byte>) : JarEntry {
@@ -250,9 +256,9 @@ private fun createJarEntry(fileName: String, content: List<Byte>) : JarEntry {
 }
 
 private fun crc32(data: ByteArray): UInt {
-  val table = UIntArray(256) { i ->
+  val table = UIntArray(size = 256) { i ->
     var crc = i.toUInt()
-    repeat(8) {
+    repeat(times = 8) {
       crc = if (crc and 1u != 0u) {
         (crc ushr 1) xor 0xEDB88320u
       } else {
