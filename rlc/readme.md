@@ -8,12 +8,12 @@ but it holds a special place in my heart because it is my birthplace.
 My Lox Compiler compiles to JVM bytecode.
 It's not objectively special, but it's my first JVM backend compiler, so it's special to me.
 
-## Features (5/33)
+## Features (6/33)
 The brief list of features I want to implement
 
 ### Meta
 - [x] The compiler should be a single executable file
-- [ ] The result of successful compilation should be a single executable jar file
+- [x] The result of successful compilation should be a single executable jar file
 
 ### Data Types
 - [ ] Booleans
