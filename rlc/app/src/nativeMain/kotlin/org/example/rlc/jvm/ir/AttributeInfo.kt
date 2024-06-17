@@ -87,7 +87,9 @@ class CodeAttribute(
     Opcode.OP_GETFIELD -> 0
     Opcode.OP_GETSTATIC -> 0
     Opcode.OP_ICONST_0 -> 0
+    Opcode.OP_ICONST_1 -> 0
     Opcode.OP_IFEQ -> 0
+    Opcode.OP_ILOAD_1 -> 2
     Opcode.OP_INVOKE_SPECIAL -> 0
     Opcode.OP_INVOKE_STATIC -> 0
     Opcode.OP_INVOKE_VIRTUAL -> 0

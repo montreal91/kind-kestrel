@@ -24,6 +24,8 @@ class SimpleOperation(opcode: Opcode) : Operation(opcode) {
       Opcode.OP_DSUB -> -2
       Opcode.OP_DUP -> 1
       Opcode.OP_ICONST_0 -> 1
+      Opcode.OP_ICONST_1 -> 1
+      Opcode.OP_ILOAD_1 -> 1
       Opcode.OP_IRETURN -> -1
       Opcode.OP_RETURN -> 0
       else -> throw IllegalArgumentException(

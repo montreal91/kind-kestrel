@@ -70,7 +70,7 @@ internal class ClassCompiler {
       constantPool.addConstantPoolInfo(method.methodName)
       constantPool.addConstantPoolInfo(method.methodDescriptor)
 
-      for (attribute in method.attributes) {
+      for (attribute in method.attributeList) {
         constantPool.addConstantPoolInfo(attribute.attributeName)
         when (attribute) {
           is CodeAttribute -> addCodeConstantsToConstantPool(attribute)
@@ -122,9 +122,9 @@ internal class ClassCompiler {
     res.addAll(constantPool[methodInfo.methodName.label].toBytes())
     res.addAll(constantPool[methodInfo.methodDescriptor.label].toBytes())
 
-    res.addAll(methodInfo.attributes.size.toShort().toBytes())
+    res.addAll(methodInfo.attributeList.size.toShort().toBytes())
 
-    for (attribute in methodInfo.attributes) {
+    for (attribute in methodInfo.attributeList) {
       res.addAll(compileAttributeToByteCode(attribute))
     }
 

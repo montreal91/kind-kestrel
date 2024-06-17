@@ -11,6 +11,10 @@ import org.example.rlc.jvm.ir.toUtf8Value
 internal val loxRuntimeError = "LoxRuntimeError".toClassInfo()
 internal val loxDoubleClassInfo = "LoxDouble".toClassInfo()
 internal val loxObjectClassInfo = "LoxObject".toClassInfo()
+internal val loxNilClassInfo = "LoxNil".toClassInfo()
+internal val loxBooleanClassInfo = "LoxBoolean".toClassInfo()
+internal val loxClassInfo = "LoxClass".toClassInfo()
+internal val loxStringClassInfo = "LoxString".toClassInfo()
 
 internal val loxDoubleConstructorInfo = MethodRefInfo(
   label = "LoxDouble.\"<init>\":(D)V",
@@ -24,13 +28,59 @@ internal val loxDoubleConstructorInfo = MethodRefInfo(
   returnSize = 1
 )
 
-internal val valueFieldRefInfo = FieldRefInfo(
+internal val loxBooleanConstructorInfo = MethodRefInfo(
+  label = "LoxBoolean.\"<init>\":(D)V",
+  classInfo = loxBooleanClassInfo,
+  nameAndType = NameAndTypeInfo(
+    label = "\"<init>\":(Z)V",
+    name = "<init>".toUtf8Value(),
+    descriptor = "(Z)V".toUtf8Value(),
+  ),
+  argsSize = 2,
+  returnSize = 1
+)
+
+internal val loxNilConstructorInfo = MethodRefInfo(
+  label = "LoxNil.\"<init>\":()V",
+  classInfo = loxNilClassInfo,
+  nameAndType = NameAndTypeInfo(
+    label = "\"<init>\":()V",
+    name = "<init>".toUtf8Value(),
+    descriptor = "()V".toUtf8Value(),
+  ),
+  argsSize = 2,
+  returnSize = 1
+)
+
+internal val loxStringConstructorInfo = MethodRefInfo(
+  label = "LoxString.\"<init>\":(Ljava/lang/String;)V",
+  classInfo = loxStringClassInfo,
+  nameAndType = NameAndTypeInfo(
+    label = "\"<init>\":(Ljava/lang/String;)V",
+    name = "<init>".toUtf8Value(),
+    descriptor = "(Ljava/lang/String;)V".toUtf8Value(),
+  ),
+  argsSize = 2,
+  returnSize = 1
+)
+
+internal val doubleValueFieldRefInfo = FieldRefInfo(
   label = "LoxDouble.value:D",
   classInfo = loxDoubleClassInfo,
   nameAndType = NameAndTypeInfo(
     label = "value:D",
     name = "value".toUtf8Value(),
     descriptor = "D".toUtf8Value(),
+  )
+)
+
+internal val stringValueFieldRefInfo = FieldRefInfo(
+  label = "LoxString.value:Ljava/lang/String;",
+  classInfo = loxStringClassInfo,
+  nameAndType = NameAndTypeInfo(
+    label = "value:Ljava/lang/String;",
+    name = "value".toUtf8Value(),
+    descriptor = "Ljava/lang/String;".toUtf8Value(),
   )
 )
 
@@ -43,6 +93,18 @@ internal val objectConstructor = MethodRefInfo(
   classInfo = "java/lang/Object".toClassInfo(),
   nameAndType = initializerNameAndType,
   argsSize = 1,
+  returnSize = 1
+)
+
+internal val loxObjectConstructor = MethodRefInfo(
+  label = "LoxObject.\"<init>\":(LLoxClass;)V",
+  classInfo = loxObjectClassInfo,
+  nameAndType = NameAndTypeInfo(
+    label = "\"<init>\":(LLoxClass;)V",
+    name = "<init>".toUtf8Value(),
+    descriptor = "(LLoxClass;)V".toUtf8Value(),
+  ),
+  argsSize = 2,
   returnSize = 1
 )
 

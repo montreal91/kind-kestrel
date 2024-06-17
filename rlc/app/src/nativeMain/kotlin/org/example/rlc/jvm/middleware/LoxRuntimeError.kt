@@ -68,6 +68,6 @@ private fun constructor(): MethodInfo {
     methodName = "<init>".toUtf8Value(),
     methodDescriptor = "(Ljava/lang/String;)V".toUtf8Value(),
     accessFlagList = listOf(MethodAccessFlags.NONE),
-    attributes = listOf(codeAttribute)
+    attributeList = listOf(codeAttribute)
   )
 }

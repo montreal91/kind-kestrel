@@ -14,13 +14,16 @@ import org.example.rlc.jvm.ir.toClassInfo
 import org.example.rlc.jvm.ir.toStringRefInfo
 import org.example.rlc.jvm.ir.toUtf8Value
 
+
+internal val objectInitializer = "<init>".toUtf8Value()
+
 internal fun runtimeErrorConstructorRef(): MethodRefInfo {
   return MethodRefInfo(
     label = "LoxRuntimeError.\"<init>\":(Ljava/lang/String;)V",
     classInfo = "LoxRuntimeError".toClassInfo(),
     nameAndType = NameAndTypeInfo(
       label = "\"<init>\":(Ljava/lang/String;)V",
-      name = "<init>".toUtf8Value(),
+      name = objectInitializer,
       descriptor = "(Ljava/lang/String;)V".toUtf8Value()
     ),
     argsSize = 2,
@@ -83,7 +86,7 @@ internal fun addMethod(): MethodInfo {
       MethodAccessFlags.FINAL,
       MethodAccessFlags.PRIVATE,
     ),
-    attributes = listOf(codeAttribute)
+    attributeList = listOf(codeAttribute)
   )
 }
 
@@ -139,7 +142,7 @@ internal fun numberMagicMethod(methodName: String): MethodInfo {
       MethodAccessFlags.FINAL,
       MethodAccessFlags.PRIVATE,
     ),
-    attributes = listOf(codeAttribute)
+    attributeList = listOf(codeAttribute)
   )
 }
 
@@ -181,7 +184,7 @@ internal fun unaryMagicMethod(methodName: String): MethodInfo {
       MethodAccessFlags.FINAL,
       MethodAccessFlags.PRIVATE
     ),
-    attributes = listOf(codeAttribute)
+    attributeList = listOf(codeAttribute)
   )
 }
 

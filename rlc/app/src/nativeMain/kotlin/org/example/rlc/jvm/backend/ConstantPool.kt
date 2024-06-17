@@ -20,7 +20,13 @@ class ConstantPool {
   private val size: Int
     get() = constants.size + 1 + offset
 
-  operator fun get(label: String): Short = labelIndex[label]!!.toShort()
+  operator fun get(label: String): Short {
+    if (labelIndex.containsKey(label)) {
+      return labelIndex[label]!!.toShort()
+    }
+
+    throw RuntimeException("Unexpected label [$label]")
+  }
 
   fun addConstantPoolInfo(constantPoolInfo: ConstantPoolInfo) {
     if (labelIndex.containsKey(constantPoolInfo.label)) {

@@ -86,7 +86,7 @@ private fun loxClassConstructor(): MethodInfo {
     methodName = constructorMethodName,
     methodDescriptor = "(Ljava/lang/String;)V".toUtf8Value(),
     accessFlagList = listOf(MethodAccessFlags.NONE),
-    attributes = listOf(code),
+    attributeList = listOf(code),
   )
 }
 
@@ -130,6 +130,6 @@ private fun loxClassEqualsMethod(): MethodInfo {
     methodName = "equals".toUtf8Value(),
     methodDescriptor = "(Ljava/lang/Object;)Z".toUtf8Value(),
     accessFlagList = listOf(MethodAccessFlags.PUBLIC),
-    attributes = listOf(code)
+    attributeList = listOf(code)
   )
 }

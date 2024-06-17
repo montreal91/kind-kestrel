@@ -56,8 +56,8 @@ import org.example.rlc.jvm.ir.toUtf8Value
  * ```
  */
 internal fun loxDouble() = ClassFile(
-  thisClassInfo = "LoxDouble".toClassInfo(),
-  superClassInfo = "LoxObject".toClassInfo(),
+  thisClassInfo = loxDoubleClassInfo,
+  superClassInfo = loxObjectClassInfo,
   accessFlagList = listOf(ClassAccessFlags.SUPER),
   attributeList = listOf(),
   fieldList = listOf(valueFieldInfo()),
@@ -86,20 +86,8 @@ private fun loxDoubleConstructor(): MethodInfo {
     nameAndType = NameAndTypeInfo(
       label = "LOX_DOUBLE_CLASS:LLoxClass;",
       name = "LOX_DOUBLE_CLASS".toUtf8Value(),
-      descriptor = "LLoxClass;".toUtf8Value(),
+      descriptor = loxClassDescriptor,
     )
-  )
-
-  val loxObjectConstructor = MethodRefInfo(
-    label = "LoxObject.\"<init>\":(LLoxClass;)V",
-    classInfo = loxObjectClassInfo,
-    nameAndType = NameAndTypeInfo(
-      label = "\"<init>\":(LLoxClass;)V",
-      name = "<init>".toUtf8Value(),
-      descriptor = "(LLoxClass;)V".toUtf8Value(),
-    ),
-    argsSize = 2,
-    returnSize = 1
   )
 
   val code = listOf(
@@ -108,7 +96,7 @@ private fun loxDoubleConstructor(): MethodInfo {
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxObjectConstructor),
     SimpleOperation(Opcode.OP_ALOAD_0),
     SimpleOperation(Opcode.OP_DLOAD_1),
-    ShortConstantOperation(Opcode.OP_PUTFIELD, valueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_PUTFIELD, doubleValueFieldRefInfo),
     SimpleOperation(Opcode.OP_RETURN)
   )
 
@@ -123,7 +111,7 @@ private fun loxDoubleConstructor(): MethodInfo {
     methodName = "<init>".toUtf8Value(),
     methodDescriptor = "(D)V".toUtf8Value(),
     accessFlagList = listOf(),
-    attributes = listOf(codeAttribute),
+    attributeList = listOf(codeAttribute),
   )
 }
 
@@ -132,9 +120,9 @@ private fun addArithmeticMethodInfo(methodName: String, operation: Opcode): Meth
     ShortConstantOperation(Opcode.OP_NEW, loxDoubleClassInfo),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, valueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
     SimpleOperation(Opcode.OP_ALOAD_1),
-    ShortConstantOperation(Opcode.OP_GETFIELD, valueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
     SimpleOperation(operation),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxDoubleConstructorInfo),
     SimpleOperation(Opcode.OP_ARETURN)
@@ -151,7 +139,7 @@ private fun addArithmeticMethodInfo(methodName: String, operation: Opcode): Meth
     methodName = methodName.toUtf8Value(),
     methodDescriptor = "(LLoxDouble;)LLoxDouble;".toUtf8Value(),
     accessFlagList = listOf(MethodAccessFlags.NONE),
-    attributes = listOf(codeAttribute),
+    attributeList = listOf(codeAttribute),
   )
 }
 
@@ -160,7 +148,7 @@ private fun addUnaryMethodInfo(methodName: String, operation: Opcode): MethodInf
     ShortConstantOperation(Opcode.OP_NEW, loxDoubleClassInfo),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, valueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
     SimpleOperation(operation),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxDoubleConstructorInfo),
     SimpleOperation(Opcode.OP_ARETURN)
@@ -177,7 +165,7 @@ private fun addUnaryMethodInfo(methodName: String, operation: Opcode): MethodInf
     methodName = methodName.toUtf8Value(),
     methodDescriptor = "()LLoxDouble;".toUtf8Value(),
     accessFlagList = listOf(MethodAccessFlags.NONE),
-    attributes = listOf(codeAttribute),
+    attributeList = listOf(codeAttribute),
   )
 }
 
@@ -196,7 +184,7 @@ private fun toString(): MethodInfo {
 
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, valueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
     ShortConstantOperation(Opcode.OP_INVOKE_STATIC, doubleToStringMethodRef),
     SimpleOperation(Opcode.OP_ARETURN)
   )
@@ -210,8 +198,8 @@ private fun toString(): MethodInfo {
 
   return MethodInfo(
     methodName = "toString".toUtf8Value(),
-    methodDescriptor = "()Ljava/lang/String;".toUtf8Value(),
+    methodDescriptor = toStringDescriptor,
     accessFlagList = listOf(MethodAccessFlags.PUBLIC),
-    attributes = listOf(codeAttribute)
+    attributeList = listOf(codeAttribute)
   )
 }
