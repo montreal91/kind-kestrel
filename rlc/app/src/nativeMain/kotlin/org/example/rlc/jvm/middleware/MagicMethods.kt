@@ -34,7 +34,8 @@ internal fun runtimeErrorConstructorRef(): MethodRefInfo {
 // Add method is a bit different because
 // Lox supports concatenation of strings with + operator
 internal fun addMethod(): MethodInfo {
-  val methodRefInfo = MethodRefInfo(
+  // To properly implement Lox runtime errors, this (and other) magic methods should be inlined.
+  val doubleAddMagicMethod = MethodRefInfo(
     label = "LoxDouble.__add__:(LLoxDouble;)LLoxDouble;",
     classInfo = loxDoubleClassInfo,
     nameAndType = NameAndTypeInfo(
@@ -46,10 +47,25 @@ internal fun addMethod(): MethodInfo {
     returnSize = 1
   )
 
+  val stringConcatMagicMethod = MethodRefInfo(
+    label = "LoxString.__add__:(LLoxString;)LLoxString;",
+    classInfo = loxStringClassInfo,
+    nameAndType = NameAndTypeInfo(
+      label = "__add__:(LLoxString;)LLoxString;",
+      name = "__add__".toUtf8Value(),
+      descriptor = "(LLoxString;)LLoxString;".toUtf8Value()
+    ),
+    argsSize = 2,
+    returnSize = 1
+  )
+
+  val errorMessage = "Both operands should be doubles or strings.".toStringRefInfo()
+
   // This code will change after a while
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(Opcode.OP_INSTANCEOF, loxDoubleClassInfo),
+    // Hmmmm, maybe I need something like labels for these purposes
     ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 16),
     SimpleOperation(Opcode.OP_ALOAD_1),
     ShortConstantOperation(Opcode.OP_INSTANCEOF, loxDoubleClassInfo),
@@ -62,11 +78,27 @@ internal fun addMethod(): MethodInfo {
     SimpleOperation(Opcode.OP_ASTORE_3),
     SimpleOperation(Opcode.OP_ALOAD_2),
     SimpleOperation(Opcode.OP_ALOAD_3),
-    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, methodRefInfo),
+    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, doubleAddMagicMethod),
+    SimpleOperation(Opcode.OP_ARETURN),
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(Opcode.OP_INSTANCEOF, loxStringClassInfo),
+    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 32),
+    SimpleOperation(Opcode.OP_ALOAD_1),
+    ShortConstantOperation(Opcode.OP_INSTANCEOF, loxStringClassInfo),
+    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 32),
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(Opcode.OP_CHECKCAST, loxStringClassInfo),
+    SimpleOperation(Opcode.OP_ASTORE_2),
+    SimpleOperation(Opcode.OP_ALOAD_1),
+    ShortConstantOperation(Opcode.OP_CHECKCAST, loxStringClassInfo),
+    SimpleOperation(Opcode.OP_ASTORE_3),
+    SimpleOperation(Opcode.OP_ALOAD_2),
+    SimpleOperation(Opcode.OP_ALOAD_3),
+    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, stringConcatMagicMethod),
     SimpleOperation(Opcode.OP_ARETURN),
     ShortConstantOperation(Opcode.OP_NEW, loxRuntimeError),
     SimpleOperation(Opcode.OP_DUP),
-    ByteConstantOperation(Opcode.OP_LDC, "Both operands should be double.".toStringRefInfo()),
+    ByteConstantOperation(Opcode.OP_LDC, errorMessage),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, runtimeErrorConstructorRef()),
     SimpleOperation(Opcode.OP_ATHROW),
   )

@@ -196,13 +196,14 @@ internal class ClassCompiler {
       ind = (ind + bytes.size.toShort()).toShort()
     }
 
-    val stackTable = mutableMapOf<Short, StackMapFrame>()
+    val stackTable = linkedMapOf<Short, StackMapFrame>()
     for ((i, operation) in operations.withIndex()) {
       if (operation !is ControlFlowOperation) {
         continue
       }
 
       val offset = opIndex[operation.jumpTo]
+      println("HUGS. Jump from [$i] to [${operation.jumpTo}]. Offset: [$offset]")
       val jump = (offset - opIndex[i]).toShort()
       res.overwriteShort(
         start = opIndex[i] + 1,

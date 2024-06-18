@@ -98,6 +98,7 @@ class CodeAttribute(
     Opcode.OP_LDC -> 0
     Opcode.OP_LDC2_W -> 0
     Opcode.OP_NEW -> 0
+    Opcode.OP_POP -> 0
     Opcode.OP_PUTFIELD -> 0
     Opcode.OP_PUTSTATIC -> 0
     Opcode.OP_RETURN -> 0

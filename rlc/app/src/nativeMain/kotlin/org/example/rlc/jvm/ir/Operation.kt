@@ -27,6 +27,7 @@ class SimpleOperation(opcode: Opcode) : Operation(opcode) {
       Opcode.OP_ICONST_1 -> 1
       Opcode.OP_ILOAD_1 -> 1
       Opcode.OP_IRETURN -> -1
+      Opcode.OP_POP -> -1
       Opcode.OP_RETURN -> 0
       else -> throw IllegalArgumentException(
         "Invalid opcode for Simple Operation: $opcode"

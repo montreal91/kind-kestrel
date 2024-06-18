@@ -91,6 +91,9 @@ enum class Opcode(val value: Byte) {
   // Takes two bytes as an operand
   OP_NEW(0xBB.toByte()),
 
+  // Pop the top operand stack value
+  OP_POP(0x57.toByte()),
+
   // Set field in object
   // Takes two bytes as an operand
   OP_PUTFIELD(0xB5.toByte()),
