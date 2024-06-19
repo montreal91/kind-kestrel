@@ -202,16 +202,25 @@ internal class ClassCompiler {
         continue
       }
 
-      val offset = opIndex[operation.jumpTo]
-      println("HUGS. Jump from [$i] to [${operation.jumpTo}]. Offset: [$offset]")
-      val jump = (offset - opIndex[i]).toShort()
+      val targetOffset = opIndex[operation.jumpTo]
+      val jump = (targetOffset - opIndex[i]).toShort()
       res.overwriteShort(
         start = opIndex[i] + 1,
         value = jump
       )
 
       // Here we have to add a stackTable entry
-      stackTable[offset] = SameFrame(offset.toByte())
+      if (stackTable.isEmpty()) {
+        stackTable[targetOffset] = SameFrame(targetOffset.toByte())
+      }
+      else if (!stackTable.containsKey(targetOffset)) {
+        val hz = stackTable.values.last().tag.toInt()
+        stackTable[targetOffset] = SameFrame((targetOffset.toInt() - hz - 1).toByte())
+      }
+      else {
+        // Here we already have calculated stack frame for the given target,
+        // so no need to calculate it again.
+      }
     }
 
     return CodeCompilationResult(

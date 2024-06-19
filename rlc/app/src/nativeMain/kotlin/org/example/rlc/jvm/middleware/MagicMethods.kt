@@ -59,7 +59,7 @@ internal fun addMethod(): MethodInfo {
     returnSize = 1
   )
 
-  val errorMessage = "Both operands should be doubles or strings.".toStringRefInfo()
+  val errorMessage = "Both operands should be numbers or strings.".toStringRefInfo()
 
   // This code will change after a while
   val code = listOf(
@@ -154,7 +154,7 @@ internal fun numberMagicMethod(methodName: String): MethodInfo {
     SimpleOperation(Opcode.OP_ARETURN),
     ShortConstantOperation(Opcode.OP_NEW, loxRuntimeError),
     SimpleOperation(Opcode.OP_DUP),
-    ByteConstantOperation(Opcode.OP_LDC, "Both operands should be double.".toStringRefInfo()),
+    ByteConstantOperation(Opcode.OP_LDC, "Both operands should be numbers.".toStringRefInfo()),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, runtimeErrorConstructorRef()),
     SimpleOperation(Opcode.OP_ATHROW),
   )

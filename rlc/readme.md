@@ -18,7 +18,7 @@ The brief list of features I want to implement
 ### Data Types
 - [x] Booleans
 - [x] Numbers
-- [ ] Strings
+- [x] Strings
 - [x] Nil
 
 ### Expressions
