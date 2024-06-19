@@ -16,10 +16,10 @@ The brief list of features I want to implement
 - [x] The result of successful compilation should be a single executable jar file
 
 ### Data Types
-- [ ] Booleans
+- [x] Booleans
 - [x] Numbers
-- [ ] Strings
-- [ ] Nil
+- [x] Strings
+- [x] Nil
 
 ### Expressions
 - [x] Arithmetic

@@ -11,6 +11,7 @@ import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
+import org.example.rlc.jvm.ir.ByteConstantOperation
 import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
 import org.example.rlc.jvm.ir.CodeAttribute
@@ -23,6 +24,7 @@ import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.loxMainClassName
 import org.example.rlc.jvm.ir.toClassInfo
+import org.example.rlc.jvm.ir.toStringRefInfo
 import org.example.rlc.jvm.ir.toUtf8Value
 
 
@@ -33,7 +35,10 @@ class AstToClassFileIrConverter {
   private val classes = mutableListOf(
     loxClass(),
     loxObject(),
+    loxBoolean(),
     loxDouble(),
+    loxNil(),
+    loxString(),
     loxRuntimeError(),
   )
   private val currentCode = mutableListOf<Operation>()
@@ -92,11 +97,9 @@ class AstToClassFileIrConverter {
 
   private fun visitLiteral(expr: Literal) = when (expr.type) {
     Literal.Type.NUMBER -> compileNumber(expr)
-    Literal.Type.BOOLEAN -> {}  // TODO()
+    Literal.Type.BOOLEAN -> compileBoolean(expr)
     Literal.Type.STRING -> compileString(expr)
-    Literal.Type.NIL_TYPE -> {
-      TODO()
-    }
+    Literal.Type.NIL_TYPE -> compileNil()
   }
 
   private fun visitBinary(expr: Binary) {
@@ -135,6 +138,23 @@ class AstToClassFileIrConverter {
     visitExpr(expr.expression)
   }
 
+  private fun compileBoolean(expr: Literal) {
+    val valueOp = when (expr.value) {
+      "true" -> Opcode.OP_ICONST_1
+      "false" -> Opcode.OP_ICONST_0
+      else -> throw RuntimeException("Unsupported boolean literal: [${expr.value}]")
+    }
+
+    val ops = listOf(
+      ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+      SimpleOperation(Opcode.OP_DUP),
+      SimpleOperation(valueOp),
+      ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo)
+    )
+
+    currentCode.addAll(ops)
+  }
+
   private fun compileNumber(literal: Literal) {
     val ops = listOf(
       ShortConstantOperation(Opcode.OP_NEW, loxDoubleClassInfo),
@@ -146,8 +166,25 @@ class AstToClassFileIrConverter {
     currentCode.addAll(ops)
   }
 
+  private fun compileNil() {
+    val ops = listOf(
+      ShortConstantOperation(Opcode.OP_NEW, loxNilClassInfo),
+      SimpleOperation(Opcode.OP_DUP),
+      ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxNilConstructorInfo),
+    )
+
+    currentCode.addAll(ops)
+  }
+
   private fun compileString(literal: Literal) {
-    TODO("Not implemented yet.")
+    val ops = listOf(
+      ShortConstantOperation(Opcode.OP_NEW, loxStringClassInfo),
+      SimpleOperation(Opcode.OP_DUP),
+      ByteConstantOperation(Opcode.OP_LDC, literal.value.toStringRefInfo()),
+      ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxStringConstructorInfo)
+    )
+
+    currentCode.addAll(ops)
   }
 
   private fun publicStaticVoidMain(): MethodInfo {
@@ -156,7 +193,7 @@ class AstToClassFileIrConverter {
       methodName = "main".toUtf8Value(),
       methodDescriptor = "([Ljava/lang/String;)V".toUtf8Value(),
       accessFlagList = listOf(MethodAccessFlags.PUBLIC, MethodAccessFlags.STATIC),
-      attributes = listOf(
+      attributeList = listOf(
         CodeAttribute(
           argsSize = 1,
           code = currentCode.toList(),
@@ -178,7 +215,7 @@ class AstToClassFileIrConverter {
       methodName = constructor,
       methodDescriptor = noArgsVoidDescriptor,
       accessFlagList = listOf(MethodAccessFlags.PUBLIC),
-      attributes = listOf(
+      attributeList = listOf(
         CodeAttribute(
           argsSize = 1,
           code = code,

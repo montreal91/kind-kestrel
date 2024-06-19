@@ -70,7 +70,7 @@ internal class ClassCompiler {
       constantPool.addConstantPoolInfo(method.methodName)
       constantPool.addConstantPoolInfo(method.methodDescriptor)
 
-      for (attribute in method.attributes) {
+      for (attribute in method.attributeList) {
         constantPool.addConstantPoolInfo(attribute.attributeName)
         when (attribute) {
           is CodeAttribute -> addCodeConstantsToConstantPool(attribute)
@@ -122,9 +122,9 @@ internal class ClassCompiler {
     res.addAll(constantPool[methodInfo.methodName.label].toBytes())
     res.addAll(constantPool[methodInfo.methodDescriptor.label].toBytes())
 
-    res.addAll(methodInfo.attributes.size.toShort().toBytes())
+    res.addAll(methodInfo.attributeList.size.toShort().toBytes())
 
-    for (attribute in methodInfo.attributes) {
+    for (attribute in methodInfo.attributeList) {
       res.addAll(compileAttributeToByteCode(attribute))
     }
 
@@ -196,21 +196,31 @@ internal class ClassCompiler {
       ind = (ind + bytes.size.toShort()).toShort()
     }
 
-    val stackTable = mutableMapOf<Short, StackMapFrame>()
+    val stackTable = linkedMapOf<Short, StackMapFrame>()
     for ((i, operation) in operations.withIndex()) {
       if (operation !is ControlFlowOperation) {
         continue
       }
 
-      val offset = opIndex[operation.jumpTo]
-      val jump = (offset - opIndex[i]).toShort()
+      val targetOffset = opIndex[operation.jumpTo]
+      val jump = (targetOffset - opIndex[i]).toShort()
       res.overwriteShort(
         start = opIndex[i] + 1,
         value = jump
       )
 
       // Here we have to add a stackTable entry
-      stackTable[offset] = SameFrame(offset.toByte())
+      if (stackTable.isEmpty()) {
+        stackTable[targetOffset] = SameFrame(targetOffset.toByte())
+      }
+      else if (!stackTable.containsKey(targetOffset)) {
+        val hz = stackTable.values.last().tag.toInt()
+        stackTable[targetOffset] = SameFrame((targetOffset.toInt() - hz - 1).toByte())
+      }
+      else {
+        // Here we already have calculated stack frame for the given target,
+        // so no need to calculate it again.
+      }
     }
 
     return CodeCompilationResult(

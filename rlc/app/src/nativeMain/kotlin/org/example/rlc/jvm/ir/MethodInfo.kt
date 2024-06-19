@@ -6,7 +6,7 @@ class MethodInfo(
   val methodName: Utf8Value,
   val methodDescriptor: Utf8Value,
   private val accessFlagList: List<MethodAccessFlags>,
-  val attributes: List<AttributeInfo>
+  val attributeList: List<AttributeInfo>
 ) {
   val accessFlags: Short
     get() {

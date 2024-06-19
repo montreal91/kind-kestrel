@@ -24,7 +24,11 @@ import org.example.rlc.jvm.ir.toUtf8Value
  *
  * ```
  * class LoxObject {
- *   static LoxClass loxDoubleClass = new LoxClass("LoxDouble");
+ *   static final LoxClass loxNilClass = new LoxClass("LoxNil");
+ *   static final LoxClass loxBoolClass = new LoxClass("LoxBoolean");
+ *   static final LoxClass loxDoubleClass = new LoxClass("LoxDouble");
+ *   static final LoxClass loxStringClass = new LoxClass("LoxString");
+ *
  *   final LoxClass clazz;
  *
  *   LoxObject(LoxClass clazz) {
@@ -34,11 +38,17 @@ import org.example.rlc.jvm.ir.toUtf8Value
  * ```
  */
 internal fun loxObject() = ClassFile(
-  thisClassInfo = "LoxObject".toClassInfo(),
+  thisClassInfo = loxObjectClassInfo,
   superClassInfo = "java/lang/Object".toClassInfo(),
   accessFlagList = listOf(ClassAccessFlags.SUPER),
   attributeList = listOf(),
-  fieldList = listOf(clazzFieldInfo(), loxDoubleClass()),
+  fieldList = listOf(
+    clazzFieldInfo(),
+    loxDoubleClass(),
+    loxNilClass(),
+    loxBooleanClass(),
+    loxStringClass()
+  ),
   methodList = listOf(loxObjectConstructor(), loxObjectStaticInitializer()),
   interfaceList = listOf(),
 )
@@ -47,13 +57,31 @@ internal fun loxObject() = ClassFile(
 private fun clazzFieldInfo() = FieldInfo(
   accessFlagList = listOf(FieldAccessFlags.FINAL),
   fieldName = "clazz".toUtf8Value(),
-  fieldDescriptor = "LLoxClass;".toUtf8Value(),
+  fieldDescriptor = loxClassDescriptor,
 )
 
 private fun loxDoubleClass() = FieldInfo(
   accessFlagList = listOf(FieldAccessFlags.STATIC, FieldAccessFlags.FINAL),
   fieldName = "LOX_DOUBLE_CLASS".toUtf8Value(),
-  fieldDescriptor = "LLoxClass;".toUtf8Value(),
+  fieldDescriptor = loxClassDescriptor,
+)
+
+private fun loxNilClass() = FieldInfo(
+  accessFlagList = listOf(FieldAccessFlags.STATIC, FieldAccessFlags.FINAL),
+  fieldName = "LOX_NIL_CLASS".toUtf8Value(),
+  fieldDescriptor = loxClassDescriptor,
+)
+
+private fun loxBooleanClass() = FieldInfo(
+  accessFlagList = listOf(FieldAccessFlags.STATIC, FieldAccessFlags.FINAL),
+  fieldName = "LOX_BOOLEAN_CLASS".toUtf8Value(),
+  fieldDescriptor = loxClassDescriptor,
+)
+
+private fun loxStringClass() = FieldInfo(
+  accessFlagList = listOf(FieldAccessFlags.STATIC, FieldAccessFlags.FINAL),
+  fieldName = ("LOX_STRING_CLASS").toUtf8Value(),
+  fieldDescriptor = loxClassDescriptor,
 )
 
 private fun loxObjectStaticInitializer(): MethodInfo {
@@ -69,22 +97,72 @@ private fun loxObjectStaticInitializer(): MethodInfo {
     returnSize = 1
   )
 
-  val loxClassField = FieldRefInfo(
-    label = " LoxObject.LOX_DOUBLE_CLASS:LLoxClass;",
-    classInfo = "LoxObject".toClassInfo(),
+  val loxDoubleClassField = FieldRefInfo(
+    label = "LoxObject.LOX_DOUBLE_CLASS:LLoxClass;",
+    classInfo = loxObjectClassInfo,
     nameAndType = NameAndTypeInfo(
       label = "LOX_DOUBLE_CLASS:LLoxClass;",
       name = "LOX_DOUBLE_CLASS".toUtf8Value(),
-      descriptor = "LLoxClass;".toUtf8Value(),
+      descriptor = loxClassDescriptor,
     )
   )
 
+  val loxNilClassField = FieldRefInfo(
+    label = "LoxObject.LOX_NIL_CLASS:LLoxClass;",
+    classInfo = loxObjectClassInfo,
+    nameAndType = NameAndTypeInfo(
+      label = "LOX_NIL_CLASS:LLoxClass;",
+      name = "LOX_NIL_CLASS".toUtf8Value(),
+      descriptor = loxClassDescriptor,
+    )
+  )
+
+  val loxBoolClassField = FieldRefInfo(
+    label = "LoxObject.LOX_BOOLEAN_CLASS:LLoxClass;",
+    classInfo = loxObjectClassInfo,
+    nameAndType = NameAndTypeInfo(
+      label = "LOX_BOOLEAN_CLASS:LLoxClass;",
+      name = "LOX_BOOLEAN_CLASS".toUtf8Value(),
+      descriptor = loxClassDescriptor,
+    )
+  )
+
+  val loxStringClassField = FieldRefInfo(
+    label = "LoxObject.LOX_STRING_CLASS:LLoxClass;",
+    classInfo = loxObjectClassInfo,
+    nameAndType = NameAndTypeInfo(
+      label = "LOX_STRING_CLASS:LLoxClass;",
+      name = "LOX_STRING_CLASS".toUtf8Value(),
+      descriptor = loxClassDescriptor,
+    )
+  )
+
+  // TODO: Create better code generator
   val code = listOf(
-    ShortConstantOperation(Opcode.OP_NEW, "LoxClass".toClassInfo()),
+    ShortConstantOperation(Opcode.OP_NEW, loxClassInfo),
     SimpleOperation(Opcode.OP_DUP),
     ByteConstantOperation(Opcode.OP_LDC, "LoxDouble".toStringRefInfo()),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxClassConstructor),
-    ShortConstantOperation(Opcode.OP_PUTSTATIC, loxClassField),
+    ShortConstantOperation(Opcode.OP_PUTSTATIC, loxDoubleClassField),
+
+    ShortConstantOperation(Opcode.OP_NEW, loxClassInfo),
+    SimpleOperation(Opcode.OP_DUP),
+    ByteConstantOperation(Opcode.OP_LDC, "LoxNil".toStringRefInfo()),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxClassConstructor),
+    ShortConstantOperation(Opcode.OP_PUTSTATIC, loxNilClassField),
+
+    ShortConstantOperation(Opcode.OP_NEW, loxClassInfo),
+    SimpleOperation(Opcode.OP_DUP),
+    ByteConstantOperation(Opcode.OP_LDC, "LoxBoolean".toStringRefInfo()),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxClassConstructor),
+    ShortConstantOperation(Opcode.OP_PUTSTATIC, loxBoolClassField),
+
+    ShortConstantOperation(Opcode.OP_NEW, loxClassInfo),
+    SimpleOperation(Opcode.OP_DUP),
+    ByteConstantOperation(Opcode.OP_LDC, "LoxString".toStringRefInfo()),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxClassConstructor),
+    ShortConstantOperation(Opcode.OP_PUTSTATIC, loxStringClassField),
+
     SimpleOperation(Opcode.OP_RETURN),
   )
 
@@ -99,7 +177,7 @@ private fun loxObjectStaticInitializer(): MethodInfo {
     methodName = "<clinit>".toUtf8Value(),
     methodDescriptor = "()V".toUtf8Value(),
     accessFlagList = listOf(MethodAccessFlags.STATIC),
-    attributes = listOf(codeAttribute)
+    attributeList = listOf(codeAttribute)
   )
 }
 
@@ -133,6 +211,6 @@ fun loxObjectConstructor(): MethodInfo {
     methodName = "<init>".toUtf8Value(),
     methodDescriptor = "(LLoxClass;)V".toUtf8Value(),
     accessFlagList = listOf(MethodAccessFlags.NONE),
-    attributes = listOf(codeAttribute),
+    attributeList = listOf(codeAttribute),
   )
 }

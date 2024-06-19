@@ -49,8 +49,16 @@ enum class Opcode(val value: Byte) {
   // Takes two bytes as an operand
   OP_GETSTATIC(0xB2.toByte()),
 
-  OP_ICONST_0(0x3.toByte()),  // Push int constant
+  // Push int constant 0
+  OP_ICONST_0(0x3.toByte()),
+
+  // Push int constant 1
+  OP_ICONST_1(0x4.toByte()),
+
   OP_IFEQ(0x99.toByte()),  // Branch if int comparison with zero succeeds
+
+  // Load int from local variable
+  OP_ILOAD_1(0x1B.toByte()),
 
   // Determine if object is of given type
   // Takes two bytes as an operand
@@ -82,6 +90,9 @@ enum class Opcode(val value: Byte) {
   // Create new object
   // Takes two bytes as an operand
   OP_NEW(0xBB.toByte()),
+
+  // Pop the top operand stack value
+  OP_POP(0x57.toByte()),
 
   // Set field in object
   // Takes two bytes as an operand
