@@ -1,11 +1,13 @@
 package org.example.rlc.jvm.ir
 
 enum class ClassAccessFlags(val value: Short) {
+  ABSTRACT(value = 0x0400),
   PUBLIC(value = 0x0001),
   SUPER(value = 0x0020),
 }
 
 enum class MethodAccessFlags(val value: Short) {
+  ABSTRACT(value = 0x0400),
   FINAL(value = 0x0010),
   NONE(value = 0x0000),
   PRIVATE(value = 0x0002),

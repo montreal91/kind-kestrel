@@ -106,20 +106,88 @@ internal fun addMethod(): MethodInfo {
   val codeAttribute = CodeAttribute(
     argsSize = 2,
     code = code,
-    exceptionTable = 0,
-    attributes = listOf(),
   )
 
-  return MethodInfo(
-    methodName = "__add__".toUtf8Value(),
-    methodDescriptor = "(LLoxObject;LLoxObject;)LLoxObject;".toUtf8Value(),
-    accessFlagList = listOf(
-      MethodAccessFlags.STATIC,
-      MethodAccessFlags.FINAL,
-      MethodAccessFlags.PRIVATE,
+  return makeMethodInfo(methodName = "__add__", codeAttribute = codeAttribute)
+}
+
+internal fun eqMethod(): MethodInfo {
+  val getClassMri = MethodRefInfo(
+    label = "java/lang/Object.getClass:()Ljava/lang/Class;",
+    classInfo = javaLangObjectClassInfo,
+    nameAndType = NameAndTypeInfo(
+      label = "getClass:()Ljava/lang/Class;",
+      name = "getClass".toUtf8Value(),
+      descriptor = "()Ljava/lang/Class;".toUtf8Value()
     ),
-    attributeList = listOf(codeAttribute)
+    argsSize = 1,
+    returnSize = 1,
   )
+
+  val objectEqualsMri = MethodRefInfo(
+    label = "java/lang/Object.equals:(Ljava/lang/Object;)Z",
+    classInfo = javaLangObjectClassInfo,
+    nameAndType = NameAndTypeInfo(
+      label = "equals:(Ljava/lang/Object;)Z",
+      name = "equals".toUtf8Value(),
+      descriptor = "(Ljava/lang/Object;)Z".toUtf8Value(),
+    ),
+    argsSize = 2,
+    returnSize = 1,
+  )
+
+  val loxObjectEqMri = MethodRefInfo(
+    label = "LoxObject.__eq__:(LLoxObject;)LLoxObject;",
+    classInfo = loxObjectClassInfo,
+    nameAndType = NameAndTypeInfo(
+      label = "__eq__:(LLoxObject;)LLoxObject;",
+      name = "__eq__".toUtf8Value(),
+      descriptor = loxBinaryOpDescriptor,
+    ),
+    argsSize = 2,
+    returnSize = 1,
+  )
+
+  val code = listOf(
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, getClassMri),
+    SimpleOperation(Opcode.OP_ALOAD_1),
+    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, getClassMri),
+    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, objectEqualsMri),
+    ControlFlowOperation(Opcode.OP_IFNE, jumpTo = 11),
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    SimpleOperation(Opcode.OP_DUP),
+    SimpleOperation(Opcode.OP_ICONST_0),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
+    SimpleOperation(Opcode.OP_ARETURN),
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(Opcode.OP_INSTANCEOF, loxNilClassInfo),
+    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 19),
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    SimpleOperation(Opcode.OP_DUP),
+    SimpleOperation(Opcode.OP_ICONST_1),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
+    SimpleOperation(Opcode.OP_ARETURN),
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(Opcode.OP_INSTANCEOF, loxBooleanClassInfo),
+    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 26),
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    SimpleOperation(Opcode.OP_ALOAD_1),
+    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, loxObjectEqMri),
+    SimpleOperation(Opcode.OP_ARETURN),
+    ShortConstantOperation(Opcode.OP_NEW, loxRuntimeError),
+    SimpleOperation(Opcode.OP_DUP),
+    ByteConstantOperation(Opcode.OP_LDC, "Invalid object type.".toStringRefInfo()),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, runtimeErrorConstructorRef()),
+    SimpleOperation(Opcode.OP_ATHROW),
+  )
+
+  val codeAttribute = CodeAttribute(
+    argsSize = 2,
+    code = code,
+  )
+
+  return makeMethodInfo(methodName = "__eq__", codeAttribute = codeAttribute)
 }
 
 internal fun numberMagicMethod(methodName: String): MethodInfo {
@@ -162,21 +230,21 @@ internal fun numberMagicMethod(methodName: String): MethodInfo {
   val codeAttribute = CodeAttribute(
     argsSize = 2,
     code = code,
-    exceptionTable = 0,
-    attributes = listOf(),
   )
 
-  return MethodInfo(
-    methodName = methodName.toUtf8Value(),
-    methodDescriptor = "(LLoxObject;LLoxObject;)LLoxObject;".toUtf8Value(),
-    accessFlagList = listOf(
-      MethodAccessFlags.STATIC,
-      MethodAccessFlags.FINAL,
-      MethodAccessFlags.PRIVATE,
-    ),
-    attributeList = listOf(codeAttribute)
-  )
+  return makeMethodInfo(methodName, codeAttribute)
 }
+
+private fun makeMethodInfo(methodName: String, codeAttribute: CodeAttribute) = MethodInfo(
+  methodName = methodName.toUtf8Value(),
+  methodDescriptor = "(LLoxObject;LLoxObject;)LLoxObject;".toUtf8Value(),
+  accessFlagList = listOf(
+    MethodAccessFlags.STATIC,
+    MethodAccessFlags.FINAL,
+    MethodAccessFlags.PRIVATE,
+  ),
+  attributeList = listOf(codeAttribute),
+)
 
 internal fun unaryMagicMethod(methodName: String): MethodInfo {
   val methodRefInfo = MethodRefInfo(
@@ -204,8 +272,6 @@ internal fun unaryMagicMethod(methodName: String): MethodInfo {
   val codeAttribute = CodeAttribute(
     argsSize = 1,
     code = code + generateRuntimeError("Operand should be a number."),
-    exceptionTable = 0,
-    attributes = listOf(),
   )
 
   return MethodInfo(

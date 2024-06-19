@@ -23,10 +23,12 @@ class SimpleOperation(opcode: Opcode) : Operation(opcode) {
       Opcode.OP_DNEG -> -2
       Opcode.OP_DSUB -> -2
       Opcode.OP_DUP -> 1
+      Opcode.OP_IAND -> -1
       Opcode.OP_ICONST_0 -> 1
       Opcode.OP_ICONST_1 -> 1
       Opcode.OP_ILOAD_1 -> 1
       Opcode.OP_IRETURN -> -1
+      Opcode.OP_IXOR -> -1
       Opcode.OP_POP -> -1
       Opcode.OP_RETURN -> 0
       else -> throw IllegalArgumentException(
@@ -39,6 +41,7 @@ class ControlFlowOperation(opcode: Opcode, val jumpTo: Int) : Operation(opcode) 
   override val stackModification: Int
     get() = when(opcode) {
       Opcode.OP_IFEQ -> -1
+      Opcode.OP_IFNE -> -1
       else -> throw IllegalArgumentException(
         "Invalid opcode for Control Flow Operation: $opcode"
       )

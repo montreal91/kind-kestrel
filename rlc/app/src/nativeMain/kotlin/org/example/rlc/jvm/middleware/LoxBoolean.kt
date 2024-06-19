@@ -23,7 +23,7 @@ internal fun loxBoolean() = ClassFile(
   accessFlagList = listOf(ClassAccessFlags.SUPER),
   attributeList = listOf(),
   fieldList = listOf(valueField()),
-  methodList = listOf(loxBooleanConstructor(), toString()),
+  methodList = listOf(loxBooleanConstructor(), toString(), eq()),
   interfaceList = listOf(),
 )
 
@@ -74,6 +74,37 @@ private fun loxBooleanConstructor(): MethodInfo {
   return MethodInfo(
     methodName = "<init>".toUtf8Value(),
     methodDescriptor = "(Z)V".toUtf8Value(),
+    accessFlagList = listOf(),
+    attributeList = listOf(codeAttribute),
+  )
+}
+
+private fun eq(): MethodInfo {
+  val code = listOf(
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    SimpleOperation(Opcode.OP_DUP),
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo),
+    SimpleOperation(Opcode.OP_ALOAD_1),
+    ShortConstantOperation(Opcode.OP_CHECKCAST, loxBooleanClassInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo),
+    SimpleOperation(Opcode.OP_IXOR),
+    SimpleOperation(Opcode.OP_ICONST_1),
+    SimpleOperation(Opcode.OP_IXOR),
+    SimpleOperation(Opcode.OP_ICONST_1),
+    SimpleOperation(Opcode.OP_IAND),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
+    SimpleOperation(Opcode.OP_ARETURN),
+  )
+
+  val codeAttribute = CodeAttribute(
+    argsSize = 2,
+    code = code,
+  )
+
+  return MethodInfo(
+    methodName = "__eq__".toUtf8Value(),
+    methodDescriptor = loxBinaryOpDescriptor,
     accessFlagList = listOf(),
     attributeList = listOf(codeAttribute),
   )

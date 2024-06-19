@@ -40,7 +40,7 @@ import org.example.rlc.jvm.ir.toUtf8Value
 internal fun loxObject() = ClassFile(
   thisClassInfo = loxObjectClassInfo,
   superClassInfo = "java/lang/Object".toClassInfo(),
-  accessFlagList = listOf(ClassAccessFlags.SUPER),
+  accessFlagList = listOf(ClassAccessFlags.SUPER, ClassAccessFlags.ABSTRACT),
   attributeList = listOf(),
   fieldList = listOf(
     clazzFieldInfo(),
@@ -49,7 +49,11 @@ internal fun loxObject() = ClassFile(
     loxBooleanClass(),
     loxStringClass()
   ),
-  methodList = listOf(loxObjectConstructor(), loxObjectStaticInitializer()),
+  methodList = listOf(
+    loxObjectConstructor(),
+    loxObjectStaticInitializer(),
+    abstractEqMethod()
+  ),
   interfaceList = listOf(),
 )
 
@@ -181,7 +185,7 @@ private fun loxObjectStaticInitializer(): MethodInfo {
   )
 }
 
-fun loxObjectConstructor(): MethodInfo {
+private fun loxObjectConstructor(): MethodInfo {
   val clazzField = FieldRefInfo(
     label = "LoxObject.clazz:LLoxClass;",
     classInfo = "LoxObject".toClassInfo(),
@@ -214,3 +218,10 @@ fun loxObjectConstructor(): MethodInfo {
     attributeList = listOf(codeAttribute),
   )
 }
+
+private fun abstractEqMethod(): MethodInfo = MethodInfo(
+  methodName = "__eq__".toUtf8Value(),
+  methodDescriptor = "(LLoxObject;)LLoxObject;".toUtf8Value(),
+  accessFlagList = listOf(MethodAccessFlags.ABSTRACT),
+  attributeList = listOf()
+)

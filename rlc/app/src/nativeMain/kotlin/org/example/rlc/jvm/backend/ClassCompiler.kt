@@ -196,36 +196,36 @@ internal class ClassCompiler {
       ind = (ind + bytes.size.toShort()).toShort()
     }
 
-    val stackTable = linkedMapOf<Short, StackMapFrame>()
+    val jumpTargets = mutableSetOf<Int>()
     for ((i, operation) in operations.withIndex()) {
       if (operation !is ControlFlowOperation) {
         continue
       }
 
       val targetOffset = opIndex[operation.jumpTo]
+      jumpTargets.add(targetOffset.toInt())
       val jump = (targetOffset - opIndex[i]).toShort()
       res.overwriteShort(
         start = opIndex[i] + 1,
         value = jump
       )
+    }
 
-      // Here we have to add a stackTable entry
-      if (stackTable.isEmpty()) {
-        stackTable[targetOffset] = SameFrame(targetOffset.toByte())
+    val stackTable = mutableListOf<StackMapFrame>()
+    val sortedTargets = jumpTargets.toList().sorted()
+
+    for ((i, targetOffset) in sortedTargets.withIndex()) {
+      if (i == 0) {
+        stackTable.add(SameFrame(targetOffset.toByte()))
+        continue
       }
-      else if (!stackTable.containsKey(targetOffset)) {
-        val hz = stackTable.values.last().tag.toInt()
-        stackTable[targetOffset] = SameFrame((targetOffset.toInt() - hz - 1).toByte())
-      }
-      else {
-        // Here we already have calculated stack frame for the given target,
-        // so no need to calculate it again.
-      }
+      val relativeOffset = targetOffset - sortedTargets[i - 1] - 1
+      stackTable.add(SameFrame(relativeOffset.toByte()))
     }
 
     return CodeCompilationResult(
       bytes = res.toList(),
-      stackMapTableAttribute = StackMapTableAttribute(stackTable.values.toList())
+      stackMapTableAttribute = StackMapTableAttribute(stackTable.toList())
     )
   }
 

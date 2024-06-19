@@ -43,7 +43,10 @@ enum class Opcode(val value: Byte) {
   // Duplicate the top operand stack value
   OP_DUP(0x59.toByte()),
 
-  OP_GETFIELD(0xB4.toByte()),  // Fetch field from object
+  // Fetch field from object.
+  // Pops object reference from the stack
+  // Pushes field value to the stack
+  OP_GETFIELD(0xB4.toByte()),
 
   // Get static field from class
   // Takes two bytes as an operand
@@ -52,10 +55,21 @@ enum class Opcode(val value: Byte) {
   // Push int constant 0
   OP_ICONST_0(0x3.toByte()),
 
+  // Bitwise AND of int values
+  // Pops two int values from the stack
+  // Pushes the result to the stack
+  OP_IAND(0x7E.toByte()),
+
   // Push int constant 1
   OP_ICONST_1(0x4.toByte()),
 
-  OP_IFEQ(0x99.toByte()),  // Branch if int comparison with zero succeeds
+  // Branch if int comparison with zero succeeds.
+  // Succeeds if and only if value = 0
+  OP_IFEQ(0x99.toByte()),
+
+  // Branch if int comparison with zero succeeds.
+  // Succeeds if and only if value != 0
+  OP_IFNE(0x9A.toByte()),
 
   // Load int from local variable
   OP_ILOAD_1(0x1B.toByte()),
@@ -77,7 +91,13 @@ enum class Opcode(val value: Byte) {
   // Takes two bytes as an operand
   OP_INVOKE_VIRTUAL(0xB6.toByte()),
 
-  OP_IRETURN(0xAC.toByte()),   // Return int from method
+  // Return int from method
+  OP_IRETURN(0xAC.toByte()),
+
+  // Boolean XOR int
+  // Pops two int values from the stack
+  // Pushes result to the stack
+  OP_IXOR(0x82.toByte()),
 
   // Push item from run-time constant pool
   // Takes one byte as an operand

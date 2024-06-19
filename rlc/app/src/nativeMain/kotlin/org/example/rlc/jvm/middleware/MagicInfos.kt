@@ -140,34 +140,18 @@ private const val binaryOpDescriptor = "(LLoxObject;LLoxObject;)LLoxObject;"
 private const val unaryOpDescriptor = "(LLoxObject;)LLoxObject;"
 
 internal val binaryOperations = mapOf(
-  Pair(
-    Token.Type.PLUS, NameAndTypeInfo(
-      label = "__add__:${binaryOpDescriptor}",
-      name = "__add__".toUtf8Value(),
-      descriptor = binaryOpDescriptor.toUtf8Value()
-    )
-  ),
-  Pair(
-    Token.Type.MINUS, NameAndTypeInfo(
-      label = "__sub__:${binaryOpDescriptor}",
-      name = "__sub__".toUtf8Value(),
-      descriptor = binaryOpDescriptor.toUtf8Value()
-    )
-  ),
-  Pair(
-    Token.Type.STAR, NameAndTypeInfo(
-      label = "__mul__:${binaryOpDescriptor}",
-      name = "__mul__".toUtf8Value(),
-      descriptor = binaryOpDescriptor.toUtf8Value()
-    )
-  ),
-  Pair(
-    Token.Type.SLASH, NameAndTypeInfo(
-      label = "__div__:${binaryOpDescriptor}",
-      name = "__div__".toUtf8Value(),
-      descriptor = binaryOpDescriptor.toUtf8Value()
-    )
-  ),
+  Pair(Token.Type.PLUS, genBinaryNameAndType(name = "__add__")),
+  Pair(Token.Type.MINUS, genBinaryNameAndType(name="__sub__")),
+  Pair(Token.Type.STAR, genBinaryNameAndType(name = "__mul__")),
+  Pair(Token.Type.SLASH, genBinaryNameAndType(name = "__div__")),
+  Pair(Token.Type.EQUAL_EQUAL, genBinaryNameAndType(name = "__eq__")),
+  Pair(Token.Type.BANG_EQUAL, genBinaryNameAndType(name = "__ne__")),
+)
+
+private fun genBinaryNameAndType(name: String) = NameAndTypeInfo(
+  label = "$name:$binaryOpDescriptor",
+  name = name.toUtf8Value(),
+  descriptor = binaryOpDescriptor.toUtf8Value(),
 )
 
 internal val unaryOperations = mapOf(

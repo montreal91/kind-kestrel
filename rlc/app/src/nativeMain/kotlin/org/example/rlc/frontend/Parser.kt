@@ -151,7 +151,7 @@ class Parser(private val tokens: List<Token>) {
       val token = currentToken
       matchAny(equalityTokens.toList())
       val rightOperand = comparison()
-      leftOperand = Logical(leftOperand, token, rightOperand)
+      leftOperand = Binary(leftOperand, token, rightOperand)
     }
 
     return leftOperand
@@ -163,7 +163,7 @@ class Parser(private val tokens: List<Token>) {
       val token = currentToken
       matchAny(comparisonTokens.toList())
       val rightOperand = term()
-      leftOperand = Logical(leftOperand, token, rightOperand)
+      leftOperand = Binary(leftOperand, token, rightOperand)
     }
 
     return leftOperand

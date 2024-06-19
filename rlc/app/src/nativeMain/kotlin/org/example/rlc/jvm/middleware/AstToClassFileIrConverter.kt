@@ -66,6 +66,7 @@ class AstToClassFileIrConverter {
         numberMagicMethod(methodName = "__mul__"),
         numberMagicMethod(methodName = "__div__"),
         unaryMagicMethod(methodName = "__neg__"),
+        eqMethod(),
       )
     )
 
@@ -111,8 +112,10 @@ class AstToClassFileIrConverter {
       Token.Type.MINUS -> getArithmeticMethodRef(Token.Type.MINUS)
       Token.Type.STAR -> getArithmeticMethodRef(Token.Type.STAR)
       Token.Type.SLASH -> getArithmeticMethodRef(Token.Type.SLASH)
+      Token.Type.EQUAL_EQUAL -> getArithmeticMethodRef(Token.Type.EQUAL_EQUAL)
+      Token.Type.BANG_EQUAL -> getArithmeticMethodRef(Token.Type.BANG_EQUAL)
       else -> throw RuntimeException(
-        "Unsupported binary operator ${expr.operator}"
+        "Unsupported binary operator [${expr.operator}]"
       )
     }
 
