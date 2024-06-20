@@ -9,7 +9,6 @@ import org.example.rlc.jvm.ir.FieldInfo
 import org.example.rlc.jvm.ir.FieldRefInfo
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
-import org.example.rlc.jvm.ir.MethodRefInfo
 import org.example.rlc.jvm.ir.NameAndTypeInfo
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
@@ -89,22 +88,6 @@ private fun loxClassConstructor(): MethodInfo {
     attributeList = listOf(code),
   )
 }
-
-//private fun stringEquals(): MethodRefInfo {
-//  val nameInfo = "equals".toUtf8Value()
-//  val typeInfo = "(Ljava/lang/Object;)Z".toUtf8Value()
-//  return MethodRefInfo(
-//    label = "java/lang/String.equals:(Ljava/lang/Object;)Z",
-//    classInfo = "java/lang/String".toClassInfo(),
-//    nameAndType = NameAndTypeInfo(
-//      label = "equals:(Ljava/lang/Object;)Z",
-//      name = nameInfo,
-//      descriptor = typeInfo,
-//    ),
-//    argsSize = 2,
-//    returnSize = 1
-//  )
-//}
 
 private fun loxClassEqualsMethod(): MethodInfo {
   val code = CodeAttribute(
