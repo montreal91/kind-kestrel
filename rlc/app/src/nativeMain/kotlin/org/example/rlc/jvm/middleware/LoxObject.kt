@@ -52,7 +52,8 @@ internal fun loxObject() = ClassFile(
   methodList = listOf(
     loxObjectConstructor(),
     loxObjectStaticInitializer(),
-    abstractEqMethod()
+    abstractEqMethod(),
+    abstractTruthyMethod(),
   ),
   interfaceList = listOf(),
 )
@@ -221,7 +222,15 @@ private fun loxObjectConstructor(): MethodInfo {
 
 private fun abstractEqMethod(): MethodInfo = MethodInfo(
   methodName = "__eq__".toUtf8Value(),
-  methodDescriptor = "(LLoxObject;)LLoxObject;".toUtf8Value(),
+  methodDescriptor = loxBinaryOpDescriptor,
+  accessFlagList = listOf(MethodAccessFlags.ABSTRACT),
+  attributeList = listOf()
+)
+
+// Later it will not be abstract
+private fun abstractTruthyMethod(): MethodInfo = MethodInfo(
+  methodName = "__truthy__".toUtf8Value(),
+  methodDescriptor = loxUnaryOpDescriptor,
   accessFlagList = listOf(MethodAccessFlags.ABSTRACT),
   attributeList = listOf()
 )

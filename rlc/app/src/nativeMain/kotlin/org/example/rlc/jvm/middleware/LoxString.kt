@@ -1,9 +1,7 @@
 package org.example.rlc.jvm.middleware
 
-import org.example.rlc.jvm.ir.ByteConstantOperation
 import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
-import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.CodeAttribute
 import org.example.rlc.jvm.ir.FieldAccessFlags
 import org.example.rlc.jvm.ir.FieldInfo
@@ -26,7 +24,9 @@ internal fun loxString() = ClassFile(
   methodList = listOf(
     loxStringConstructor(),
     stringConcatenation(),
-    toString()
+    toString(),
+    eq(),
+    truthy(),
   ),
   interfaceList = listOf(),
   attributeList = listOf(),
@@ -93,6 +93,57 @@ private fun toString(): MethodInfo {
     methodDescriptor = toStringDescriptor,
     accessFlagList = listOf(MethodAccessFlags.PUBLIC),
     attributeList = listOf(codeAttribute)
+  )
+}
+
+private fun eq(): MethodInfo {
+  val code = listOf(
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    SimpleOperation(Opcode.OP_DUP),
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo),
+    SimpleOperation(Opcode.OP_ALOAD_1),
+    ShortConstantOperation(Opcode.OP_CHECKCAST, loxStringClassInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, stringEquals()),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
+    SimpleOperation(Opcode.OP_ARETURN),
+  )
+
+  val codeAttribute = CodeAttribute(
+    argsSize = 2,
+    code = code,
+  )
+
+  return MethodInfo(
+    methodName = "__eq__".toUtf8Value(),
+    methodDescriptor = loxBinaryOpDescriptor,
+    accessFlagList = listOf(MethodAccessFlags.NONE),
+    attributeList = listOf(codeAttribute),
+  )
+}
+
+private fun truthy(): MethodInfo {
+  val code = listOf(
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    SimpleOperation(Opcode.OP_DUP),
+    SimpleOperation(Opcode.OP_ICONST_1),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
+    SimpleOperation(Opcode.OP_ARETURN)
+  )
+
+  val codeAttribute = CodeAttribute(
+    argsSize = 1,
+    code = code,
+    exceptionTable = 0,
+    attributes = listOf()
+  )
+
+  return MethodInfo(
+    methodName = "__truthy__".toUtf8Value(),
+    methodDescriptor = loxUnaryOpDescriptor,
+    accessFlagList = listOf(MethodAccessFlags.NONE),
+    attributeList = listOf(codeAttribute),
   )
 }
 

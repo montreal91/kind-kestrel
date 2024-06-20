@@ -68,6 +68,8 @@ internal fun loxDouble() = ClassFile(
     addArithmeticMethodInfo(methodName = "__mul__", operation = Opcode.OP_DMUL),
     addArithmeticMethodInfo(methodName = "__div__", operation = Opcode.OP_DDIV),
     addUnaryMethodInfo(methodName = "__neg__", operation = Opcode.OP_DNEG),
+    addEqMethod(),
+    truthy(),
     toString()
   ),
   interfaceList = listOf(),
@@ -164,6 +166,61 @@ private fun addUnaryMethodInfo(methodName: String, operation: Opcode): MethodInf
   return MethodInfo(
     methodName = methodName.toUtf8Value(),
     methodDescriptor = "()LLoxDouble;".toUtf8Value(),
+    accessFlagList = listOf(MethodAccessFlags.NONE),
+    attributeList = listOf(codeAttribute),
+  )
+}
+
+private fun addEqMethod(): MethodInfo {
+  val code = listOf(
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    SimpleOperation(Opcode.OP_DUP),
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    SimpleOperation(Opcode.OP_ALOAD_1),
+    ShortConstantOperation(Opcode.OP_CHECKCAST, loxDoubleClassInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    SimpleOperation(Opcode.OP_DCMPG),
+    SimpleOperation(Opcode.OP_ICONST_1),
+    SimpleOperation(Opcode.OP_IAND),
+    SimpleOperation(Opcode.OP_ICONST_1),
+    SimpleOperation(Opcode.OP_IXOR),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
+    SimpleOperation(Opcode.OP_ARETURN),
+  )
+
+  val codeAttribute = CodeAttribute(
+    argsSize = 2,
+    code = code,
+  )
+
+  return MethodInfo(
+    methodName = "__eq__".toUtf8Value(),
+    methodDescriptor = loxBinaryOpDescriptor,
+    accessFlagList = listOf(MethodAccessFlags.NONE),
+    attributeList = listOf(codeAttribute)
+  )
+}
+
+private fun truthy(): MethodInfo {
+  val code = listOf(
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    SimpleOperation(Opcode.OP_DUP),
+    SimpleOperation(Opcode.OP_ICONST_1),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
+    SimpleOperation(Opcode.OP_ARETURN)
+  )
+
+  val codeAttribute = CodeAttribute(
+    argsSize = 1,
+    code = code,
+    exceptionTable = 0,
+    attributes = listOf()
+  )
+
+  return MethodInfo(
+    methodName = "__truthy__".toUtf8Value(),
+    methodDescriptor = loxUnaryOpDescriptor,
     accessFlagList = listOf(MethodAccessFlags.NONE),
     attributeList = listOf(codeAttribute),
   )

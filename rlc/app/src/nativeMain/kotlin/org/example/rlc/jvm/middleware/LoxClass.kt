@@ -90,21 +90,21 @@ private fun loxClassConstructor(): MethodInfo {
   )
 }
 
-private fun stringEquals(): MethodRefInfo {
-  val nameInfo = "equals".toUtf8Value()
-  val typeInfo = "(Ljava/lang/Object;)Z".toUtf8Value()
-  return MethodRefInfo(
-    label = "java/lang/String.equals:(Ljava/lang/Object;)Z",
-    classInfo = "java/lang/String".toClassInfo(),
-    nameAndType = NameAndTypeInfo(
-      label = "equals:(Ljava/lang/Object;)Z",
-      name = nameInfo,
-      descriptor = typeInfo,
-    ),
-    argsSize = 2,
-    returnSize = 1
-  )
-}
+//private fun stringEquals(): MethodRefInfo {
+//  val nameInfo = "equals".toUtf8Value()
+//  val typeInfo = "(Ljava/lang/Object;)Z".toUtf8Value()
+//  return MethodRefInfo(
+//    label = "java/lang/String.equals:(Ljava/lang/Object;)Z",
+//    classInfo = "java/lang/String".toClassInfo(),
+//    nameAndType = NameAndTypeInfo(
+//      label = "equals:(Ljava/lang/Object;)Z",
+//      name = nameInfo,
+//      descriptor = typeInfo,
+//    ),
+//    argsSize = 2,
+//    returnSize = 1
+//  )
+//}
 
 private fun loxClassEqualsMethod(): MethodInfo {
   val code = CodeAttribute(

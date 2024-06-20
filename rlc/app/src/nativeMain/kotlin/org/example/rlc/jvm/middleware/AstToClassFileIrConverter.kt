@@ -65,8 +65,10 @@ class AstToClassFileIrConverter {
         numberMagicMethod(methodName = "__sub__"),
         numberMagicMethod(methodName = "__mul__"),
         numberMagicMethod(methodName = "__div__"),
-        unaryMagicMethod(methodName = "__neg__"),
-        eqMethod(),
+        unaryMinusMagicMethod(methodName = "__neg__"),
+        notOperatorMagicMethod(),
+        equalsMethod(),
+        notEqualsMethod(),
       )
     )
 
@@ -131,6 +133,7 @@ class AstToClassFileIrConverter {
 
     val methodRef = when (expr.operator.type) {
       Token.Type.MINUS -> getUnaryMethodRef(Token.Type.MINUS)
+      Token.Type.BANG -> getUnaryMethodRef(Token.Type.BANG)
       else -> throw RuntimeException("Unexpected unary operator ${expr.operator}")
     }
 

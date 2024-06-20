@@ -16,6 +16,7 @@ class SimpleOperation(opcode: Opcode) : Operation(opcode) {
       Opcode.OP_ASTORE_3 -> -1
       Opcode.OP_ATHROW -> -1
       Opcode.OP_DADD -> -2
+      Opcode.OP_DCMPG -> -3
       Opcode.OP_DDIV -> -2
       Opcode.OP_DLOAD_0 -> 2
       Opcode.OP_DLOAD_1 -> 2

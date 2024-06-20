@@ -28,6 +28,11 @@ enum class Opcode(val value: Byte) {
   OP_CHECKCAST(0xC0.toByte()),
 
   OP_DADD(0x63.toByte()), // Add two doubles
+
+  // Compare double values on operand stack
+  // Pushes int value as a result
+  OP_DCMPG(0x98.toByte()),
+
   OP_DDIV(0x6F.toByte()), // Divide double
 
   // Load double from local variable

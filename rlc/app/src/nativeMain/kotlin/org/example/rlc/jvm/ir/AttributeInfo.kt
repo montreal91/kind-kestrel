@@ -84,6 +84,7 @@ class CodeAttribute(
     Opcode.OP_ATHROW -> 0
     Opcode.OP_CHECKCAST -> 0
     Opcode.OP_DADD -> 0
+    Opcode.OP_DCMPG -> 0
     Opcode.OP_DDIV -> 0
     Opcode.OP_DLOAD_0 -> 2
     Opcode.OP_DLOAD_1 -> 3
