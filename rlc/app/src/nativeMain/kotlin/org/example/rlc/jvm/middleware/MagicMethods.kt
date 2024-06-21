@@ -140,14 +140,14 @@ internal fun equalsMethod(): MethodInfo {
   return makeBinaryMethodInfo(methodName = "__eq__", codeAttribute = codeAttribute)
 }
 
-internal fun numberMagicMethod(methodName: String): MethodInfo {
+internal fun numberMagicMethod(methodName: String, returnType: String): MethodInfo {
   val methodRefInfo = MethodRefInfo(
-    label = "LoxDouble.${methodName}:(LLoxDouble;)LLoxDouble;",
+    label = "LoxDouble.${methodName}:(LLoxDouble;)L$returnType;",
     classInfo = loxDoubleClassInfo,
     nameAndType = NameAndTypeInfo(
-      label = "${methodName}:(LLoxDouble;)LLoxDouble;",
+      label = "${methodName}:(LLoxDouble;)L$returnType;",
       name = methodName.toUtf8Value(),
-      descriptor = "(LLoxDouble;)LLoxDouble;".toUtf8Value()
+      descriptor = "(LLoxDouble;)L$returnType;".toUtf8Value()
     ),
     argsSize = 2,
     returnSize = 1
@@ -172,7 +172,7 @@ internal fun numberMagicMethod(methodName: String): MethodInfo {
     SimpleOperation(Opcode.OP_ARETURN),
     ShortConstantOperation(Opcode.OP_NEW, loxRuntimeError),
     SimpleOperation(Opcode.OP_DUP),
-    ByteConstantOperation(Opcode.OP_LDC, "Both operands should be numbers.".toStringRefInfo()),
+    ByteConstantOperation(Opcode.OP_LDC, "Operands must be numbers.".toStringRefInfo()),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, runtimeErrorConstructorRef()),
     SimpleOperation(Opcode.OP_ATHROW),
   )

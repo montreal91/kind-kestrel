@@ -146,6 +146,10 @@ internal val binaryOperations = mapOf(
   Pair(Token.Type.SLASH, genBinaryNameAndType(name = "__div__")),
   Pair(Token.Type.EQUAL_EQUAL, genBinaryNameAndType(name = "__eq__")),
   Pair(Token.Type.BANG_EQUAL, genBinaryNameAndType(name = "__neq__")),
+  Pair(Token.Type.GREATER, genBinaryNameAndType(name = "__gt__")),
+  Pair(Token.Type.GREATER_EQUAL, genBinaryNameAndType(name = "__ge__")),
+  Pair(Token.Type.LESS, genBinaryNameAndType(name = "__lt__")),
+  Pair(Token.Type.LESS_EQUAL, genBinaryNameAndType(name = "__le__")),
 )
 
 internal fun stringEquals(): MethodRefInfo {

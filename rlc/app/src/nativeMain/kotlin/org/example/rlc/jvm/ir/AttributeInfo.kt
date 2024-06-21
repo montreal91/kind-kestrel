@@ -94,9 +94,12 @@ class CodeAttribute(
     Opcode.OP_DUP -> 0
     Opcode.OP_GETFIELD -> 0
     Opcode.OP_GETSTATIC -> 0
+    Opcode.OP_IADD -> 0
     Opcode.OP_IAND -> 0
     Opcode.OP_ICONST_0 -> 0
     Opcode.OP_ICONST_1 -> 0
+    Opcode.OP_ICONST_2 -> 0
+    Opcode.OP_ICONST_3 -> 0
     Opcode.OP_IFEQ -> 0
     Opcode.OP_IFNE -> 0
     Opcode.OP_ILOAD_1 -> 2
@@ -105,6 +108,7 @@ class CodeAttribute(
     Opcode.OP_INVOKE_VIRTUAL -> 0
     Opcode.OP_INSTANCEOF -> 0
     Opcode.OP_IRETURN -> 0
+    Opcode.OP_ISHR -> 0
     Opcode.OP_IXOR -> 0
     Opcode.OP_LDC -> 0
     Opcode.OP_LDC2_W -> 0

@@ -123,29 +123,7 @@ private fun eq(): MethodInfo {
   )
 }
 
-private fun truthy(): MethodInfo {
-  val code = listOf(
-    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
-    SimpleOperation(Opcode.OP_DUP),
-    SimpleOperation(Opcode.OP_ICONST_1),
-    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
-    SimpleOperation(Opcode.OP_ARETURN)
-  )
-
-  val codeAttribute = CodeAttribute(
-    argsSize = 1,
-    code = code,
-    exceptionTable = 0,
-    attributes = listOf()
-  )
-
-  return MethodInfo(
-    methodName = "__truthy__".toUtf8Value(),
-    methodDescriptor = loxUnaryOpDescriptor,
-    accessFlagList = listOf(MethodAccessFlags.NONE),
-    attributeList = listOf(codeAttribute),
-  )
-}
+private fun truthy() = alwaysTruthy()
 
 private fun stringConcatenation(): MethodInfo {
   val sb = "java/lang/StringBuilder".toClassInfo()

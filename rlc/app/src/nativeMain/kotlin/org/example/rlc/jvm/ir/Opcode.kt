@@ -60,13 +60,24 @@ enum class Opcode(val value: Byte) {
   // Push int constant 0
   OP_ICONST_0(0x3.toByte()),
 
+  // Add two integers on the stack
+  // Pops two int values from the stack
+  // Pushes the result to the stack
+  OP_IADD(0x60.toByte()),
+
   // Bitwise AND of int values
   // Pops two int values from the stack
   // Pushes the result to the stack
   OP_IAND(0x7E.toByte()),
 
-  // Push int constant 1
+  // Push int constant 1 to the operand stack
   OP_ICONST_1(0x4.toByte()),
+
+  // Push int constant 2 to the operand stack
+  OP_ICONST_2(0x5.toByte()),
+
+  // Push int constant 3 to the operand stack
+  OP_ICONST_3(0x6.toByte()),
 
   // Branch if int comparison with zero succeeds.
   // Succeeds if and only if value = 0
@@ -98,6 +109,11 @@ enum class Opcode(val value: Byte) {
 
   // Return int from method
   OP_IRETURN(0xAC.toByte()),
+
+  // Shift right int
+  // Pops two int values from the stack
+  // Pushes result to the stack
+  OP_ISHR(0x7A.toByte()),
 
   // Boolean XOR int
   // Pops two int values from the stack

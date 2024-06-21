@@ -62,13 +62,17 @@ class AstToClassFileIrConverter {
         constructor(),
         publicStaticVoidMain(),
         addMethod(),
-        numberMagicMethod(methodName = "__sub__"),
-        numberMagicMethod(methodName = "__mul__"),
-        numberMagicMethod(methodName = "__div__"),
+        numberMagicMethod(methodName = "__sub__", returnType = "LoxDouble"),
+        numberMagicMethod(methodName = "__mul__", returnType = "LoxDouble"),
+        numberMagicMethod(methodName = "__div__", returnType = "LoxDouble"),
         unaryMinusMagicMethod(methodName = "__neg__"),
         notOperatorMagicMethod(),
         equalsMethod(),
         notEqualsMethod(),
+        numberMagicMethod(methodName = "__gt__", returnType = "LoxBoolean"),
+        numberMagicMethod(methodName = "__ge__", returnType = "LoxBoolean"),
+        numberMagicMethod(methodName = "__lt__", returnType = "LoxBoolean"),
+        numberMagicMethod(methodName = "__le__", returnType = "LoxBoolean"),
       )
     )
 
@@ -116,6 +120,10 @@ class AstToClassFileIrConverter {
       Token.Type.SLASH -> getArithmeticMethodRef(Token.Type.SLASH)
       Token.Type.EQUAL_EQUAL -> getArithmeticMethodRef(Token.Type.EQUAL_EQUAL)
       Token.Type.BANG_EQUAL -> getArithmeticMethodRef(Token.Type.BANG_EQUAL)
+      Token.Type.GREATER -> getArithmeticMethodRef(Token.Type.GREATER)
+      Token.Type.GREATER_EQUAL -> getArithmeticMethodRef(Token.Type.GREATER_EQUAL)
+      Token.Type.LESS -> getArithmeticMethodRef(Token.Type.LESS)
+      Token.Type.LESS_EQUAL -> getArithmeticMethodRef(Token.Type.LESS_EQUAL)
       else -> throw RuntimeException(
         "Unsupported binary operator [${expr.operator}]"
       )
@@ -233,10 +241,10 @@ class AstToClassFileIrConverter {
   }
 
   private fun getArithmeticMethodRef(operation: Token.Type): MethodRefInfo {
-    return methodRefs.getOrPut(operation) {createArithmeticMethodRef(operation)}
+    return methodRefs.getOrPut(operation) {createBinaryNumericMethodRef(operation)}
   }
 
-  private fun createArithmeticMethodRef(operation: Token.Type): MethodRefInfo {
+  private fun createBinaryNumericMethodRef(operation: Token.Type): MethodRefInfo {
     val nameAndType = binaryOperations[operation]
     val label = loxMainClassName + "." + nameAndType!!.label
 
