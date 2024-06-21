@@ -68,6 +68,12 @@ internal fun loxDouble() = ClassFile(
     addArithmeticMethodInfo(methodName = "__mul__", operation = Opcode.OP_DMUL),
     addArithmeticMethodInfo(methodName = "__div__", operation = Opcode.OP_DDIV),
     addUnaryMethodInfo(methodName = "__neg__", operation = Opcode.OP_DNEG),
+    addEqMethod(),
+    greater(),
+    greaterOrEquals(),
+    less(),
+    lessOrEquals(),
+    truthy(),
     toString()
   ),
   interfaceList = listOf(),
@@ -100,12 +106,7 @@ private fun loxDoubleConstructor(): MethodInfo {
     SimpleOperation(Opcode.OP_RETURN)
   )
 
-  val codeAttribute = CodeAttribute(
-    argsSize = 2,
-    code = code,
-    exceptionTable = 0,
-    attributes = listOf()
-  )
+  val codeAttribute = CodeAttribute(argsSize = 2, code = code)
 
   return MethodInfo(
     methodName = "<init>".toUtf8Value(),
@@ -128,12 +129,7 @@ private fun addArithmeticMethodInfo(methodName: String, operation: Opcode): Meth
     SimpleOperation(Opcode.OP_ARETURN)
   )
 
-  val codeAttribute = CodeAttribute(
-    argsSize = 2,
-    code = code,
-    exceptionTable = 0,
-    attributes = listOf()
-  )
+  val codeAttribute = CodeAttribute(argsSize = 2, code = code)
 
   return MethodInfo(
     methodName = methodName.toUtf8Value(),
@@ -154,12 +150,7 @@ private fun addUnaryMethodInfo(methodName: String, operation: Opcode): MethodInf
     SimpleOperation(Opcode.OP_ARETURN)
   )
 
-  val codeAttribute = CodeAttribute(
-    argsSize = 2,
-    code = code,
-    exceptionTable = 0,
-    attributes = listOf()
-  )
+  val codeAttribute = CodeAttribute(argsSize = 2, code = code)
 
   return MethodInfo(
     methodName = methodName.toUtf8Value(),
@@ -168,6 +159,36 @@ private fun addUnaryMethodInfo(methodName: String, operation: Opcode): MethodInf
     attributeList = listOf(codeAttribute),
   )
 }
+
+private fun addEqMethod(): MethodInfo {
+  val code = listOf(
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    SimpleOperation(Opcode.OP_DUP),
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    SimpleOperation(Opcode.OP_ALOAD_1),
+    ShortConstantOperation(Opcode.OP_CHECKCAST, loxDoubleClassInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    SimpleOperation(Opcode.OP_DCMPG),
+    SimpleOperation(Opcode.OP_ICONST_1),
+    SimpleOperation(Opcode.OP_IAND),
+    SimpleOperation(Opcode.OP_ICONST_1),
+    SimpleOperation(Opcode.OP_IXOR),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
+    SimpleOperation(Opcode.OP_ARETURN),
+  )
+
+  val codeAttribute = CodeAttribute(argsSize = 2, code = code)
+
+  return MethodInfo(
+    methodName = "__eq__".toUtf8Value(),
+    methodDescriptor = loxBinaryOpDescriptor,
+    accessFlagList = listOf(MethodAccessFlags.NONE),
+    attributeList = listOf(codeAttribute)
+  )
+}
+
+private fun truthy() = alwaysTruthy()
 
 private fun toString(): MethodInfo {
   val doubleToStringMethodRef = MethodRefInfo(
@@ -189,17 +210,128 @@ private fun toString(): MethodInfo {
     SimpleOperation(Opcode.OP_ARETURN)
   )
 
-  val codeAttribute = CodeAttribute(
-    argsSize = 1,
-    code = code,
-    exceptionTable = 0,
-    attributes = listOf()
-  )
+  val codeAttribute = CodeAttribute(argsSize = 1, code = code)
 
   return MethodInfo(
     methodName = "toString".toUtf8Value(),
     methodDescriptor = toStringDescriptor,
     accessFlagList = listOf(MethodAccessFlags.PUBLIC),
+    attributeList = listOf(codeAttribute)
+  )
+}
+
+private fun greater(): MethodInfo {
+  val code = listOf(
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    SimpleOperation(Opcode.OP_DUP),
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    SimpleOperation(Opcode.OP_ALOAD_1),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    SimpleOperation(Opcode.OP_DCMPG),
+    SimpleOperation(Opcode.OP_ICONST_3),
+    SimpleOperation(Opcode.OP_IAND),
+    SimpleOperation(Opcode.OP_ICONST_1),
+    SimpleOperation(Opcode.OP_IADD),
+    SimpleOperation(Opcode.OP_ICONST_3),
+    SimpleOperation(Opcode.OP_IAND),
+    SimpleOperation(Opcode.OP_ICONST_1),
+    SimpleOperation(Opcode.OP_ISHR),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
+    SimpleOperation(Opcode.OP_ARETURN)
+  )
+
+  val codeAttribute = CodeAttribute(argsSize = 2, code = code)
+  return MethodInfo(
+    methodName = "__gt__".toUtf8Value(),
+    methodDescriptor = numberComparisonDescriptor,
+    accessFlagList = listOf(MethodAccessFlags.NONE),
+    attributeList = listOf(codeAttribute)
+  )
+}
+
+private fun greaterOrEquals(): MethodInfo {
+  val code = listOf(
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    SimpleOperation(Opcode.OP_DUP),
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    SimpleOperation(Opcode.OP_ALOAD_1),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    SimpleOperation(Opcode.OP_DCMPG),
+    SimpleOperation(Opcode.OP_ICONST_3),
+    SimpleOperation(Opcode.OP_IAND),
+    SimpleOperation(Opcode.OP_ICONST_2),
+    SimpleOperation(Opcode.OP_IXOR),
+    SimpleOperation(Opcode.OP_ICONST_1),
+    SimpleOperation(Opcode.OP_ISHR),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
+    SimpleOperation(Opcode.OP_ARETURN)
+  )
+
+  val codeAttribute = CodeAttribute(argsSize = 2, code = code)
+  return MethodInfo(
+    methodName = "__ge__".toUtf8Value(),
+    methodDescriptor = numberComparisonDescriptor,
+    accessFlagList = listOf(MethodAccessFlags.NONE),
+    attributeList = listOf(codeAttribute)
+  )
+}
+
+private fun less(): MethodInfo {
+  val code = listOf(
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    SimpleOperation(Opcode.OP_DUP),
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    SimpleOperation(Opcode.OP_ALOAD_1),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    SimpleOperation(Opcode.OP_DCMPG),
+    SimpleOperation(Opcode.OP_ICONST_3),
+    SimpleOperation(Opcode.OP_IAND),
+    SimpleOperation(Opcode.OP_ICONST_1),
+    SimpleOperation(Opcode.OP_ISHR),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
+    SimpleOperation(Opcode.OP_ARETURN)
+  )
+
+  val codeAttribute = CodeAttribute(argsSize = 2, code = code)
+  return MethodInfo(
+    methodName = "__lt__".toUtf8Value(),
+    methodDescriptor = numberComparisonDescriptor,
+    accessFlagList = listOf(MethodAccessFlags.NONE),
+    attributeList = listOf(codeAttribute)
+  )
+}
+
+private fun lessOrEquals(): MethodInfo {
+  val code = listOf(
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    SimpleOperation(Opcode.OP_DUP),
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    SimpleOperation(Opcode.OP_ALOAD_1),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    SimpleOperation(Opcode.OP_DCMPG),
+    SimpleOperation(Opcode.OP_ICONST_3),
+    SimpleOperation(Opcode.OP_IAND),
+    SimpleOperation(Opcode.OP_ICONST_1),
+    SimpleOperation(Opcode.OP_IADD),
+    SimpleOperation(Opcode.OP_ICONST_3),
+    SimpleOperation(Opcode.OP_IAND),
+    SimpleOperation(Opcode.OP_ICONST_2),
+    SimpleOperation(Opcode.OP_IXOR),
+    SimpleOperation(Opcode.OP_ICONST_1),
+    SimpleOperation(Opcode.OP_ISHR),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
+    SimpleOperation(Opcode.OP_ARETURN)
+  )
+
+  val codeAttribute = CodeAttribute(argsSize = 2, code = code)
+  return MethodInfo(
+    methodName = "__le__".toUtf8Value(),
+    methodDescriptor = numberComparisonDescriptor,
+    accessFlagList = listOf(MethodAccessFlags.NONE),
     attributeList = listOf(codeAttribute)
   )
 }

@@ -23,7 +23,13 @@ internal fun loxBoolean() = ClassFile(
   accessFlagList = listOf(ClassAccessFlags.SUPER),
   attributeList = listOf(),
   fieldList = listOf(valueField()),
-  methodList = listOf(loxBooleanConstructor(), toString()),
+  methodList = listOf(
+    loxBooleanConstructor(),
+    toString(),
+    eq(),
+    neg(),
+    truthy()
+  ),
   interfaceList = listOf(),
 )
 
@@ -75,6 +81,82 @@ private fun loxBooleanConstructor(): MethodInfo {
     methodName = "<init>".toUtf8Value(),
     methodDescriptor = "(Z)V".toUtf8Value(),
     accessFlagList = listOf(),
+    attributeList = listOf(codeAttribute),
+  )
+}
+
+private fun eq(): MethodInfo {
+  val code = listOf(
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    SimpleOperation(Opcode.OP_DUP),
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo),
+    SimpleOperation(Opcode.OP_ALOAD_1),
+    ShortConstantOperation(Opcode.OP_CHECKCAST, loxBooleanClassInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo),
+    SimpleOperation(Opcode.OP_IXOR),
+    SimpleOperation(Opcode.OP_ICONST_1),
+    SimpleOperation(Opcode.OP_IXOR),
+    SimpleOperation(Opcode.OP_ICONST_1),
+    SimpleOperation(Opcode.OP_IAND),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
+    SimpleOperation(Opcode.OP_ARETURN),
+  )
+
+  val codeAttribute = CodeAttribute(
+    argsSize = 2,
+    code = code,
+  )
+
+  return MethodInfo(
+    methodName = "__eq__".toUtf8Value(),
+    methodDescriptor = loxBinaryOpDescriptor,
+    accessFlagList = listOf(MethodAccessFlags.NONE),
+    attributeList = listOf(codeAttribute),
+  )
+}
+
+private fun neg(): MethodInfo {
+  val code = listOf(
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    SimpleOperation(Opcode.OP_DUP),
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo),
+    SimpleOperation(Opcode.OP_ICONST_1),
+    SimpleOperation(Opcode.OP_IXOR),
+    SimpleOperation(Opcode.OP_ICONST_1),
+    SimpleOperation(Opcode.OP_IAND),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
+    SimpleOperation(Opcode.OP_ARETURN)
+  )
+
+  val codeAttribute = CodeAttribute(code = code, argsSize = 1)
+
+  return MethodInfo(
+    methodName = "__neg__".toUtf8Value(),
+    methodDescriptor = "()LLoxObject;".toUtf8Value(),
+    accessFlagList = listOf(MethodAccessFlags.NONE),
+    attributeList = listOf(codeAttribute)
+  )
+}
+
+private fun truthy(): MethodInfo {
+  val code = listOf(
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    SimpleOperation(Opcode.OP_ARETURN)
+  )
+
+  val codeAttribute = CodeAttribute(
+    argsSize = 1,
+    code = code,
+    exceptionTable = 0,
+    attributes = listOf()
+  )
+
+  return MethodInfo(
+    methodName = "__truthy__".toUtf8Value(),
+    methodDescriptor = loxUnaryOpDescriptor,
+    accessFlagList = listOf(MethodAccessFlags.NONE),
     attributeList = listOf(codeAttribute),
   )
 }

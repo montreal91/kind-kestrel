@@ -140,42 +140,100 @@ private const val binaryOpDescriptor = "(LLoxObject;LLoxObject;)LLoxObject;"
 private const val unaryOpDescriptor = "(LLoxObject;)LLoxObject;"
 
 internal val binaryOperations = mapOf(
-  Pair(
-    Token.Type.PLUS, NameAndTypeInfo(
-      label = "__add__:${binaryOpDescriptor}",
-      name = "__add__".toUtf8Value(),
-      descriptor = binaryOpDescriptor.toUtf8Value()
-    )
-  ),
-  Pair(
-    Token.Type.MINUS, NameAndTypeInfo(
-      label = "__sub__:${binaryOpDescriptor}",
-      name = "__sub__".toUtf8Value(),
-      descriptor = binaryOpDescriptor.toUtf8Value()
-    )
-  ),
-  Pair(
-    Token.Type.STAR, NameAndTypeInfo(
-      label = "__mul__:${binaryOpDescriptor}",
-      name = "__mul__".toUtf8Value(),
-      descriptor = binaryOpDescriptor.toUtf8Value()
-    )
-  ),
-  Pair(
-    Token.Type.SLASH, NameAndTypeInfo(
-      label = "__div__:${binaryOpDescriptor}",
-      name = "__div__".toUtf8Value(),
-      descriptor = binaryOpDescriptor.toUtf8Value()
-    )
-  ),
+  Pair(Token.Type.PLUS, genBinaryNameAndType(name = "__add__")),
+  Pair(Token.Type.MINUS, genBinaryNameAndType(name="__sub__")),
+  Pair(Token.Type.STAR, genBinaryNameAndType(name = "__mul__")),
+  Pair(Token.Type.SLASH, genBinaryNameAndType(name = "__div__")),
+  Pair(Token.Type.EQUAL_EQUAL, genBinaryNameAndType(name = "__eq__")),
+  Pair(Token.Type.BANG_EQUAL, genBinaryNameAndType(name = "__neq__")),
+  Pair(Token.Type.GREATER, genBinaryNameAndType(name = "__gt__")),
+  Pair(Token.Type.GREATER_EQUAL, genBinaryNameAndType(name = "__ge__")),
+  Pair(Token.Type.LESS, genBinaryNameAndType(name = "__lt__")),
+  Pair(Token.Type.LESS_EQUAL, genBinaryNameAndType(name = "__le__")),
+)
+
+internal fun stringEquals(): MethodRefInfo {
+  val nameInfo = "equals".toUtf8Value()
+  val typeInfo = "(Ljava/lang/Object;)Z".toUtf8Value()
+  return MethodRefInfo(
+    label = "java/lang/String.equals:(Ljava/lang/Object;)Z",
+    classInfo = "java/lang/String".toClassInfo(),
+    nameAndType = NameAndTypeInfo(
+      label = "equals:(Ljava/lang/Object;)Z",
+      name = nameInfo,
+      descriptor = typeInfo,
+    ),
+    argsSize = 2,
+    returnSize = 1
+  )
+}
+
+internal fun loxBooleanNegMri(): MethodRefInfo {
+  val nameInfo = "__neg__".toUtf8Value()
+  val typeInfo = "()LLoxObject;".toUtf8Value()
+
+  return MethodRefInfo(
+    label = "LoxBoolean.$nameInfo:$typeInfo",
+    classInfo = loxBooleanClassInfo,
+    nameAndType = NameAndTypeInfo(
+      label = "$nameInfo:$typeInfo",
+      name = nameInfo,
+      descriptor = typeInfo
+    ),
+    argsSize = 1,
+    returnSize = 1,
+  )
+}
+
+private fun genBinaryNameAndType(name: String) = NameAndTypeInfo(
+  label = "$name:$binaryOpDescriptor",
+  name = name.toUtf8Value(),
+  descriptor = binaryOpDescriptor.toUtf8Value(),
 )
 
 internal val unaryOperations = mapOf(
-  Pair(
-    Token.Type.MINUS, NameAndTypeInfo(
-      label = "__neg__:${unaryOpDescriptor}",
-      name = "__neg__".toUtf8Value(),
-      descriptor = unaryOpDescriptor.toUtf8Value()
-    )
-  )
+  Pair(Token.Type.MINUS, genUnaryNameAndType(name = "__neg__")),
+  Pair(Token.Type.BANG, genUnaryNameAndType(name = "__not__"))
+)
+
+private fun genUnaryNameAndType(name: String) = NameAndTypeInfo(
+  label = "$name:$unaryOpDescriptor",
+  name = name.toUtf8Value(),
+  descriptor = unaryOpDescriptor.toUtf8Value()
+)
+
+internal val getClassMri = MethodRefInfo(
+  label = "java/lang/Object.getClass:()Ljava/lang/Class;",
+  classInfo = javaLangObjectClassInfo,
+  nameAndType = NameAndTypeInfo(
+    label = "getClass:()Ljava/lang/Class;",
+    name = "getClass".toUtf8Value(),
+    descriptor = "()Ljava/lang/Class;".toUtf8Value()
+  ),
+  argsSize = 1,
+  returnSize = 1,
+)
+
+internal val objectEqualsMri = MethodRefInfo(
+  label = "java/lang/Object.equals:(Ljava/lang/Object;)Z",
+  classInfo = javaLangObjectClassInfo,
+  nameAndType = NameAndTypeInfo(
+    label = "equals:(Ljava/lang/Object;)Z",
+    name = "equals".toUtf8Value(),
+    descriptor = "(Ljava/lang/Object;)Z".toUtf8Value(),
+  ),
+  argsSize = 2,
+  returnSize = 1,
+)
+
+internal val loxObjectEqMri = MethodRefInfo(
+  label = "LoxObject.__eq__:(LLoxObject;)LLoxObject;",
+  classInfo = loxObjectClassInfo,
+  nameAndType = NameAndTypeInfo(
+    label = "__eq__:(LLoxObject;)LLoxObject;",
+    name = "__eq__".toUtf8Value(),
+    descriptor = loxBinaryOpDescriptor,
+  ),
+  argsSize = 2,
+  returnSize = 1,
 )

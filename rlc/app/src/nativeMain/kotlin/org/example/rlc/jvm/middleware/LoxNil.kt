@@ -20,7 +20,7 @@ internal fun loxNil() = ClassFile(
   accessFlagList = listOf(ClassAccessFlags.SUPER),
   attributeList = listOf(),
   fieldList = listOf(),
-  methodList = listOf(loxNilConstructor(), toString()),
+  methodList = listOf(loxNilConstructor(), toString(), truthy()),
   interfaceList = listOf(),
 )
 
@@ -54,6 +54,30 @@ private fun loxNilConstructor(): MethodInfo {
     methodDescriptor = "()V".toUtf8Value(),
     accessFlagList = listOf(),
     attributeList = listOf(codeAttribute)
+  )
+}
+
+private fun truthy(): MethodInfo {
+  val code = listOf(
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    SimpleOperation(Opcode.OP_DUP),
+    SimpleOperation(Opcode.OP_ICONST_0),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
+    SimpleOperation(Opcode.OP_ARETURN)
+  )
+
+  val codeAttribute = CodeAttribute(
+    argsSize = 1,
+    code = code,
+    exceptionTable = 0,
+    attributes = listOf()
+  )
+
+  return MethodInfo(
+    methodName = "__truthy__".toUtf8Value(),
+    methodDescriptor = loxUnaryOpDescriptor,
+    accessFlagList = listOf(MethodAccessFlags.NONE),
+    attributeList = listOf(codeAttribute),
   )
 }
 

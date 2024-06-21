@@ -1,0 +1,24 @@
+print "Expect false";
+print nil != nil; // expect: false
+
+print "Expect false";
+print true != true; // expect: false
+print "Expect true";
+print true != false; // expect: true
+
+print "Expect false";
+print 1 != 1; // expect: false
+print "Expect true";
+print 1 != 2; // expect: true
+
+print "Expect false";
+print "str" != "str"; // expect: false
+print "Expect true";
+print "str" != "ing"; // expect: true
+
+print "Expect true";
+print nil != false; // expect: true
+print "Expect true";
+print false != 0; // expect: true
+print "Expect true";
+print 0 != "0"; // expect: true

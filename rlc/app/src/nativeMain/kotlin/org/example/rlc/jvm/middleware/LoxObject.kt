@@ -40,7 +40,7 @@ import org.example.rlc.jvm.ir.toUtf8Value
 internal fun loxObject() = ClassFile(
   thisClassInfo = loxObjectClassInfo,
   superClassInfo = "java/lang/Object".toClassInfo(),
-  accessFlagList = listOf(ClassAccessFlags.SUPER),
+  accessFlagList = listOf(ClassAccessFlags.SUPER, ClassAccessFlags.ABSTRACT),
   attributeList = listOf(),
   fieldList = listOf(
     clazzFieldInfo(),
@@ -49,7 +49,12 @@ internal fun loxObject() = ClassFile(
     loxBooleanClass(),
     loxStringClass()
   ),
-  methodList = listOf(loxObjectConstructor(), loxObjectStaticInitializer()),
+  methodList = listOf(
+    loxObjectConstructor(),
+    loxObjectStaticInitializer(),
+    abstractEqMethod(),
+    abstractTruthyMethod(),
+  ),
   interfaceList = listOf(),
 )
 
@@ -181,7 +186,7 @@ private fun loxObjectStaticInitializer(): MethodInfo {
   )
 }
 
-fun loxObjectConstructor(): MethodInfo {
+private fun loxObjectConstructor(): MethodInfo {
   val clazzField = FieldRefInfo(
     label = "LoxObject.clazz:LLoxClass;",
     classInfo = "LoxObject".toClassInfo(),
@@ -210,6 +215,45 @@ fun loxObjectConstructor(): MethodInfo {
   return MethodInfo(
     methodName = "<init>".toUtf8Value(),
     methodDescriptor = "(LLoxClass;)V".toUtf8Value(),
+    accessFlagList = listOf(MethodAccessFlags.NONE),
+    attributeList = listOf(codeAttribute),
+  )
+}
+
+private fun abstractEqMethod(): MethodInfo = MethodInfo(
+  methodName = "__eq__".toUtf8Value(),
+  methodDescriptor = loxBinaryOpDescriptor,
+  accessFlagList = listOf(MethodAccessFlags.ABSTRACT),
+  attributeList = listOf()
+)
+
+// Later it will not be abstract
+private fun abstractTruthyMethod(): MethodInfo = MethodInfo(
+  methodName = "__truthy__".toUtf8Value(),
+  methodDescriptor = loxUnaryOpDescriptor,
+  accessFlagList = listOf(MethodAccessFlags.ABSTRACT),
+  attributeList = listOf()
+)
+
+internal fun alwaysTruthy(): MethodInfo {
+  val code = listOf(
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    SimpleOperation(Opcode.OP_DUP),
+    SimpleOperation(Opcode.OP_ICONST_1),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
+    SimpleOperation(Opcode.OP_ARETURN)
+  )
+
+  val codeAttribute = CodeAttribute(
+    argsSize = 1,
+    code = code,
+    exceptionTable = 0,
+    attributes = listOf()
+  )
+
+  return MethodInfo(
+    methodName = "__truthy__".toUtf8Value(),
+    methodDescriptor = loxUnaryOpDescriptor,
     accessFlagList = listOf(MethodAccessFlags.NONE),
     attributeList = listOf(codeAttribute),
   )

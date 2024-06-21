@@ -1,0 +1,22 @@
+print "1: expect: false";
+print !true;
+
+print "2: expect: true";
+print !false;    // expect: true
+print "3: expect: true";
+print !!true;    // expect: true
+
+print "4: expect: false";
+print !123;      // expect: false
+print "5: expect: false";
+print !0;        // expect: false
+
+print "6: expect: true";
+print !nil;     // expect: true
+
+print "7: expect: false";
+print !"";       // expect: false
+
+// fun foo() {}
+// print "expect: false";
+// print !foo;      // expect: false
