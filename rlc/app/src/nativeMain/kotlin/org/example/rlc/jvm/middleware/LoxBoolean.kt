@@ -3,6 +3,7 @@ package org.example.rlc.jvm.middleware
 import org.example.rlc.jvm.ir.ByteConstantOperation
 import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
+import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.CodeAttribute
 import org.example.rlc.jvm.ir.ControlFlowOperation
 import org.example.rlc.jvm.ir.FieldAccessFlags
@@ -10,14 +11,17 @@ import org.example.rlc.jvm.ir.FieldInfo
 import org.example.rlc.jvm.ir.FieldRefInfo
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
+import org.example.rlc.jvm.ir.MethodSignature
 import org.example.rlc.jvm.ir.NameAndTypeInfo
+import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
-import org.example.rlc.jvm.ir.toStringRefInfo
+import org.example.rlc.jvm.ir.StringRefInfo
+import org.example.rlc.jvm.ir.loxMainClassName
 import org.example.rlc.jvm.ir.toUtf8Value
 
-internal fun loxBoolean() = ClassFile(
+internal fun loxBooleanCf() = ClassFile(
   thisClassInfo = loxBooleanClassInfo,
   superClassInfo = loxObjectClassInfo,
   accessFlagList = listOf(ClassAccessFlags.SUPER),
@@ -78,10 +82,13 @@ private fun loxBooleanConstructor(): MethodInfo {
   )
 
   return MethodInfo(
-    methodName = "<init>".toUtf8Value(),
-    methodDescriptor = "(Z)V".toUtf8Value(),
+    methodName = "<init>",
+    methodDescriptor = "(Z)V",
     accessFlagList = listOf(),
     attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }
 
@@ -113,6 +120,9 @@ private fun eq(): MethodInfo {
     methodDescriptor = loxBinaryOpDescriptor,
     accessFlagList = listOf(MethodAccessFlags.NONE),
     attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }
 
@@ -136,7 +146,10 @@ private fun neg(): MethodInfo {
     methodName = "__neg__".toUtf8Value(),
     methodDescriptor = "()LLoxObject;".toUtf8Value(),
     accessFlagList = listOf(MethodAccessFlags.NONE),
-    attributeList = listOf(codeAttribute)
+    attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }
 
@@ -158,17 +171,23 @@ private fun truthy(): MethodInfo {
     methodDescriptor = loxUnaryOpDescriptor,
     accessFlagList = listOf(MethodAccessFlags.NONE),
     attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }
+
+private val trueStr = StringRefInfo(value = "true")
+private val falseStr = StringRefInfo(value = "false")
 
 private fun toString(): MethodInfo {
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo),
     ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 5),
-    ByteConstantOperation(Opcode.OP_LDC, "true".toStringRefInfo()),
+    ByteConstantOperation(Opcode.OP_LDC, trueStr),
     SimpleOperation(Opcode.OP_ARETURN),
-    ByteConstantOperation(Opcode.OP_LDC, "false".toStringRefInfo()),
+    ByteConstantOperation(Opcode.OP_LDC, falseStr),
     SimpleOperation(Opcode.OP_ARETURN)
   )
 
@@ -184,5 +203,8 @@ private fun toString(): MethodInfo {
     methodDescriptor = toStringDescriptor,
     accessFlagList = listOf(MethodAccessFlags.PUBLIC),
     attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }

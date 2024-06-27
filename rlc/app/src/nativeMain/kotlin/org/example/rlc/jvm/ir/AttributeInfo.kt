@@ -5,21 +5,7 @@ import kotlin.math.max
 sealed class AttributeInfo(val attributeName: Utf8Value)
 
 
-sealed class StackMapFrame(val tag: Byte) {
-  abstract fun toBytes(): List<Byte>
-}
 
-class SameFrame(tag: Byte) : StackMapFrame(tag) {
-  override fun toBytes(): List<Byte> {
-    return listOf(tag)
-  }
-}
-
-class StackMapTableAttribute(
-  val frames: List<StackMapFrame>
-) : AttributeInfo(stackMapTableAttributeName) {
-  fun isEmpty() = frames.isEmpty()
-}
 
 class CodeAttribute(
   private val argsSize: Int,

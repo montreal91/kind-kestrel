@@ -3,18 +3,22 @@ package org.example.rlc.jvm.middleware
 import org.example.rlc.jvm.ir.ByteConstantOperation
 import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
+import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.CodeAttribute
 import org.example.rlc.jvm.ir.FieldRefInfo
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
+import org.example.rlc.jvm.ir.MethodSignature
 import org.example.rlc.jvm.ir.NameAndTypeInfo
+import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
-import org.example.rlc.jvm.ir.toStringRefInfo
+import org.example.rlc.jvm.ir.StringRefInfo
+import org.example.rlc.jvm.ir.loxMainClassName
 import org.example.rlc.jvm.ir.toUtf8Value
 
-internal fun loxNil() = ClassFile(
+internal fun loxNilCf() = ClassFile(
   thisClassInfo = loxNilClassInfo,
   superClassInfo = loxObjectClassInfo,
   accessFlagList = listOf(ClassAccessFlags.SUPER),
@@ -53,7 +57,10 @@ private fun loxNilConstructor(): MethodInfo {
     methodName = "<init>".toUtf8Value(),
     methodDescriptor = "()V".toUtf8Value(),
     accessFlagList = listOf(),
-    attributeList = listOf(codeAttribute)
+    attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }
 
@@ -78,13 +85,18 @@ private fun truthy(): MethodInfo {
     methodDescriptor = loxUnaryOpDescriptor,
     accessFlagList = listOf(MethodAccessFlags.NONE),
     attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }
+
+private val nilStr = StringRefInfo(value = "nil")
 
 private fun toString(): MethodInfo {
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ByteConstantOperation(Opcode.OP_LDC, "nil".toStringRefInfo()),
+    ByteConstantOperation(Opcode.OP_LDC, nilStr),
     SimpleOperation(Opcode.OP_ARETURN)
   )
 
@@ -99,6 +111,9 @@ private fun toString(): MethodInfo {
     methodName = "toString".toUtf8Value(),
     methodDescriptor = toStringDescriptor,
     accessFlagList = listOf(MethodAccessFlags.PUBLIC),
-    attributeList = listOf(codeAttribute)
+    attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }

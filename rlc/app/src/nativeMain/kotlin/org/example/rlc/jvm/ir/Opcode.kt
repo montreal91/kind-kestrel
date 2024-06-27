@@ -83,7 +83,7 @@ enum class Opcode(val value: Byte) {
   // Succeeds if and only if value = 0
   OP_IFEQ(0x99.toByte()),
 
-  // Branch if int comparison with zero succeeds.
+  // Branch if int comparison with zero fails.
   // Succeeds if and only if value != 0
   OP_IFNE(0x9A.toByte()),
 

@@ -1,20 +1,29 @@
 package org.example.rlc.jvm.middleware
 
 import org.example.rlc.frontend.Token
+import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.FieldRefInfo
 import org.example.rlc.jvm.ir.MethodRefInfo
 import org.example.rlc.jvm.ir.NameAndTypeInfo
-import org.example.rlc.jvm.ir.toClassInfo
+import org.example.rlc.jvm.ir.javaLangObject
+import org.example.rlc.jvm.ir.loxBoolean
+import org.example.rlc.jvm.ir.loxDouble
+import org.example.rlc.jvm.ir.loxMainClassName
+import org.example.rlc.jvm.ir.loxNil
+import org.example.rlc.jvm.ir.loxObject
+import org.example.rlc.jvm.ir.loxString
 import org.example.rlc.jvm.ir.toUtf8Value
 
 
-internal val loxRuntimeError = "LoxRuntimeError".toClassInfo()
-internal val loxDoubleClassInfo = "LoxDouble".toClassInfo()
-internal val loxObjectClassInfo = "LoxObject".toClassInfo()
-internal val loxNilClassInfo = "LoxNil".toClassInfo()
-internal val loxBooleanClassInfo = "LoxBoolean".toClassInfo()
-internal val loxClassInfo = "LoxClass".toClassInfo()
-internal val loxStringClassInfo = "LoxString".toClassInfo()
+internal val javaLangObjectClassInfo = ClassInfo(className = javaLangObject)
+internal val loxRuntimeErrorClassInfo = ClassInfo(className = "LoxRuntimeError")
+internal val loxDoubleClassInfo = ClassInfo(className = loxDouble)
+internal val loxObjectClassInfo = ClassInfo(className = loxObject)
+internal val loxNilClassInfo = ClassInfo(className = loxNil)
+internal val loxBooleanClassInfo = ClassInfo(className = loxBoolean)
+internal val loxClassInfo = ClassInfo(className = "LoxClass")
+internal val loxStringClassInfo = ClassInfo(className = loxString)
+internal val loxMainClassInfo = ClassInfo(className = loxMainClassName)
 
 internal val loxDoubleConstructorInfo = MethodRefInfo(
   label = "LoxDouble.\"<init>\":(D)V",
@@ -90,7 +99,7 @@ internal val initializerNameAndType = NameAndTypeInfo(
 
 internal val objectConstructor = MethodRefInfo(
   label = "java/lang/Object.\"<init>\":()V",
-  classInfo = "java/lang/Object".toClassInfo(),
+  classInfo = javaLangObjectClassInfo,
   nameAndType = initializerNameAndType,
   argsSize = 1,
   returnSize = 1
@@ -108,7 +117,7 @@ internal val loxObjectConstructor = MethodRefInfo(
   returnSize = 1
 )
 
-internal val javaLangObjectClassInfo = "java/lang/Object".toClassInfo()
+
 
 internal val javaStringDescriptor = "Ljava/lang/String;".toUtf8Value()
 
@@ -116,7 +125,7 @@ internal val constructorMethodName = "<init>".toUtf8Value()
 
 internal val systemOutField = FieldRefInfo(
   label = "java/lang/System.out:Ljava/io/PrintStream;",
-  classInfo = "java/lang/System".toClassInfo(),
+  classInfo = ClassInfo(className = "java/lang/System"),
   nameAndType = NameAndTypeInfo(
     label = "System.err:PrintStream",
     name = "out".toUtf8Value(),
@@ -126,7 +135,7 @@ internal val systemOutField = FieldRefInfo(
 
 internal val printMethodRef = MethodRefInfo(
   label = "java/io/PrintStream.println:(Ljava/lang/Object;)V",
-  classInfo = "java/io/PrintStream".toClassInfo(),
+  classInfo = ClassInfo(className = "java/io/PrintStream"),
   nameAndType = NameAndTypeInfo(
     label = "println:(Ljava/lang/Object;)V",
     name = "println".toUtf8Value(),
@@ -157,7 +166,7 @@ internal fun stringEquals(): MethodRefInfo {
   val typeInfo = "(Ljava/lang/Object;)Z".toUtf8Value()
   return MethodRefInfo(
     label = "java/lang/String.equals:(Ljava/lang/Object;)Z",
-    classInfo = "java/lang/String".toClassInfo(),
+    classInfo = ClassInfo(className = "java/lang/String"),
     nameAndType = NameAndTypeInfo(
       label = "equals:(Ljava/lang/Object;)Z",
       name = nameInfo,
@@ -235,5 +244,17 @@ internal val loxObjectEqMri = MethodRefInfo(
     descriptor = loxBinaryOpDescriptor,
   ),
   argsSize = 2,
+  returnSize = 1,
+)
+
+internal val loxObjectTruthyMri = MethodRefInfo(
+  label = "LoxObject.__truthy__:(LLoxObject;)LLoxObject;",
+  classInfo = loxObjectClassInfo,
+  nameAndType = NameAndTypeInfo(
+    label = "__truthy__:(LLoxObject;)LLoxObject;",
+    name = "__truthy__".toUtf8Value(),
+    descriptor = loxUnaryOpDescriptor,
+  ),
+  argsSize = 1,
   returnSize = 1,
 )

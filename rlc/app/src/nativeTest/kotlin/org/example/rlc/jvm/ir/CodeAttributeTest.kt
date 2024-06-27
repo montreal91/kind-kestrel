@@ -2,7 +2,7 @@ package org.example.rlc.jvm.ir
 
 import org.example.rlc.jvm.middleware.generateRuntimeError
 import org.example.rlc.jvm.middleware.loxDoubleClassInfo
-import org.example.rlc.jvm.middleware.loxRuntimeError
+import org.example.rlc.jvm.middleware.loxRuntimeErrorClassInfo
 import org.example.rlc.jvm.middleware.runtimeErrorConstructorRef
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -39,9 +39,9 @@ private fun addMethodCodeAttribute(): CodeAttribute {
     SimpleOperation(Opcode.OP_ALOAD_3),
     ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, methodRefInfo),
     SimpleOperation(Opcode.OP_ARETURN),
-    ShortConstantOperation(Opcode.OP_NEW, loxRuntimeError),
+    ShortConstantOperation(Opcode.OP_NEW, loxRuntimeErrorClassInfo),
     SimpleOperation(Opcode.OP_DUP),
-    ByteConstantOperation(Opcode.OP_LDC, "Both operands should be double.".toStringRefInfo()),
+    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(value = "Both operands should be double.")),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, runtimeErrorConstructorRef()),
     SimpleOperation(Opcode.OP_ATHROW),
   )

@@ -2,6 +2,7 @@ package org.example.rlc.jvm.middleware
 
 import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
+import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.CodeAttribute
 import org.example.rlc.jvm.ir.FieldAccessFlags
 import org.example.rlc.jvm.ir.FieldInfo
@@ -9,14 +10,16 @@ import org.example.rlc.jvm.ir.FieldRefInfo
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
 import org.example.rlc.jvm.ir.MethodRefInfo
+import org.example.rlc.jvm.ir.MethodSignature
 import org.example.rlc.jvm.ir.NameAndTypeInfo
+import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
-import org.example.rlc.jvm.ir.toClassInfo
+import org.example.rlc.jvm.ir.loxMainClassName
 import org.example.rlc.jvm.ir.toUtf8Value
 
-internal fun loxString() = ClassFile(
+internal fun loxStringCf() = ClassFile(
   thisClassInfo = loxStringClassInfo,
   superClassInfo = loxObjectClassInfo,
   accessFlagList = listOf(ClassAccessFlags.SUPER),
@@ -71,6 +74,9 @@ private fun loxStringConstructor(): MethodInfo {
     methodDescriptor = "(Ljava/lang/String;)V".toUtf8Value(),
     accessFlagList = listOf(),
     attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }
 
@@ -92,7 +98,10 @@ private fun toString(): MethodInfo {
     methodName = "toString".toUtf8Value(),
     methodDescriptor = toStringDescriptor,
     accessFlagList = listOf(MethodAccessFlags.PUBLIC),
-    attributeList = listOf(codeAttribute)
+    attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }
 
@@ -120,13 +129,16 @@ private fun eq(): MethodInfo {
     methodDescriptor = loxBinaryOpDescriptor,
     accessFlagList = listOf(MethodAccessFlags.NONE),
     attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }
 
 private fun truthy() = alwaysTruthy()
 
 private fun stringConcatenation(): MethodInfo {
-  val sb = "java/lang/StringBuilder".toClassInfo()
+  val sb = ClassInfo(className = "java/lang/StringBuilder")
   val sbConstructorMethodRef = MethodRefInfo(
     label = "java/lang/StringBuilder.\"<init>\":(Ljava/lang/String;)V",
     classInfo = sb,
@@ -194,5 +206,8 @@ private fun stringConcatenation(): MethodInfo {
     methodDescriptor = "(LLoxString;)LLoxString;".toUtf8Value(),
     accessFlagList = listOf(MethodAccessFlags.NONE),
     attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }

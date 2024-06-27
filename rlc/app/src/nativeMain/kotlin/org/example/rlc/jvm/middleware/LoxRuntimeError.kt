@@ -2,15 +2,18 @@ package org.example.rlc.jvm.middleware
 
 import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
+import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.CodeAttribute
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
 import org.example.rlc.jvm.ir.MethodRefInfo
+import org.example.rlc.jvm.ir.MethodSignature
 import org.example.rlc.jvm.ir.NameAndTypeInfo
+import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
-import org.example.rlc.jvm.ir.toClassInfo
+import org.example.rlc.jvm.ir.loxMainClassName
 import org.example.rlc.jvm.ir.toUtf8Value
 
 
@@ -26,7 +29,7 @@ import org.example.rlc.jvm.ir.toUtf8Value
  * ```
  */
 internal fun loxRuntimeError() = ClassFile(
-  thisClassInfo = "LoxRuntimeError".toClassInfo(),
+  thisClassInfo = loxRuntimeErrorClassInfo,
   superClassInfo = runtimeExceptionClassInfo(),
   accessFlagList = listOf(ClassAccessFlags.SUPER),
   fieldList = listOf(),
@@ -35,7 +38,7 @@ internal fun loxRuntimeError() = ClassFile(
   attributeList = listOf(),
 )
 
-private fun runtimeExceptionClassInfo() = "java/lang/RuntimeException".toClassInfo()
+private fun runtimeExceptionClassInfo() = ClassInfo(className = "java/lang/RuntimeException")
 
 private fun constructor(): MethodInfo {
   val runtimeException = MethodRefInfo(
@@ -68,6 +71,9 @@ private fun constructor(): MethodInfo {
     methodName = "<init>".toUtf8Value(),
     methodDescriptor = "(Ljava/lang/String;)V".toUtf8Value(),
     accessFlagList = listOf(MethodAccessFlags.NONE),
-    attributeList = listOf(codeAttribute)
+    attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }

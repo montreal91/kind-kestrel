@@ -2,6 +2,7 @@ package org.example.rlc.jvm.middleware
 
 import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
+import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.CodeAttribute
 import org.example.rlc.jvm.ir.FieldAccessFlags
 import org.example.rlc.jvm.ir.FieldInfo
@@ -9,11 +10,13 @@ import org.example.rlc.jvm.ir.FieldRefInfo
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
 import org.example.rlc.jvm.ir.MethodRefInfo
+import org.example.rlc.jvm.ir.MethodSignature
 import org.example.rlc.jvm.ir.NameAndTypeInfo
+import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
-import org.example.rlc.jvm.ir.toClassInfo
+import org.example.rlc.jvm.ir.loxMainClassName
 import org.example.rlc.jvm.ir.toUtf8Value
 
 
@@ -55,7 +58,7 @@ import org.example.rlc.jvm.ir.toUtf8Value
  * }
  * ```
  */
-internal fun loxDouble() = ClassFile(
+internal fun loxDoubleCf() = ClassFile(
   thisClassInfo = loxDoubleClassInfo,
   superClassInfo = loxObjectClassInfo,
   accessFlagList = listOf(ClassAccessFlags.SUPER),
@@ -113,6 +116,9 @@ private fun loxDoubleConstructor(): MethodInfo {
     methodDescriptor = "(D)V".toUtf8Value(),
     accessFlagList = listOf(),
     attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }
 
@@ -136,6 +142,9 @@ private fun addArithmeticMethodInfo(methodName: String, operation: Opcode): Meth
     methodDescriptor = "(LLoxDouble;)LLoxDouble;".toUtf8Value(),
     accessFlagList = listOf(MethodAccessFlags.NONE),
     attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }
 
@@ -157,6 +166,9 @@ private fun addUnaryMethodInfo(methodName: String, operation: Opcode): MethodInf
     methodDescriptor = "()LLoxDouble;".toUtf8Value(),
     accessFlagList = listOf(MethodAccessFlags.NONE),
     attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }
 
@@ -184,7 +196,10 @@ private fun addEqMethod(): MethodInfo {
     methodName = "__eq__".toUtf8Value(),
     methodDescriptor = loxBinaryOpDescriptor,
     accessFlagList = listOf(MethodAccessFlags.NONE),
-    attributeList = listOf(codeAttribute)
+    attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }
 
@@ -193,7 +208,7 @@ private fun truthy() = alwaysTruthy()
 private fun toString(): MethodInfo {
   val doubleToStringMethodRef = MethodRefInfo(
     label = "java/lang/Double.toString:(D)Ljava/lang/String;",
-    classInfo = "java/lang/Double".toClassInfo(),
+    classInfo = ClassInfo(className = "java/lang/Double"),
     nameAndType = NameAndTypeInfo(
       label = "toString:(D)Ljava/lang/String;",
       name = "toString".toUtf8Value(),
@@ -216,7 +231,10 @@ private fun toString(): MethodInfo {
     methodName = "toString".toUtf8Value(),
     methodDescriptor = toStringDescriptor,
     accessFlagList = listOf(MethodAccessFlags.PUBLIC),
-    attributeList = listOf(codeAttribute)
+    attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }
 
@@ -246,7 +264,10 @@ private fun greater(): MethodInfo {
     methodName = "__gt__".toUtf8Value(),
     methodDescriptor = numberComparisonDescriptor,
     accessFlagList = listOf(MethodAccessFlags.NONE),
-    attributeList = listOf(codeAttribute)
+    attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }
 
@@ -274,7 +295,10 @@ private fun greaterOrEquals(): MethodInfo {
     methodName = "__ge__".toUtf8Value(),
     methodDescriptor = numberComparisonDescriptor,
     accessFlagList = listOf(MethodAccessFlags.NONE),
-    attributeList = listOf(codeAttribute)
+    attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }
 
@@ -300,7 +324,10 @@ private fun less(): MethodInfo {
     methodName = "__lt__".toUtf8Value(),
     methodDescriptor = numberComparisonDescriptor,
     accessFlagList = listOf(MethodAccessFlags.NONE),
-    attributeList = listOf(codeAttribute)
+    attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }
 
@@ -332,6 +359,9 @@ private fun lessOrEquals(): MethodInfo {
     methodName = "__le__".toUtf8Value(),
     methodDescriptor = numberComparisonDescriptor,
     accessFlagList = listOf(MethodAccessFlags.NONE),
-    attributeList = listOf(codeAttribute)
+    attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }

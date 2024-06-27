@@ -1,17 +1,20 @@
 package org.example.rlc.jvm.middleware
 
 import org.example.rlc.jvm.ir.ByteConstantOperation
+import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.CodeAttribute
 import org.example.rlc.jvm.ir.ControlFlowOperation
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
 import org.example.rlc.jvm.ir.MethodRefInfo
+import org.example.rlc.jvm.ir.MethodSignature
 import org.example.rlc.jvm.ir.NameAndTypeInfo
+import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
-import org.example.rlc.jvm.ir.toClassInfo
-import org.example.rlc.jvm.ir.toStringRefInfo
+import org.example.rlc.jvm.ir.StringRefInfo
+import org.example.rlc.jvm.ir.loxMainClassName
 import org.example.rlc.jvm.ir.toUtf8Value
 
 
@@ -20,7 +23,7 @@ internal val objectInitializer = "<init>".toUtf8Value()
 internal fun runtimeErrorConstructorRef(): MethodRefInfo {
   return MethodRefInfo(
     label = "LoxRuntimeError.\"<init>\":(Ljava/lang/String;)V",
-    classInfo = "LoxRuntimeError".toClassInfo(),
+    classInfo = loxRuntimeErrorClassInfo,
     nameAndType = NameAndTypeInfo(
       label = "\"<init>\":(Ljava/lang/String;)V",
       name = objectInitializer,
@@ -170,9 +173,9 @@ internal fun numberMagicMethod(methodName: String, returnType: String): MethodIn
     SimpleOperation(Opcode.OP_ALOAD_3),
     ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, methodRefInfo),
     SimpleOperation(Opcode.OP_ARETURN),
-    ShortConstantOperation(Opcode.OP_NEW, loxRuntimeError),
+    ShortConstantOperation(Opcode.OP_NEW, loxRuntimeErrorClassInfo),
     SimpleOperation(Opcode.OP_DUP),
-    ByteConstantOperation(Opcode.OP_LDC, "Operands must be numbers.".toStringRefInfo()),
+    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(value = "Operands must be numbers.")),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, runtimeErrorConstructorRef()),
     SimpleOperation(Opcode.OP_ATHROW),
   )
@@ -225,6 +228,9 @@ private fun makeBinaryMethodInfo(methodName: String, codeAttribute: CodeAttribut
     MethodAccessFlags.PRIVATE,
   ),
   attributeList = listOf(codeAttribute),
+  // TODO: Make this stuff work
+  isStatic = true,
+  signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
 )
 
 private fun makeUnaryMethodInfo(methodName: String, codeAttribute: CodeAttribute) = MethodInfo(
@@ -236,6 +242,9 @@ private fun makeUnaryMethodInfo(methodName: String, codeAttribute: CodeAttribute
     MethodAccessFlags.PRIVATE,
   ),
   attributeList = listOf(codeAttribute),
+  // TODO: Make this stuff work
+  isStatic = true,
+  signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
 )
 
 internal fun unaryMinusMagicMethod(methodName: String): MethodInfo {
@@ -274,7 +283,10 @@ internal fun unaryMinusMagicMethod(methodName: String): MethodInfo {
       MethodAccessFlags.FINAL,
       MethodAccessFlags.PRIVATE
     ),
-    attributeList = listOf(codeAttribute)
+    attributeList = listOf(codeAttribute),
+    // TODO: Make this stuff work
+    isStatic = true,
+    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
   )
 }
 
@@ -309,9 +321,9 @@ internal fun notOperatorMagicMethod(): MethodInfo {
 }
 
 internal fun generateRuntimeError(message: String) = listOf(
-  ShortConstantOperation(Opcode.OP_NEW, loxRuntimeError),
+  ShortConstantOperation(Opcode.OP_NEW, loxRuntimeErrorClassInfo),
   SimpleOperation(Opcode.OP_DUP),
-  ByteConstantOperation(Opcode.OP_LDC, message.toStringRefInfo()),
+  ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(message)),
   ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, runtimeErrorConstructorRef()),
   SimpleOperation(Opcode.OP_ATHROW),
 )

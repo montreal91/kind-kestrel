@@ -1,0 +1,22 @@
+// Note: These tests implicitly depend on ints being truthy.
+
+// Return the first non-true argument.
+print "Expect: false";
+print false and 1; // expect: false
+// print "Expect: 1";
+// print true and 1; // expect: 1
+// print "Expect: false";
+// print 1 and 2 and false; // expect: false
+
+// print "Expect: false";
+// print 1 and False and 2;
+
+// print "Expect nil";
+
+
+// Return the last argument if all are true.
+
+// print "Expect: true";
+// print 1 and true; // expect: true
+// print "Expect: 3";
+// print 1 and 2 and 3; // expect: 3

@@ -14,31 +14,35 @@ import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.jvm.ir.ByteConstantOperation
 import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
+import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.CodeAttribute
+import org.example.rlc.jvm.ir.ControlFlowOperation
+import org.example.rlc.jvm.ir.DoubleValue
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
 import org.example.rlc.jvm.ir.MethodRefInfo
+import org.example.rlc.jvm.ir.MethodSignature
+import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.Operation
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
+import org.example.rlc.jvm.ir.StringRefInfo
 import org.example.rlc.jvm.ir.loxMainClassName
-import org.example.rlc.jvm.ir.toClassInfo
-import org.example.rlc.jvm.ir.toStringRefInfo
 import org.example.rlc.jvm.ir.toUtf8Value
 
 
 class AstToClassFileIrConverter {
   private val constructor = "<init>".toUtf8Value()
   private val noArgsVoidDescriptor = "()V".toUtf8Value()
-  private val objectClass = "java/lang/Object".toClassInfo()
+  private val objectClass = javaLangObjectClassInfo
   private val classes = mutableListOf(
     loxClass(),
-    loxObject(),
-    loxBoolean(),
-    loxDouble(),
-    loxNil(),
-    loxString(),
+    loxObjectCf(),
+    loxBooleanCf(),
+    loxDoubleCf(),
+    loxNilCf(),
+    loxStringCf(),
     loxRuntimeError(),
   )
   private val currentCode = mutableListOf<Operation>()
@@ -52,7 +56,7 @@ class AstToClassFileIrConverter {
 
   private fun finalizeClass() {
     val c = ClassFile(
-      thisClassInfo = loxMainClassName.toClassInfo(),
+      thisClassInfo = loxMainClassInfo,
       superClassInfo = objectClass,
       accessFlagList = listOf(ClassAccessFlags.PUBLIC),
       attributeList = listOf(),
@@ -133,7 +137,30 @@ class AstToClassFileIrConverter {
   }
 
   private fun visitLogical(expr: Logical) {
-    TODO("Not implemented yet.")
+    visitExpr(expr.left)
+    when (expr.operator.type) {
+      Token.Type.AND -> compileAnd(expr)
+      Token.Type.OR -> compileOr()
+      else -> throw IllegalStateException("Unsupported logical operator [${expr.operator}].")
+    }
+  }
+
+  private fun compileAnd(expr: Logical) {
+    currentCode.add(SimpleOperation(Opcode.OP_DUP))
+    currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, loxObjectTruthyMri))
+    currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, loxBooleanClassInfo))
+    currentCode.add(ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo))
+    val insertBranchHere = currentCode.size
+    // currentCode.add(ControlFlowOperation(Opcode.OP_IFEQ, n))
+    // I guess that before we add operations from the second branch,
+    // we need to pop duplicated boolean object from the stack.
+    // Though, probably, we shouldn't duplicate the result of truthy method, but the resulting object itself.
+    visitExpr(expr.right)
+    val jumpToHere = currentCode.size + 1
+    currentCode.add(insertBranchHere, ControlFlowOperation(Opcode.OP_IFEQ, jumpToHere))
+  }
+
+  private fun compileOr() {
   }
 
   private fun visitUnary(expr: Unary) {
@@ -173,7 +200,7 @@ class AstToClassFileIrConverter {
     val ops = listOf(
       ShortConstantOperation(Opcode.OP_NEW, loxDoubleClassInfo),
       SimpleOperation(Opcode.OP_DUP),
-      ShortConstantOperation(Opcode.OP_LDC2_W, literal.toConstant()),
+      ShortConstantOperation(Opcode.OP_LDC2_W, DoubleValue(literal.value)),
       ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxDoubleConstructorInfo)
     )
 
@@ -194,7 +221,7 @@ class AstToClassFileIrConverter {
     val ops = listOf(
       ShortConstantOperation(Opcode.OP_NEW, loxStringClassInfo),
       SimpleOperation(Opcode.OP_DUP),
-      ByteConstantOperation(Opcode.OP_LDC, literal.value.toStringRefInfo()),
+      ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(literal.value)),
       ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxStringConstructorInfo)
     )
 
@@ -214,7 +241,9 @@ class AstToClassFileIrConverter {
           exceptionTable = 0,
           attributes = listOf()
         )
-      )
+      ),
+      isStatic = true,
+      signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
     )
   }
 
@@ -236,7 +265,10 @@ class AstToClassFileIrConverter {
           exceptionTable = 0,
           attributes = listOf()
         )
-      )
+      ),
+      // TODO: Make this stuff work
+      isStatic = true,
+      signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
     )
   }
 
@@ -250,7 +282,7 @@ class AstToClassFileIrConverter {
 
     return MethodRefInfo(
       label = label,
-      classInfo = loxMainClassName.toClassInfo(),
+      classInfo = loxMainClassInfo,
       nameAndType = nameAndType,
       argsSize = 2,
       returnSize = 1
@@ -263,7 +295,7 @@ class AstToClassFileIrConverter {
 
     return MethodRefInfo(
       label = label,
-      classInfo = loxMainClassName.toClassInfo(),
+      classInfo = loxMainClassInfo,
       nameAndType = nameAndType,
       argsSize = 1,
       returnSize = 1
