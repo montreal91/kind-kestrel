@@ -5,6 +5,7 @@ import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
 import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.CodeAttribute
+import org.example.rlc.jvm.ir.EmptyVti
 import org.example.rlc.jvm.ir.FieldAccessFlags
 import org.example.rlc.jvm.ir.FieldInfo
 import org.example.rlc.jvm.ir.FieldRefInfo
@@ -19,8 +20,8 @@ import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
 import org.example.rlc.jvm.ir.loxBoolean
+import org.example.rlc.jvm.ir.loxClassClassName
 import org.example.rlc.jvm.ir.loxDouble
-import org.example.rlc.jvm.ir.loxMainClassName
 import org.example.rlc.jvm.ir.loxNil
 import org.example.rlc.jvm.ir.loxString
 import org.example.rlc.jvm.ir.toUtf8Value
@@ -186,13 +187,11 @@ private fun loxObjectStaticInitializer(): MethodInfo {
   )
 
   return MethodInfo(
-    methodName = "<clinit>".toUtf8Value(),
-    methodDescriptor = "()V".toUtf8Value(),
+    methodName = staticInitializerMethodName,
     accessFlagList = listOf(MethodAccessFlags.STATIC),
     attributeList = listOf(codeAttribute),
-    // TODO: Make this stuff work
     isStatic = true,
-    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
+    signature = MethodSignature(listOf(), EmptyVti())
   )
 }
 
@@ -223,35 +222,29 @@ private fun loxObjectConstructor(): MethodInfo {
   )
 
   return MethodInfo(
-    methodName = "<init>".toUtf8Value(),
-    methodDescriptor = "(LLoxClass;)V".toUtf8Value(),
+    methodName = constructorMethodName,
     accessFlagList = listOf(MethodAccessFlags.NONE),
     attributeList = listOf(codeAttribute),
-    // TODO: Make this stuff work
     isStatic = true,
-    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
+    signature = MethodSignature(listOf(ObjectVti(ClassInfo(loxClassClassName))), EmptyVti())
   )
 }
 
 private fun abstractEqMethod(): MethodInfo = MethodInfo(
-  methodName = "__eq__".toUtf8Value(),
-  methodDescriptor = loxBinaryOpDescriptor,
+  methodName = "__eq__",
   accessFlagList = listOf(MethodAccessFlags.ABSTRACT),
   attributeList = listOf(),
-  // TODO: Make this stuff work
   isStatic = true,
-  signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
+  signature = loxBinaryOpSignature
 )
 
 // Later it will not be abstract
 private fun abstractTruthyMethod(): MethodInfo = MethodInfo(
-  methodName = "__truthy__".toUtf8Value(),
-  methodDescriptor = loxUnaryOpDescriptor,
+  methodName = "__truthy__",
   accessFlagList = listOf(MethodAccessFlags.ABSTRACT),
   attributeList = listOf(),
-  // TODO: Make this stuff work
   isStatic = true,
-  signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
+  signature = loxUnaryOpSignature
 )
 
 internal fun alwaysTruthy(): MethodInfo {
@@ -271,12 +264,10 @@ internal fun alwaysTruthy(): MethodInfo {
   )
 
   return MethodInfo(
-    methodName = "__truthy__".toUtf8Value(),
-    methodDescriptor = loxUnaryOpDescriptor,
+    methodName = "__truthy__",
     accessFlagList = listOf(MethodAccessFlags.NONE),
     attributeList = listOf(codeAttribute),
-    // TODO: Make this stuff work
     isStatic = true,
-    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
+    signature = loxUnaryOpSignature
   )
 }

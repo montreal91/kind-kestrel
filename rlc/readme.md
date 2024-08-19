@@ -23,7 +23,7 @@ The brief list of features I want to implement
 
 ### Expressions
 - [x] Arithmetic
-- [ ] Comparison and Equality
+- [x] Comparison and Equality
 - [ ] Logical Operators
 - [ ] Precedence
 - [ ] Grouping

@@ -71,12 +71,15 @@ private fun doubleToJvmConstant(value: Double): ByteArray {
 class Utf8Value(
   label: String,
   value: ByteArray,
+  val encodedString: String,
   val size: Short,
 ) : ConstantValue(type = ConstantType.UTF_8, label = label, value = value) {
-  constructor(value: String) : this(
-    label = value + "_Utf8",
-    value = value.encodeToByteArray(),
-    size = value.length.toShort()
+
+  constructor(str: String) : this(
+    label = str,
+    value = str.encodeToByteArray(),
+    size = str.length.toShort(),
+    encodedString = str,
   )
 }
 

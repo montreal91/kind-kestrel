@@ -4,6 +4,7 @@ import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
 import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.CodeAttribute
+import org.example.rlc.jvm.ir.EmptyVti
 import org.example.rlc.jvm.ir.FieldAccessFlags
 import org.example.rlc.jvm.ir.FieldInfo
 import org.example.rlc.jvm.ir.FieldRefInfo
@@ -16,7 +17,6 @@ import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
-import org.example.rlc.jvm.ir.loxMainClassName
 import org.example.rlc.jvm.ir.toUtf8Value
 
 internal fun loxStringCf() = ClassFile(
@@ -70,13 +70,11 @@ private fun loxStringConstructor(): MethodInfo {
   )
 
   return MethodInfo(
-    methodName = "<init>".toUtf8Value(),
-    methodDescriptor = "(Ljava/lang/String;)V".toUtf8Value(),
+    methodName = constructorMethodName,
     accessFlagList = listOf(),
     attributeList = listOf(codeAttribute),
-    // TODO: Make this stuff work
     isStatic = true,
-    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
+    signature = MethodSignature(listOf(ObjectVti(javaLangStringClassInfo)), EmptyVti())
   )
 }
 
@@ -95,13 +93,11 @@ private fun toString(): MethodInfo {
   )
 
   return MethodInfo(
-    methodName = "toString".toUtf8Value(),
-    methodDescriptor = toStringDescriptor,
+    methodName = "toString",
     accessFlagList = listOf(MethodAccessFlags.PUBLIC),
     attributeList = listOf(codeAttribute),
-    // TODO: Make this stuff work
     isStatic = true,
-    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
+    signature = MethodSignature(listOf(), ObjectVti(javaLangStringClassInfo))
   )
 }
 
@@ -125,13 +121,11 @@ private fun eq(): MethodInfo {
   )
 
   return MethodInfo(
-    methodName = "__eq__".toUtf8Value(),
-    methodDescriptor = loxBinaryOpDescriptor,
+    methodName = "__eq__",
     accessFlagList = listOf(MethodAccessFlags.NONE),
     attributeList = listOf(codeAttribute),
-    // TODO: Make this stuff work
     isStatic = true,
-    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
+    signature = loxBinaryOpSignature
   )
 }
 
@@ -202,12 +196,10 @@ private fun stringConcatenation(): MethodInfo {
   )
 
   return MethodInfo(
-    methodName = "__add__".toUtf8Value(),
-    methodDescriptor = "(LLoxString;)LLoxString;".toUtf8Value(),
+    methodName = "__add__",
     accessFlagList = listOf(MethodAccessFlags.NONE),
     attributeList = listOf(codeAttribute),
-    // TODO: Make this stuff work
     isStatic = true,
-    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
+    signature = MethodSignature(listOf(ObjectVti(loxStringClassInfo)), ObjectVti(loxStringClassInfo))
   )
 }

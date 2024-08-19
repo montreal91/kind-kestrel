@@ -1,10 +1,11 @@
 package org.example.rlc.jvm.middleware
 
+import org.example.rlc.jvm.ir.BooleanVti
 import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
-import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.CodeAttribute
 import org.example.rlc.jvm.ir.ControlFlowOperation
+import org.example.rlc.jvm.ir.EmptyVti
 import org.example.rlc.jvm.ir.FieldAccessFlags
 import org.example.rlc.jvm.ir.FieldInfo
 import org.example.rlc.jvm.ir.FieldRefInfo
@@ -16,7 +17,6 @@ import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
-import org.example.rlc.jvm.ir.loxMainClassName
 import org.example.rlc.jvm.ir.toUtf8Value
 
 /***
@@ -84,12 +84,13 @@ private fun loxClassConstructor(): MethodInfo {
   )
   return MethodInfo(
     methodName = constructorMethodName,
-    methodDescriptor = "(Ljava/lang/String;)V".toUtf8Value(),
     accessFlagList = listOf(MethodAccessFlags.NONE),
     attributeList = listOf(code),
-    // TODO: Make this stuff work
     isStatic = true,
-    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
+    signature = MethodSignature(
+      listOf(ObjectVti(classInfo = javaLangStringClassInfo, isArray = false)),
+      EmptyVti()
+    ),
   )
 }
 
@@ -114,12 +115,10 @@ private fun loxClassEqualsMethod(): MethodInfo {
     attributes = listOf(),
   )
   return MethodInfo(
-    methodName = "equals".toUtf8Value(),
-    methodDescriptor = "(Ljava/lang/Object;)Z".toUtf8Value(),
+    methodName = "equals",
     accessFlagList = listOf(MethodAccessFlags.PUBLIC),
     attributeList = listOf(code),
-    // TODO: Make this stuff work
     isStatic = true,
-    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
+    signature = MethodSignature(listOf(ObjectVti(javaLangObjectClassInfo)), BooleanVti())
   )
 }

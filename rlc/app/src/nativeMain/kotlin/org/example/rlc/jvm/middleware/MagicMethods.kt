@@ -1,7 +1,6 @@
 package org.example.rlc.jvm.middleware
 
 import org.example.rlc.jvm.ir.ByteConstantOperation
-import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.CodeAttribute
 import org.example.rlc.jvm.ir.ControlFlowOperation
 import org.example.rlc.jvm.ir.MethodAccessFlags
@@ -14,7 +13,6 @@ import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
-import org.example.rlc.jvm.ir.loxMainClassName
 import org.example.rlc.jvm.ir.toUtf8Value
 
 
@@ -220,31 +218,30 @@ internal fun notEqualsMethod(): MethodInfo {
 }
 
 private fun makeBinaryMethodInfo(methodName: String, codeAttribute: CodeAttribute) = MethodInfo(
-  methodName = methodName.toUtf8Value(),
-  methodDescriptor = "(LLoxObject;LLoxObject;)LLoxObject;".toUtf8Value(),
+  methodName = methodName,
   accessFlagList = listOf(
     MethodAccessFlags.STATIC,
     MethodAccessFlags.FINAL,
     MethodAccessFlags.PRIVATE,
   ),
   attributeList = listOf(codeAttribute),
-  // TODO: Make this stuff work
   isStatic = true,
-  signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
+  signature = MethodSignature(
+    listOf(ObjectVti(loxObjectClassInfo), ObjectVti(loxObjectClassInfo)),
+    ObjectVti(loxObjectClassInfo)
+  )
 )
 
 private fun makeUnaryMethodInfo(methodName: String, codeAttribute: CodeAttribute) = MethodInfo(
-  methodName = methodName.toUtf8Value(),
-  methodDescriptor = "(LLoxObject;)LLoxObject;".toUtf8Value(),
+  methodName = methodName,
   accessFlagList = listOf(
     MethodAccessFlags.STATIC,
     MethodAccessFlags.FINAL,
     MethodAccessFlags.PRIVATE,
   ),
   attributeList = listOf(codeAttribute),
-  // TODO: Make this stuff work
   isStatic = true,
-  signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
+  signature = MethodSignature(listOf(ObjectVti(loxObjectClassInfo)), ObjectVti(loxObjectClassInfo))
 )
 
 internal fun unaryMinusMagicMethod(methodName: String): MethodInfo {
@@ -276,17 +273,15 @@ internal fun unaryMinusMagicMethod(methodName: String): MethodInfo {
   )
 
   return MethodInfo(
-    methodName = methodName.toUtf8Value(),
-    methodDescriptor = "(LLoxObject;)LLoxObject;".toUtf8Value(),
+    methodName = methodName,
     accessFlagList = listOf(
       MethodAccessFlags.STATIC,
       MethodAccessFlags.FINAL,
       MethodAccessFlags.PRIVATE
     ),
     attributeList = listOf(codeAttribute),
-    // TODO: Make this stuff work
     isStatic = true,
-    signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
+    signature = MethodSignature(listOf(ObjectVti(loxObjectClassInfo)), ObjectVti(loxObjectClassInfo))
   )
 }
 

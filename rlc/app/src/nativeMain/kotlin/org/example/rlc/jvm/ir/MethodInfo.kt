@@ -4,34 +4,35 @@ import kotlin.experimental.or
 
 class MethodInfo(
   val methodName: Utf8Value,
-  val methodDescriptor: Utf8Value,
   private val accessFlagList: List<MethodAccessFlags>,
   val attributeList: List<AttributeInfo>,
   val signature: MethodSignature,
   val isStatic: Boolean,
 ) {
 
-  val newDescriptor: Utf8Value
+  val methodDescriptor: Utf8Value
     get() {
       val res = StringBuilder()
       res.append("(")
 
+      for (arg in signature.arguments) {
+        res.append(makeDescriptorValueFromSignature(arg))
+      }
 
-      res.append(signature.returnType)
+      res.append(")")
+      res.append(makeDescriptorValueFromSignature(signature.returnType))
 
       return Utf8Value(res.toString())
     }
 
   constructor(
     methodName: String,
-    methodDescriptor: String,
     accessFlagList: List<MethodAccessFlags>,
     attributeList: List<AttributeInfo>,
     signature: MethodSignature,
     isStatic: Boolean
   ) : this(
     methodName.toUtf8Value(),
-    methodDescriptor.toUtf8Value(),
     accessFlagList,
     attributeList,
     signature,
@@ -54,10 +55,24 @@ class MethodInfo(
       is TopVti -> {}
       is DoubleVti -> res.append("D")
       is IntegerVti -> res.append("I")
-      is ObjectVti -> res.append("L;")
+      is ObjectVti -> res.append(objectVtiToDescriptor(value))
+      is EmptyVti -> res.append("V")
+      is BooleanVti -> res.append("Z")
     }
 
     return res.toString()
   }
 
+  private fun objectVtiToDescriptor(vti: ObjectVti): String {
+    val res = StringBuilder()
+
+    if (vti.isArray) {
+      res.append("[")
+    }
+
+    res.append("L")
+    res.append(vti.classInfo.className.encodedString)
+    res.append(";")
+    return res.toString()
+  }
 }

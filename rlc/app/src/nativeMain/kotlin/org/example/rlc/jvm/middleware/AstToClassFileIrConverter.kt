@@ -14,10 +14,10 @@ import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.jvm.ir.ByteConstantOperation
 import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
-import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.CodeAttribute
 import org.example.rlc.jvm.ir.ControlFlowOperation
 import org.example.rlc.jvm.ir.DoubleValue
+import org.example.rlc.jvm.ir.EmptyVti
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
 import org.example.rlc.jvm.ir.MethodRefInfo
@@ -33,8 +33,6 @@ import org.example.rlc.jvm.ir.toUtf8Value
 
 
 class AstToClassFileIrConverter {
-  private val constructor = "<init>".toUtf8Value()
-  private val noArgsVoidDescriptor = "()V".toUtf8Value()
   private val objectClass = javaLangObjectClassInfo
   private val classes = mutableListOf(
     loxClass(),
@@ -161,6 +159,7 @@ class AstToClassFileIrConverter {
   }
 
   private fun compileOr() {
+    // Cuming during current cycle of feature implementation
   }
 
   private fun visitUnary(expr: Unary) {
@@ -231,8 +230,7 @@ class AstToClassFileIrConverter {
   private fun publicStaticVoidMain(): MethodInfo {
     currentCode.add(SimpleOperation(opcode = Opcode.OP_RETURN))
     return MethodInfo(
-      methodName = "main".toUtf8Value(),
-      methodDescriptor = "([Ljava/lang/String;)V".toUtf8Value(),
+      methodName = "main",
       accessFlagList = listOf(MethodAccessFlags.PUBLIC, MethodAccessFlags.STATIC),
       attributeList = listOf(
         CodeAttribute(
@@ -243,7 +241,10 @@ class AstToClassFileIrConverter {
         )
       ),
       isStatic = true,
-      signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
+      signature = MethodSignature(
+        listOf(ObjectVti(isArray = true, classInfo = javaLangStringClassInfo)),
+        EmptyVti()
+      )
     )
   }
 
@@ -255,8 +256,7 @@ class AstToClassFileIrConverter {
     )
 
     return MethodInfo(
-      methodName = constructor,
-      methodDescriptor = noArgsVoidDescriptor,
+      methodName = constructorMethodName,
       accessFlagList = listOf(MethodAccessFlags.PUBLIC),
       attributeList = listOf(
         CodeAttribute(
@@ -266,9 +266,8 @@ class AstToClassFileIrConverter {
           attributes = listOf()
         )
       ),
-      // TODO: Make this stuff work
       isStatic = true,
-      signature = MethodSignature(listOf(), ObjectVti(ClassInfo(loxMainClassName)))
+      signature = MethodSignature(listOf(), EmptyVti())
     )
   }
 
