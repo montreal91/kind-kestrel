@@ -9,6 +9,13 @@ class MethodInfo(
   val signature: MethodSignature,
   val isStatic: Boolean,
 ) {
+  // Thought for the future:
+  // Theoretically we can put here information about locals.
+  // Philosophical question is, where information about local variables should be stored.
+  // Does it belong to the code, or does it belong to the method.
+  // And how do I answer this question?
+  // ***
+  // And now I have a feeling that JVM bytecode mixes up this stuff a bit.
 
   val methodDescriptor: Utf8Value
     get() {

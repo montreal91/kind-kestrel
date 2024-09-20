@@ -29,7 +29,6 @@ import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
 import org.example.rlc.jvm.ir.loxMainClassName
-import org.example.rlc.jvm.ir.toUtf8Value
 
 
 class AstToClassFileIrConverter {
