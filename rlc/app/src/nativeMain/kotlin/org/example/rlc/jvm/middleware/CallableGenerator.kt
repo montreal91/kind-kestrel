@@ -66,8 +66,7 @@ internal fun generateLoxFunction(
     attributeList = listOf(),
     accessFlagList = listOf(),
     fieldList = generateFieldsFromEnclosedVariableList(
-      variables = enclosedVariables,
-      isMethod = isMethod
+      variables = enclosedVariables
     )
   )
 }
@@ -96,7 +95,6 @@ internal fun generateAbstractCallable(arity: Int): ClassFile {
 }
 
 internal fun generateLoxBasicCallable(): ClassFile {
-
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(
@@ -124,10 +122,10 @@ internal fun generateLoxBasicCallable(): ClassFile {
   )
 
   val basicThis = FieldInfo(
-        accessFlagList = emptyList(),
-        fieldName = "__this__".toUtf8Value(),
-        fieldDescriptor = "LLoxObject;".toUtf8Value(),
-      )
+    accessFlagList = emptyList(),
+    fieldName = "__this__".toUtf8Value(),
+    fieldDescriptor = "LLoxObject;".toUtf8Value(),
+  )
 
   return ClassFile(
     thisClassInfo = ClassInfo(className = "LoxBasicCallable"),
@@ -228,20 +226,9 @@ private fun generateArityMethodRef(className: String): MethodRefInfo {
 }
 
 private fun generateFieldsFromEnclosedVariableList(
-  variables: List<EnclosedVariable>,
-  isMethod: Boolean
+  variables: List<EnclosedVariable>
 ): List<FieldInfo> {
   val res = mutableListOf<FieldInfo>()
-
-//  if (isMethod) {
-//    res.add(
-//      FieldInfo(
-//        accessFlagList = emptyList(),
-//        fieldName = "__this__".toUtf8Value(),
-//        fieldDescriptor = "LLoxObject;".toUtf8Value(),
-//      )
-//    )
-//  }
 
   for (variable in variables) {
     res.add(generateFieldFromEnclosedVariable(variable))

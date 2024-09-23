@@ -100,7 +100,7 @@ private fun generateConstructorCallMethod(className: String, arity: Int, methods
     code.add(SimpleOperation(Opcode.OP_DUP))
     code.addAll(
       LoxFunction.generateInstantiationCode(
-        functionName = "LoxMethod_${className}_${method.name}",
+        functionName = "LoxMethod_${method.classItBelongsTo}_${method.name}",
         outerFunctionName = "",
         enclosedVariables = method.enclosedVariables,
         currentCodeOffset = code.size

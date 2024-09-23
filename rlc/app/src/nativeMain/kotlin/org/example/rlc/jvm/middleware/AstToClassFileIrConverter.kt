@@ -885,7 +885,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   private fun getLocalVariableArraySize() = resolutionTable.getMaxIndex() + 2
 
   private fun copyDownMethods(stmt: ClassDeclStmt): List<FunctionStuff> {
-    val methods = mutableMapOf<String, FunDeclStmt>()
+    val methods = mutableMapOf<String, FunctionStuff>()
 
     println("-> Copying down methods for the class ${stmt.identifier.value}")
     println("--> Known classes: ${classStatements.keys}")
@@ -897,23 +897,33 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       println("----> Super class name: [${stmt.superclass.value}]")
       val decl = classStatements[stmt.superclass.value]!!
       println("----> Super class decl: $decl")
-      decl.methods.forEach { method -> methods[method.identifier.value] = method }
+
+      decl.methods.forEach { method ->
+        methods[method.identifier.value] = FunctionStuff(
+          name = method.identifier.value,
+          enclosedVariables = method.enclosedVariables.map { it as EnclosedVariable }.toList(),
+          classItBelongsTo = stmt.superclass.value,
+        )
+      }
+
       println("----> Super class methods: ${decl.methods.size}")
     }
 
     println("--> ${methods.size} methods copied down for the class ${stmt.identifier.value}")
 
     // Not Super Methods
-    stmt.methods.forEach { method -> methods[method.identifier.value] = method }
+    stmt.methods.forEach { method ->
+      methods[method.identifier.value] = FunctionStuff(
+        name = method.identifier.value,
+        enclosedVariables = method.enclosedVariables.map { it as EnclosedVariable }.toList(),
+        classItBelongsTo = stmt.identifier.value,
+      )
+    }
 
     println("--> ${methods.size} total methods for the class ${stmt.identifier.value}")
     println("<- Finished copying down methods for the class ${stmt.identifier.value}")
-    return methods.values.map { m ->
-      FunctionStuff(
-        name = m.identifier.value,
-        enclosedVariables = m.enclosedVariables.map { it as EnclosedVariable }.toList()
-      )
-    }
+
+    return methods.values.toList()
   }
 
   private fun publicStaticVoidMain(): MethodInfo {

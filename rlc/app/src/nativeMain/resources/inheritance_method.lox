@@ -5,7 +5,15 @@ class Chaos {
   }
 }
 
-class Earth < Chaos {}
+class Earth < Chaos {
+  volcano() {
+    print "Eruption";
+  }
+}
+
+
 
 print "Expected: Chaos Noises";
 Earth().say();
+print "Expected: Eruption";
+Earth().volcano();
