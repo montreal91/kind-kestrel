@@ -9,6 +9,7 @@ import org.example.rlc.frontend.Parser
 import org.example.rlc.frontend.Scanner
 import org.example.rlc.jvm.backend.CodeGenerator
 import org.example.rlc.jvm.middleware.AstToClassFileIrConverter
+import org.example.rlc.jvm.middleware.StackMapTableMaker
 import platform.posix.F_OK
 import platform.posix.access
 import platform.posix.exit
@@ -70,8 +71,10 @@ private fun compile(pathName: String) {
   }
 
   val astConverter = AstToClassFileIrConverter()
-
   val classes = astConverter.convert(ast)
+  val stackMapTableMaker = StackMapTableMaker()
+  stackMapTableMaker.fillStackMapTables(classes)
+
   CodeGenerator(buildOutputDir = ".").compileToJar(
     classes = classes,
     jarName = outputFileName(pathName)

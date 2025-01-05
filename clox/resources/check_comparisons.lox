@@ -1,0 +1,2 @@
+print "lol" > "kek";
+print 5 > true;

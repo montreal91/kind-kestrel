@@ -9,12 +9,10 @@ import org.example.rlc.jvm.ir.FieldInfo
 import org.example.rlc.jvm.ir.InterfaceInfo
 import org.example.rlc.jvm.ir.MethodInfo
 import org.example.rlc.jvm.ir.Operation
-import org.example.rlc.jvm.ir.SameFrame
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StackMapFrame
 import org.example.rlc.jvm.ir.StackMapTableAttribute
-import org.example.rlc.jvm.ir.VerificationTypeInfo
 
 internal class ClassCompiler {
   private val constantPool : ConstantPool = ConstantPool()
@@ -139,12 +137,12 @@ internal class ClassCompiler {
 
     val codeCompilationResult = compileCode(codeAttribute.code)
 
-    if (!codeCompilationResult.stackMapTableAttribute.isEmpty()) {
-      // At this stage StackMapTable should already exist in its IR form.
-      // This is the task of the IR generator phase to make an IR of StackMapTable.
-      // This will make things much easier
-      codeAttribute.addAttribute(codeCompilationResult.stackMapTableAttribute)
-    }
+//    if (!codeCompilationResult.stackMapTableAttribute.isEmpty()) {
+//      // At this stage StackMapTable should already exist in its IR form.
+//      // This is the task of the IR generator phase to make an IR of StackMapTable.
+//      // This will make things much easier
+//      codeAttribute.addAttribute(codeCompilationResult.stackMapTableAttribute)
+//    }
 
     val codeItself = codeCompilationResult.bytes
     val attributeBytes = mutableListOf<Byte>()
@@ -176,7 +174,7 @@ internal class ClassCompiler {
     val entriesBytes = mutableListOf<Byte>()
 
     for (entry in stackMapTableAttribute.frames) {
-      entriesBytes.addAll(entry.toBytes())
+      entriesBytes.addAll(compileStackMapFrame(entry))
     }
 
     val attributeLength: Int = 2 + entriesBytes.size
@@ -186,6 +184,10 @@ internal class ClassCompiler {
     res.addAll(entriesBytes)
 
     return res
+  }
+
+  private fun compileStackMapFrame(stackMapFrame: StackMapFrame): List<Byte> {
+    return listOf()
   }
 
   private fun compileCode(operations: List<Operation>): CodeCompilationResult {
@@ -229,47 +231,8 @@ internal class ClassCompiler {
 
     return CodeCompilationResult(
       bytes = res.toList(),
-      stackMapTableAttribute = composeStackMapTable(operations, jumpTargets.toList().sorted())
+//      stackMapTableAttribute = composeStackMapTable(operations, jumpTargets.toList().sorted())
     )
-  }
-
-  private fun composeArrayOfLocalVariables(methodInfo: MethodInfo): List<VerificationTypeInfo> {
-    val res = mutableListOf<VerificationTypeInfo>()
-
-    res.addAll(methodInfo.signature.arguments)
-
-    // For now this should do the trick.
-    // Later, when I add local variables, I'll add more
-
-    return res
-  }
-
-  // This function is out of its place.
-  private fun composeStackMapTable(operations: List<Operation>, jumpTargets: List<Int>): StackMapTableAttribute {
-    val stackTable = mutableListOf<StackMapFrame>()
-    val offsets = calculateOffsets(operations)
-
-    val localVariables = composeArrayOfLocalVariables()
-
-    return StackMapTableAttribute(frames = stackTable)
-  }
-
-  private fun calculateOffsets(operations: List<Operation>): List<Int> {
-    val res = mutableListOf<Int>()
-    var offset = 0
-
-    for (op in operations) {
-      res.add(offset)
-
-      offset += when (op) {
-        is ControlFlowOperation -> 2
-        is ByteConstantOperation -> 2
-        is ShortConstantOperation -> 3
-        is SimpleOperation -> 1
-      }
-    }
-
-    return res
   }
 
   private fun compileOperation(operation: Operation) = when (operation) {
