@@ -5,6 +5,7 @@ import org.example.rlc.jvm.ir.ClassFile
 import org.example.rlc.jvm.ir.CodeAttribute
 import org.example.rlc.jvm.ir.ControlFlowOperation
 import org.example.rlc.jvm.ir.MethodInfo
+import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.Operation
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
@@ -30,8 +31,13 @@ class StackMapTableMaker {
 
     val codeAttribute = extractCodeFromMethodInfo(methodInfo)
     val jumpTargets = calculateJumpTargets(codeAttribute.code)
+    val localVariables = composeArrayOfLocalVariables(methodInfo)
 
-    codeAttribute.addAttribute(makeStackMapTable(codeAttribute.code, jumpTargets))
+    codeAttribute.addAttribute(makeStackMapTable(
+      codeAttribute.code,
+      localVariables,
+      jumpTargets
+    ))
   }
 
   private fun extractCodeFromMethodInfo(methodInfo: MethodInfo): CodeAttribute {
@@ -65,12 +71,18 @@ class StackMapTableMaker {
     return res
   }
 
-  // This function is out of its place.
-  private fun makeStackMapTable(operations: List<Operation>, jumpTargets: List<Int>): StackMapTableAttribute {
+  // This function feels out of its place.
+  private fun makeStackMapTable(
+    operations: List<Operation>,
+    localVariables: List<VerificationTypeInfo>,
+    jumpTargets: List<Int>
+  ): StackMapTableAttribute {
+    if (jumpTargets.isEmpty()) {
+      return StackMapTableAttribute(frames = listOf())
+    }
+
     val stackTable = mutableListOf<StackMapFrame>()
     val offsets = calculateOffsets(operations)
-
-//    val localVariables = composeArrayOfLocalVariables()
 
     return StackMapTableAttribute(frames = stackTable)
   }
@@ -91,6 +103,38 @@ class StackMapTableMaker {
     }
 
     return res
+  }
+
+  private fun makeControlFlowGraph(ops: List<Operation>): CfgNode {
+    val nodeIndex = mutableMapOf<Int, CfgNode>()
+
+    var currentNodeOps = mutableListOf<Operation>()
+    var startingIndex = 0
+    for ((ind, op) in ops.withIndex()) {
+      currentNodeOps.add(op)
+
+      if (lastInNodeOperation(op)) {
+        val node = CfgNode(startingIndex = startingIndex, ops = currentNodeOps)
+        currentNodeOps = mutableListOf()
+        nodeIndex[startingIndex] = node
+        startingIndex = ind + 1
+      }
+    }
+
+    for ((ind, node) in nodeIndex) {
+      // TODO: add children
+    }
+
+    return nodeIndex[0] ?: throw IllegalStateException("Control flow graph should have at least one node.")
+  }
+
+  private fun lastInNodeOperation(op: Operation) = when(op.opcode) {
+    Opcode.OP_RETURN -> true
+    Opcode.OP_IRETURN -> true
+    Opcode.OP_IFEQ -> true
+    Opcode.OP_IFNE -> true
+    Opcode.OP_ARETURN -> true
+    else -> false
   }
 
   private fun composeArrayOfLocalVariables(methodInfo: MethodInfo): List<VerificationTypeInfo> {
