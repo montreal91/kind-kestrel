@@ -33,6 +33,19 @@ internal fun createJarFile(classFiles: List<CompiledBinaryFile>, outputJar: Stri
   }
 }
 
+@OptIn(ExperimentalForeignApi::class)
+internal fun createClassFile(classFile: CompiledBinaryFile, outputJar: String) {
+
+  memScoped {
+    val systemFile = fopen(outputJar, _Mode = "wb") ?: error("Failed to open file for writing")
+    try {
+      writeByteArrayToFile(systemFile, classFile.binary.toByteArray())
+    } finally {
+      fclose(systemFile)
+    }
+  }
+}
+
 private val manifesto = """
         Manifest-Version: 1.0
         Main-Class: $loxMainClassName

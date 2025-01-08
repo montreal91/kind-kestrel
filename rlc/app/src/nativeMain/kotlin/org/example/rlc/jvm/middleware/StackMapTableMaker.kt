@@ -20,12 +20,18 @@ class StackMapTableMaker {
   }
 
   private fun processClass(classFile: ClassFile) {
-    classFile.methodList.forEach { methodInfo ->
-      val codeAttribute = extractCodeFromMethodInfo(methodInfo)
-      val jumpTargets = calculateJumpTargets(codeAttribute.code)
+    classFile.methodList.forEach(this::addAttributeIfRequired)
+  }
 
-      codeAttribute.addAttribute(makeStackMapTable(codeAttribute.code, jumpTargets))
+  private fun addAttributeIfRequired(methodInfo: MethodInfo) {
+    if (methodInfo.isAbstract) {
+      return
     }
+
+    val codeAttribute = extractCodeFromMethodInfo(methodInfo)
+    val jumpTargets = calculateJumpTargets(codeAttribute.code)
+
+    codeAttribute.addAttribute(makeStackMapTable(codeAttribute.code, jumpTargets))
   }
 
   private fun extractCodeFromMethodInfo(methodInfo: MethodInfo): CodeAttribute {
@@ -38,7 +44,10 @@ class StackMapTableMaker {
     }
 
     if (codeAttribute == null) {
-      throw IllegalStateException("Method Info [${methodInfo}] has no code attributes.")
+      throw IllegalStateException(
+        "Method Info [${methodInfo.methodName.encodedString}] " +
+            "has no code attributes. IsAbstract: ${methodInfo.isAbstract}"
+      )
     }
 
     return codeAttribute

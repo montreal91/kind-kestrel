@@ -11,12 +11,13 @@ class SameFrame(tag: Byte) : StackMapFrame(tag) {
   override fun toBytes() = listOf(tag)
 }
 
+private const val FULL_FRAME: Byte = 255.toByte()
+
 class FullFrame(
-  tag: Byte,
   val offsetDelta: Byte,
   locals: List<VerificationTypeInfo>,
   stack: List<VerificationTypeInfo>,
-) : StackMapFrame(tag) {
+) : StackMapFrame(FULL_FRAME) {
   private val _locals = locals.toMutableList()
   private val _stack = stack.toMutableList()
 

@@ -12,6 +12,11 @@ class CodeGenerator(private val buildOutputDir: String) {
     createJarFile(compile(classes), outputJar)
   }
 
+  fun compileToPlainFiles(classes: List<ClassFile>) {
+    val compiledClasses = compile(classes)
+    compiledClasses.forEach { cc -> createClassFile(cc, cc.fileName) }
+  }
+
   private fun compile(classes: List<ClassFile>): List<CompiledBinaryFile> {
     val compiledClasses = mutableListOf<CompiledBinaryFile>()
 

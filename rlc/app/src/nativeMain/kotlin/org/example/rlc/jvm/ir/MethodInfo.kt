@@ -46,6 +46,8 @@ class MethodInfo(
     isStatic,
   )
 
+  val isAbstract: Boolean = accessFlagList.contains(MethodAccessFlags.ABSTRACT)
+
   val accessFlags: Short
     get() {
       var res: Short = 0
