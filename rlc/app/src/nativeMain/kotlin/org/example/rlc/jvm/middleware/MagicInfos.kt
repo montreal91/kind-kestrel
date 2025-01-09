@@ -1,10 +1,13 @@
 package org.example.rlc.jvm.middleware
 
 import org.example.rlc.frontend.Token
+import org.example.rlc.jvm.ir.BooleanVti
 import org.example.rlc.jvm.ir.ClassInfo
+import org.example.rlc.jvm.ir.EmptyVti
 import org.example.rlc.jvm.ir.FieldRefInfo
 import org.example.rlc.jvm.ir.MethodRefInfo
 import org.example.rlc.jvm.ir.NameAndTypeInfo
+import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.javaLangObject
 import org.example.rlc.jvm.ir.loxBoolean
 import org.example.rlc.jvm.ir.loxDouble
@@ -35,7 +38,8 @@ internal val loxDoubleConstructorInfo = MethodRefInfo(
     descriptor = "(D)V".toUtf8Value(),
   ),
   argsSize = 3,
-  returnSize = 1
+  returnSize = 0,
+  returnTypeInfo = EmptyVti(),
 )
 
 internal val loxBooleanConstructorInfo = MethodRefInfo(
@@ -47,7 +51,8 @@ internal val loxBooleanConstructorInfo = MethodRefInfo(
     descriptor = "(Z)V".toUtf8Value(),
   ),
   argsSize = 2,
-  returnSize = 1
+  returnSize = 0,
+  returnTypeInfo = EmptyVti(),
 )
 
 internal val loxNilConstructorInfo = MethodRefInfo(
@@ -59,7 +64,8 @@ internal val loxNilConstructorInfo = MethodRefInfo(
     descriptor = "()V".toUtf8Value(),
   ),
   argsSize = 2,
-  returnSize = 1
+  returnSize = 0,
+  returnTypeInfo = EmptyVti(),
 )
 
 internal val loxStringConstructorInfo = MethodRefInfo(
@@ -71,7 +77,8 @@ internal val loxStringConstructorInfo = MethodRefInfo(
     descriptor = "(Ljava/lang/String;)V".toUtf8Value(),
   ),
   argsSize = 2,
-  returnSize = 1
+  returnSize = 1,
+  returnTypeInfo = EmptyVti()
 )
 
 internal val doubleValueFieldRefInfo = FieldRefInfo(
@@ -103,7 +110,8 @@ internal val objectConstructor = MethodRefInfo(
   classInfo = javaLangObjectClassInfo,
   nameAndType = initializerNameAndType,
   argsSize = 1,
-  returnSize = 1
+  returnSize = 0,
+  returnTypeInfo = EmptyVti(),
 )
 
 internal val loxObjectConstructor = MethodRefInfo(
@@ -115,15 +123,14 @@ internal val loxObjectConstructor = MethodRefInfo(
     descriptor = "(LLoxClass;)V".toUtf8Value(),
   ),
   argsSize = 2,
-  returnSize = 1
+  returnSize = 0,
+  returnTypeInfo = EmptyVti(),
 )
-
-
 
 internal val javaStringDescriptor = "Ljava/lang/String;".toUtf8Value()
 
-internal val constructorMethodName = "<init>".toUtf8Value()
-internal val staticInitializerMethodName = "<clinit>".toUtf8Value()
+internal const val constructorMethodName = "<init>"
+internal const val staticInitializerMethodName = "<clinit>"
 
 internal val systemOutField = FieldRefInfo(
   label = "java/lang/System.out:Ljava/io/PrintStream;",
@@ -144,7 +151,8 @@ internal val printMethodRef = MethodRefInfo(
     descriptor = "(Ljava/lang/Object;)V".toUtf8Value(),
   ),
   argsSize = 2,
-  returnSize = 0
+  returnSize = 0,
+  returnTypeInfo = EmptyVti(),
 )
 
 private const val binaryOpDescriptor = "(LLoxObject;LLoxObject;)LLoxObject;"
@@ -175,7 +183,8 @@ internal fun stringEquals(): MethodRefInfo {
       descriptor = typeInfo,
     ),
     argsSize = 2,
-    returnSize = 1
+    returnSize = 1,
+    returnTypeInfo = BooleanVti(),
   )
 }
 
@@ -193,6 +202,7 @@ internal fun loxBooleanNegMri(): MethodRefInfo {
     ),
     argsSize = 1,
     returnSize = 1,
+    returnTypeInfo = ObjectVti(loxObjectClassInfo, isArray = false)
   )
 }
 
@@ -223,6 +233,7 @@ internal val getClassMri = MethodRefInfo(
   ),
   argsSize = 1,
   returnSize = 1,
+  returnTypeInfo = ObjectVti(javaLangObjectClassInfo, isArray = false)
 )
 
 internal val objectEqualsMri = MethodRefInfo(
@@ -235,6 +246,7 @@ internal val objectEqualsMri = MethodRefInfo(
   ),
   argsSize = 2,
   returnSize = 1,
+  returnTypeInfo = BooleanVti(),
 )
 
 internal val loxObjectEqMri = MethodRefInfo(
@@ -247,6 +259,7 @@ internal val loxObjectEqMri = MethodRefInfo(
   ),
   argsSize = 2,
   returnSize = 1,
+  returnTypeInfo = ObjectVti(loxObjectClassInfo, isArray = false),
 )
 
 internal val loxObjectTruthyMri = MethodRefInfo(
@@ -259,4 +272,5 @@ internal val loxObjectTruthyMri = MethodRefInfo(
   ),
   argsSize = 1,
   returnSize = 1,
+  returnTypeInfo = ObjectVti(loxObjectClassInfo, isArray = false)
 )

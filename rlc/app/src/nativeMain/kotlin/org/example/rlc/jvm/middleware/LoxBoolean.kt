@@ -19,6 +19,7 @@ import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
+import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.toUtf8Value
 
 internal fun loxBooleanCf() = ClassFile(
@@ -66,7 +67,7 @@ private fun loxBooleanConstructor(): MethodInfo {
 
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETSTATIC, loxBooleanClass),
+    ShortConstantOperation(Opcode.OP_GETSTATIC, loxBooleanClass, ObjectVti(loxBooleanClassInfo, isArray = false)),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxObjectConstructor),
     SimpleOperation(Opcode.OP_ALOAD_0),
     SimpleOperation(Opcode.OP_ILOAD_1),
@@ -92,13 +93,13 @@ private fun loxBooleanConstructor(): MethodInfo {
 
 private fun eq(): MethodInfo {
   val code = listOf(
-    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo, ObjectVti(loxBooleanClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo, BooleanVti()),
     SimpleOperation(Opcode.OP_ALOAD_1),
     ShortConstantOperation(Opcode.OP_CHECKCAST, loxBooleanClassInfo),
-    ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo, BooleanVti()),
     SimpleOperation(Opcode.OP_IXOR),
     SimpleOperation(Opcode.OP_ICONST_1),
     SimpleOperation(Opcode.OP_IXOR),
@@ -124,10 +125,10 @@ private fun eq(): MethodInfo {
 
 private fun neg(): MethodInfo {
   val code = listOf(
-    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo, ObjectVti(loxBooleanClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo, BooleanVti()),
     SimpleOperation(Opcode.OP_ICONST_1),
     SimpleOperation(Opcode.OP_IXOR),
     SimpleOperation(Opcode.OP_ICONST_1),
@@ -175,11 +176,11 @@ private val falseStr = StringRefInfo(value = "false")
 private fun toString(): MethodInfo {
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo, BooleanVti()),
     ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 5),
-    ByteConstantOperation(Opcode.OP_LDC, trueStr),
+    ByteConstantOperation(Opcode.OP_LDC, trueStr, javaLangStringObjectVti),
     SimpleOperation(Opcode.OP_ARETURN),
-    ByteConstantOperation(Opcode.OP_LDC, falseStr),
+    ByteConstantOperation(Opcode.OP_LDC, falseStr, javaLangStringObjectVti),
     SimpleOperation(Opcode.OP_ARETURN)
   )
 
@@ -195,6 +196,6 @@ private fun toString(): MethodInfo {
     accessFlagList = listOf(MethodAccessFlags.PUBLIC),
     attributeList = listOf(codeAttribute),
     isStatic = true,
-    signature = MethodSignature(listOf(), ObjectVti(javaLangStringClassInfo))
+    signature = MethodSignature(listOf(ObjectVti(loxBooleanClassInfo)), ObjectVti(javaLangStringClassInfo)),
   )
 }

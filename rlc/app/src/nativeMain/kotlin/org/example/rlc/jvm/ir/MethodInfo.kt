@@ -8,6 +8,7 @@ class MethodInfo(
   val attributeList: List<AttributeInfo>,
   val signature: MethodSignature,
   val isStatic: Boolean,
+  val localVariables: List<VerificationTypeInfo>,
 ) {
   // Thought for the future:
   // Theoretically we can put here information about locals.
@@ -44,6 +45,23 @@ class MethodInfo(
     attributeList,
     signature,
     isStatic,
+    listOf(),
+  )
+
+  constructor(
+    methodName: String,
+    accessFlagList: List<MethodAccessFlags>,
+    attributeList: List<AttributeInfo>,
+    signature: MethodSignature,
+    isStatic: Boolean,
+    localVariables: List<VerificationTypeInfo>
+  ) : this(
+    methodName.toUtf8Value(),
+    accessFlagList,
+    attributeList,
+    signature,
+    isStatic,
+    localVariables,
   )
 
   val isAbstract: Boolean = accessFlagList.contains(MethodAccessFlags.ABSTRACT)

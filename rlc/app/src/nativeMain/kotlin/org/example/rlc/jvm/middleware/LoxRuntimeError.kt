@@ -50,7 +50,8 @@ private fun constructor(): MethodInfo {
       descriptor = "(Ljava/lang/String;)V".toUtf8Value()
     ),
     argsSize = 2,
-    returnSize = 1
+    returnSize = 0,
+    returnTypeInfo = EmptyVti()
   )
 
   val code = listOf(

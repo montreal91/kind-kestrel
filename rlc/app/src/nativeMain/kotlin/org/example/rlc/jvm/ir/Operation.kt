@@ -1,11 +1,20 @@
 package org.example.rlc.jvm.ir
 
-sealed class Operation(val opcode: Opcode) {
-  abstract val stackModification: Int
-}
+sealed class Operation(val opcode: Opcode, val valueInfo: VerificationTypeInfo?) {
+  init {
+    when (opcode) {
+      Opcode.OP_ASTORE_2 -> checkValueNotNull()
+      Opcode.OP_ASTORE_3 -> checkValueNotNull()
+      Opcode.OP_GETFIELD -> checkValueNotNull()
+      Opcode.OP_GETSTATIC -> checkValueNotNull()
+      Opcode.OP_LDC -> checkValueNotNull()
+      Opcode.OP_LDC2_W -> checkValueNotNull()
+      Opcode.OP_NEW -> checkValueNotNull()
+      else -> {}
+    }
+  }
 
-class SimpleOperation(opcode: Opcode) : Operation(opcode) {
-  override val stackModification: Int
+  val stackModification: Int
     get() = when (opcode) {
       Opcode.OP_ALOAD_0 -> 1
       Opcode.OP_ALOAD_1 -> 1
@@ -36,56 +45,69 @@ class SimpleOperation(opcode: Opcode) : Operation(opcode) {
       Opcode.OP_IXOR -> -1
       Opcode.OP_POP -> -1
       Opcode.OP_RETURN -> 0
-      else -> throw IllegalArgumentException(
-        "Invalid opcode for Simple Operation: $opcode"
-      )
-    }
-}
-
-class ControlFlowOperation(opcode: Opcode, val jumpTo: Int) : Operation(opcode) {
-  override val stackModification: Int
-    get() = when(opcode) {
       Opcode.OP_IFEQ -> -1
       Opcode.OP_IFNE -> -1
-      else -> throw IllegalArgumentException(
-        "Invalid opcode for Control Flow Operation: $opcode"
-      )
-    }
-}
-
-class ByteConstantOperation(opcode: Opcode, val constant: ConstantPoolInfo) : Operation(opcode) {
-  override val stackModification: Int
-    get() = when(opcode) {
       Opcode.OP_LDC -> 1
-      else -> throw IllegalArgumentException(
-        "Invalid opcode for ByteConstant Operation: $opcode"
-      )
-    }
-}
-
-class ShortConstantOperation(opcode: Opcode, val constant: ConstantPoolInfo) : Operation(opcode) {
-  override val stackModification: Int
-    get() = when(opcode) {
       Opcode.OP_CHECKCAST -> 0
-      Opcode.OP_GETFIELD -> calculateStackModification(constant)
-      Opcode.OP_GETSTATIC -> calculateStackModification(constant)
-      Opcode.OP_INVOKE_SPECIAL -> calculateStackModification(constant)
-      Opcode.OP_INVOKE_STATIC -> calculateStackModification(constant)
-      Opcode.OP_INVOKE_VIRTUAL -> calculateStackModification(constant)
+      Opcode.OP_GETFIELD -> customStackModification()
+      Opcode.OP_GETSTATIC -> customStackModification()
+      Opcode.OP_INVOKE_SPECIAL -> customStackModification()
+      Opcode.OP_INVOKE_STATIC -> customStackModification()
+      Opcode.OP_INVOKE_VIRTUAL -> customStackModification()
       Opcode.OP_INSTANCEOF -> 0
-      Opcode.OP_IRETURN -> -1
       Opcode.OP_LDC2_W -> 2
       Opcode.OP_NEW -> 1
-      Opcode.OP_PUTFIELD -> -1 - calculateStackModification(constant)
-      Opcode.OP_PUTSTATIC -> -1 - calculateStackModification(constant)
-      else -> throw IllegalArgumentException(
-        "Invalid opcode for ShortConstant Operation: $opcode"
-      )
+      Opcode.OP_PUTFIELD -> customStackModification()
+      Opcode.OP_PUTSTATIC -> customStackModification()
     }
 
-  private fun calculateStackModification(constant: ConstantPoolInfo) = when (constant) {
-    is FieldRefInfo -> constant.size
-    is MethodRefInfo -> constant.returnSize - constant.argsSize
-    else -> 0
+  protected open fun customStackModification() = 0
+
+  private fun checkValueNotNull() {
+    if (valueInfo == null) {
+      throw IllegalStateException("Operation with opcode $opcode should have non-null valueInfo.")
+    }
+  }
+}
+
+private fun calculateStackModification(constant: ConstantPoolInfo) = when (constant) {
+  is FieldRefInfo -> constant.size
+  is MethodRefInfo -> constant.returnSize - constant.argsSize
+  else -> 0
+}
+
+class SimpleOperation(
+  opcode: Opcode,
+  value: VerificationTypeInfo?
+) : Operation(opcode, valueInfo = value) {
+  constructor(opcode: Opcode) : this(opcode, value = null)
+}
+
+class ControlFlowOperation(opcode: Opcode, val jumpTo: Int) : Operation(opcode, valueInfo = null)
+
+class ByteConstantOperation(
+  opcode: Opcode,
+  val constant: ConstantPoolInfo,
+  value: VerificationTypeInfo?
+) : Operation(opcode, valueInfo = value) {
+  constructor(opcode: Opcode, constant: ConstantPoolInfo) : this(opcode, constant, value = null)
+}
+
+class ShortConstantOperation(
+  opcode: Opcode,
+  val constant: ConstantPoolInfo,
+  value: VerificationTypeInfo?
+) : Operation(opcode, valueInfo = value) {
+  constructor(opcode: Opcode, constant: ConstantPoolInfo) : this(opcode, constant, value = null)
+
+  override fun customStackModification() = when (opcode) {
+    Opcode.OP_GETFIELD -> calculateStackModification(constant)
+    Opcode.OP_GETSTATIC -> calculateStackModification(constant)
+    Opcode.OP_INVOKE_SPECIAL -> calculateStackModification(constant)
+    Opcode.OP_INVOKE_STATIC -> calculateStackModification(constant)
+    Opcode.OP_INVOKE_VIRTUAL -> calculateStackModification(constant)
+    Opcode.OP_PUTFIELD -> -1 - calculateStackModification(constant)
+    Opcode.OP_PUTSTATIC -> -1 - calculateStackModification(constant)
+    else -> super.customStackModification()
   }
 }

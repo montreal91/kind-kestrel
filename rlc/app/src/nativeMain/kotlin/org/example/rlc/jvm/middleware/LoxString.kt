@@ -17,6 +17,7 @@ import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
+import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.toUtf8Value
 
 internal fun loxStringCf() = ClassFile(
@@ -54,7 +55,7 @@ private fun loxStringConstructor(): MethodInfo {
 
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETSTATIC, loxStringClass),
+    ShortConstantOperation(Opcode.OP_GETSTATIC, loxStringClass, ObjectVti(loxStringClassInfo, isArray = false)),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxObjectConstructor),
     SimpleOperation(Opcode.OP_ALOAD_0),
     SimpleOperation(Opcode.OP_ALOAD_1),
@@ -81,7 +82,7 @@ private fun loxStringConstructor(): MethodInfo {
 private fun toString(): MethodInfo {
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo, javaLangStringObjectVti),
     SimpleOperation(Opcode.OP_ARETURN)
   )
 
@@ -103,13 +104,13 @@ private fun toString(): MethodInfo {
 
 private fun eq(): MethodInfo {
   val code = listOf(
-    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo, ObjectVti(loxBooleanClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo, javaLangStringObjectVti),
     SimpleOperation(Opcode.OP_ALOAD_1),
     ShortConstantOperation(Opcode.OP_CHECKCAST, loxStringClassInfo),
-    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo, javaLangStringObjectVti),
     ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, stringEquals()),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
     SimpleOperation(Opcode.OP_ARETURN),
@@ -137,7 +138,8 @@ private fun stringConcatenation(): MethodInfo {
     label = "java/lang/StringBuilder.\"<init>\":(Ljava/lang/String;)V",
     classInfo = sb,
     argsSize = 2,
-    returnSize = 1,
+    returnSize = 0,
+    returnTypeInfo = EmptyVti(),
     nameAndType = NameAndTypeInfo(
       label = "\"<init>\":(Ljava/lang/String;)V",
       name = "<init>".toUtf8Value(),
@@ -150,6 +152,7 @@ private fun stringConcatenation(): MethodInfo {
     classInfo = sb,
     argsSize = 2,
     returnSize = 1,
+    returnTypeInfo = ObjectVti(sb, isArray = false),
     nameAndType = NameAndTypeInfo(
       label = "append:(Ljava/lang/String;)Ljava/lang/StringBuilder;",
       name = "append".toUtf8Value(),
@@ -162,6 +165,7 @@ private fun stringConcatenation(): MethodInfo {
     classInfo = sb,
     argsSize = 1,
     returnSize = 1,
+    returnTypeInfo = javaLangStringObjectVti,
     nameAndType = NameAndTypeInfo(
       label = "toString:()Ljava/lang/String;",
       name = "toString".toUtf8Value(),
@@ -169,18 +173,18 @@ private fun stringConcatenation(): MethodInfo {
     )
   )
   val code = listOf(
-    ShortConstantOperation(Opcode.OP_NEW, sb),
+    ShortConstantOperation(Opcode.OP_NEW, sb, ObjectVti(sb)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo, javaLangStringObjectVti),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, sbConstructorMethodRef),
-    SimpleOperation(Opcode.OP_ASTORE_2),
+    SimpleOperation(Opcode.OP_ASTORE_2, javaLangStringObjectVti),
     SimpleOperation(Opcode.OP_ALOAD_2),
     SimpleOperation(Opcode.OP_ALOAD_1),
-    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo, javaLangStringObjectVti),
     ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, sbAppendMethodRef),
     SimpleOperation(Opcode.OP_POP),
-    ShortConstantOperation(Opcode.OP_NEW, loxStringClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxStringClassInfo, ObjectVti(loxStringClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ALOAD_2),
     ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, sbToStringMethodRef),

@@ -47,6 +47,7 @@ class MethodRefInfo(
   val nameAndType: NameAndTypeInfo,
   val argsSize: Int,
   val returnSize: Int,
+  val returnTypeInfo: VerificationTypeInfo,
 ) : ConstantPoolInfo() {
   override val type: ConstantType
     get() = ConstantType.METHOD_REF
@@ -88,7 +89,6 @@ class NameAndTypeInfo(
   val name: Utf8Value,
   val descriptor: Utf8Value
 ) : ConstantPoolInfo() {
-//  constructor(name: String, descriptor: String)
   override val type: ConstantType
     get() = ConstantType.NAME_AND_TYPE
 }

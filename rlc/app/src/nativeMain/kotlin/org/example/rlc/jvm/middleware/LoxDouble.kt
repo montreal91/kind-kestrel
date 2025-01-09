@@ -18,6 +18,7 @@ import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
+import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.toUtf8Value
 
 
@@ -102,7 +103,7 @@ private fun loxDoubleConstructor(): MethodInfo {
 
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETSTATIC, loxDoubleClass),
+    ShortConstantOperation(Opcode.OP_GETSTATIC, loxDoubleClass, ObjectVti(loxDoubleClassInfo, isArray = false)),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxObjectConstructor),
     SimpleOperation(Opcode.OP_ALOAD_0),
     SimpleOperation(Opcode.OP_DLOAD_1),
@@ -123,12 +124,12 @@ private fun loxDoubleConstructor(): MethodInfo {
 
 private fun addArithmeticMethodInfo(methodName: String, operation: Opcode): MethodInfo {
   val code = listOf(
-    ShortConstantOperation(Opcode.OP_NEW, loxDoubleClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxDoubleClassInfo, ObjectVti(loxDoubleClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo, DoubleVti()),
     SimpleOperation(Opcode.OP_ALOAD_1),
-    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo, DoubleVti()),
     SimpleOperation(operation),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxDoubleConstructorInfo),
     SimpleOperation(Opcode.OP_ARETURN)
@@ -147,10 +148,10 @@ private fun addArithmeticMethodInfo(methodName: String, operation: Opcode): Meth
 
 private fun addUnaryMethodInfo(methodName: String, operation: Opcode): MethodInfo {
   val code = listOf(
-    ShortConstantOperation(Opcode.OP_NEW, loxDoubleClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxDoubleClassInfo, ObjectVti(loxDoubleClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo, DoubleVti()),
     SimpleOperation(operation),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxDoubleConstructorInfo),
     SimpleOperation(Opcode.OP_ARETURN)
@@ -169,13 +170,13 @@ private fun addUnaryMethodInfo(methodName: String, operation: Opcode): MethodInf
 
 private fun addEqMethod(): MethodInfo {
   val code = listOf(
-    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo, ObjectVti(loxDoubleClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo, DoubleVti()),
     SimpleOperation(Opcode.OP_ALOAD_1),
     ShortConstantOperation(Opcode.OP_CHECKCAST, loxDoubleClassInfo),
-    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo, DoubleVti()),
     SimpleOperation(Opcode.OP_DCMPG),
     SimpleOperation(Opcode.OP_ICONST_1),
     SimpleOperation(Opcode.OP_IAND),
@@ -208,12 +209,13 @@ private fun toString(): MethodInfo {
       descriptor = "(D)Ljava/lang/String;".toUtf8Value(),
     ),
     argsSize = 3,
-    returnSize = 1
+    returnSize = 1,
+    returnTypeInfo = javaLangStringObjectVti
   )
 
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo, DoubleVti()),
     ShortConstantOperation(Opcode.OP_INVOKE_STATIC, doubleToStringMethodRef),
     SimpleOperation(Opcode.OP_ARETURN)
   )
@@ -231,12 +233,12 @@ private fun toString(): MethodInfo {
 
 private fun greater(): MethodInfo {
   val code = listOf(
-    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo, ObjectVti(loxBooleanClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo, DoubleVti()),
     SimpleOperation(Opcode.OP_ALOAD_1),
-    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo, DoubleVti()),
     SimpleOperation(Opcode.OP_DCMPG),
     SimpleOperation(Opcode.OP_ICONST_3),
     SimpleOperation(Opcode.OP_IAND),
@@ -262,12 +264,12 @@ private fun greater(): MethodInfo {
 
 private fun greaterOrEquals(): MethodInfo {
   val code = listOf(
-    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo, ObjectVti(loxBooleanClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo, DoubleVti()),
     SimpleOperation(Opcode.OP_ALOAD_1),
-    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo, DoubleVti()),
     SimpleOperation(Opcode.OP_DCMPG),
     SimpleOperation(Opcode.OP_ICONST_3),
     SimpleOperation(Opcode.OP_IAND),
@@ -291,12 +293,12 @@ private fun greaterOrEquals(): MethodInfo {
 
 private fun less(): MethodInfo {
   val code = listOf(
-    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo, ObjectVti(loxBooleanClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo, DoubleVti()),
     SimpleOperation(Opcode.OP_ALOAD_1),
-    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo, DoubleVti()),
     SimpleOperation(Opcode.OP_DCMPG),
     SimpleOperation(Opcode.OP_ICONST_3),
     SimpleOperation(Opcode.OP_IAND),
@@ -318,12 +320,12 @@ private fun less(): MethodInfo {
 
 private fun lessOrEquals(): MethodInfo {
   val code = listOf(
-    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo, ObjectVti(loxBooleanClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo, DoubleVti()),
     SimpleOperation(Opcode.OP_ALOAD_1),
-    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo),
+    ShortConstantOperation(Opcode.OP_GETFIELD, doubleValueFieldRefInfo, DoubleVti()),
     SimpleOperation(Opcode.OP_DCMPG),
     SimpleOperation(Opcode.OP_ICONST_3),
     SimpleOperation(Opcode.OP_IAND),

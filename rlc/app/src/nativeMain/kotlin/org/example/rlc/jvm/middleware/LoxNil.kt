@@ -15,6 +15,7 @@ import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
+import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.toUtf8Value
 
 internal fun loxNilCf() = ClassFile(
@@ -40,7 +41,7 @@ private fun loxNilConstructor(): MethodInfo {
 
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETSTATIC, loxNilClass),
+    ShortConstantOperation(Opcode.OP_GETSTATIC, loxNilClass, ObjectVti(loxNilClassInfo, isArray = false)),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxObjectConstructor),
     SimpleOperation(Opcode.OP_RETURN)
   )
@@ -63,7 +64,7 @@ private fun loxNilConstructor(): MethodInfo {
 
 private fun truthy(): MethodInfo {
   val code = listOf(
-    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo, ObjectVti(loxBooleanClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ICONST_0),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
@@ -91,7 +92,7 @@ private val nilStr = StringRefInfo(value = "nil")
 private fun toString(): MethodInfo {
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ByteConstantOperation(Opcode.OP_LDC, nilStr),
+    ByteConstantOperation(Opcode.OP_LDC, nilStr, javaLangStringObjectVti),
     SimpleOperation(Opcode.OP_ARETURN)
   )
 

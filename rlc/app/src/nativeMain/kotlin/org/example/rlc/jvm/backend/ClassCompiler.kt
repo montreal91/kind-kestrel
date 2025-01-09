@@ -136,14 +136,6 @@ internal class ClassCompiler {
     res.addAll(constantPool[codeAttribute.attributeName.label].toBytes())
 
     val codeCompilationResult = compileCode(codeAttribute.code)
-
-//    if (!codeCompilationResult.stackMapTableAttribute.isEmpty()) {
-//      // At this stage StackMapTable should already exist in its IR form.
-//      // This is the task of the IR generator phase to make an IR of StackMapTable.
-//      // This will make things much easier
-//      codeAttribute.addAttribute(codeCompilationResult.stackMapTableAttribute)
-//    }
-
     val codeItself = codeCompilationResult.bytes
     val attributeBytes = mutableListOf<Byte>()
 
@@ -171,6 +163,7 @@ internal class ClassCompiler {
     res.addAll(constantPool[stackMapTableAttribute.attributeName.label].toBytes())
 
     val numberOfEntries = stackMapTableAttribute.frames.size.toShort()
+    println("${stackMapTableAttribute.frames.size}")
     val entriesBytes = mutableListOf<Byte>()
 
     for (entry in stackMapTableAttribute.frames) {
@@ -217,21 +210,8 @@ internal class ClassCompiler {
       )
     }
 
-//    val stackTable = mutableListOf<StackMapFrame>()
-//    val sortedTargets = jumpTargets.toList().sorted()
-
-//    for ((i, targetOffset) in sortedTargets.withIndex()) {
-//      if (i == 0) {
-//        stackTable.add(SameFrame(targetOffset.toByte()))
-//        continue
-//      }
-//      val relativeOffset = targetOffset - sortedTargets[i - 1] - 1
-//      stackTable.add(SameFrame(relativeOffset.toByte()))
-//    }
-
     return CodeCompilationResult(
       bytes = res.toList(),
-//      stackMapTableAttribute = composeStackMapTable(operations, jumpTargets.toList().sorted())
     )
   }
 

@@ -1,8 +1,10 @@
 package org.example.rlc.jvm.middleware
 
 import org.example.rlc.jvm.ir.ByteConstantOperation
+import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.CodeAttribute
 import org.example.rlc.jvm.ir.ControlFlowOperation
+import org.example.rlc.jvm.ir.EmptyVti
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
 import org.example.rlc.jvm.ir.MethodRefInfo
@@ -13,6 +15,8 @@ import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
+import org.example.rlc.jvm.ir.VerificationTypeInfo
+import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.toUtf8Value
 
 
@@ -28,7 +32,8 @@ internal fun runtimeErrorConstructorRef(): MethodRefInfo {
       descriptor = "(Ljava/lang/String;)V".toUtf8Value()
     ),
     argsSize = 2,
-    returnSize = 1
+    returnSize = 0,
+    returnTypeInfo = EmptyVti()
   )
 }
 
@@ -45,7 +50,8 @@ internal fun addMethod(): MethodInfo {
       descriptor = "(LLoxDouble;)LLoxDouble;".toUtf8Value()
     ),
     argsSize = 2,
-    returnSize = 1
+    returnSize = 1,
+    returnTypeInfo = ObjectVti(loxDoubleClassInfo, isArray = false),
   )
 
   val stringConcatMagicMethod = MethodRefInfo(
@@ -57,7 +63,8 @@ internal fun addMethod(): MethodInfo {
       descriptor = "(LLoxString;)LLoxString;".toUtf8Value()
     ),
     argsSize = 2,
-    returnSize = 1
+    returnSize = 1,
+    returnTypeInfo = ObjectVti(loxStringClassInfo, isArray = false),
   )
 
   val errorMessage = "Both operands should be numbers or strings."
@@ -73,10 +80,10 @@ internal fun addMethod(): MethodInfo {
     ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 16),
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(Opcode.OP_CHECKCAST, loxDoubleClassInfo),
-    SimpleOperation(Opcode.OP_ASTORE_2),
+    SimpleOperation(Opcode.OP_ASTORE_2, ObjectVti(loxDoubleClassInfo)),
     SimpleOperation(Opcode.OP_ALOAD_1),
     ShortConstantOperation(Opcode.OP_CHECKCAST, loxDoubleClassInfo),
-    SimpleOperation(Opcode.OP_ASTORE_3),
+    SimpleOperation(Opcode.OP_ASTORE_3, ObjectVti(loxDoubleClassInfo)),
     SimpleOperation(Opcode.OP_ALOAD_2),
     SimpleOperation(Opcode.OP_ALOAD_3),
     ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, doubleAddMagicMethod),
@@ -89,10 +96,10 @@ internal fun addMethod(): MethodInfo {
     ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 32),
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(Opcode.OP_CHECKCAST, loxStringClassInfo),
-    SimpleOperation(Opcode.OP_ASTORE_2),
+    SimpleOperation(Opcode.OP_ASTORE_2, ObjectVti(loxStringClassInfo)),
     SimpleOperation(Opcode.OP_ALOAD_1),
     ShortConstantOperation(Opcode.OP_CHECKCAST, loxStringClassInfo),
-    SimpleOperation(Opcode.OP_ASTORE_3),
+    SimpleOperation(Opcode.OP_ASTORE_3, ObjectVti(loxStringClassInfo)),
     SimpleOperation(Opcode.OP_ALOAD_2),
     SimpleOperation(Opcode.OP_ALOAD_3),
     ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, stringConcatMagicMethod),
@@ -106,7 +113,9 @@ internal fun addMethod(): MethodInfo {
     code = code.toList(),
   )
 
-  return makeBinaryMethodInfo(methodName = "__add__", codeAttribute = codeAttribute)
+  return makeBinaryMethodInfo(methodName = "__add__", codeAttribute = codeAttribute, listOf(ObjectVti(loxObjectClassInfo), ObjectVti(
+    loxObjectClassInfo)
+  ))
 }
 
 internal fun equalsMethod(): MethodInfo {
@@ -117,7 +126,7 @@ internal fun equalsMethod(): MethodInfo {
     ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, getClassMri),
     ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, objectEqualsMri),
     ControlFlowOperation(Opcode.OP_IFNE, jumpTo = 11),
-    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo, ObjectVti(loxBooleanClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ICONST_0),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
@@ -125,7 +134,7 @@ internal fun equalsMethod(): MethodInfo {
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(Opcode.OP_INSTANCEOF, loxNilClassInfo),
     ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 19),
-    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo, ObjectVti(loxBooleanClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ICONST_1),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
@@ -138,7 +147,7 @@ internal fun equalsMethod(): MethodInfo {
 
   val codeAttribute = CodeAttribute(argsSize = 2, code = code)
 
-  return makeBinaryMethodInfo(methodName = "__eq__", codeAttribute = codeAttribute)
+  return makeBinaryMethodInfo(methodName = "__eq__", codeAttribute = codeAttribute, listOf())
 }
 
 internal fun numberMagicMethod(methodName: String, returnType: String): MethodInfo {
@@ -151,7 +160,8 @@ internal fun numberMagicMethod(methodName: String, returnType: String): MethodIn
       descriptor = "(LLoxDouble;)L$returnType;".toUtf8Value()
     ),
     argsSize = 2,
-    returnSize = 1
+    returnSize = 1,
+    returnTypeInfo = ObjectVti(ClassInfo(returnType), isArray = false)
   )
 
   val code = listOf(
@@ -163,24 +173,26 @@ internal fun numberMagicMethod(methodName: String, returnType: String): MethodIn
     ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 16),
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(Opcode.OP_CHECKCAST, loxDoubleClassInfo),
-    SimpleOperation(Opcode.OP_ASTORE_2),
+    SimpleOperation(Opcode.OP_ASTORE_2, ObjectVti(loxDoubleClassInfo)),
     SimpleOperation(Opcode.OP_ALOAD_1),
     ShortConstantOperation(Opcode.OP_CHECKCAST, loxDoubleClassInfo),
-    SimpleOperation(Opcode.OP_ASTORE_3),
+    SimpleOperation(Opcode.OP_ASTORE_3, ObjectVti(loxDoubleClassInfo)),
     SimpleOperation(Opcode.OP_ALOAD_2),
     SimpleOperation(Opcode.OP_ALOAD_3),
     ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, methodRefInfo),
     SimpleOperation(Opcode.OP_ARETURN),
-    ShortConstantOperation(Opcode.OP_NEW, loxRuntimeErrorClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxRuntimeErrorClassInfo, ObjectVti(loxRuntimeErrorClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
-    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(value = "Operands must be numbers.")),
+    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(value = "Operands must be numbers."), javaLangStringObjectVti),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, runtimeErrorConstructorRef()),
     SimpleOperation(Opcode.OP_ATHROW),
   )
 
   val codeAttribute = CodeAttribute(argsSize = 2, code = code)
 
-  return makeBinaryMethodInfo(methodName, codeAttribute)
+  return makeBinaryMethodInfo(methodName, codeAttribute, listOf(ObjectVti(loxDoubleClassInfo), ObjectVti(
+    loxDoubleClassInfo)
+  ))
 }
 
 internal fun notEqualsMethod(): MethodInfo {
@@ -191,7 +203,7 @@ internal fun notEqualsMethod(): MethodInfo {
     ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, getClassMri),
     ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, objectEqualsMri),
     ControlFlowOperation(Opcode.OP_IFNE, jumpTo = 11),
-    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo, ObjectVti(loxBooleanClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ICONST_1),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
@@ -199,7 +211,7 @@ internal fun notEqualsMethod(): MethodInfo {
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(Opcode.OP_INSTANCEOF, loxNilClassInfo),
     ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 19),
-    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo, ObjectVti(loxBooleanClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ICONST_0),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
@@ -214,10 +226,14 @@ internal fun notEqualsMethod(): MethodInfo {
 
   val codeAttribute = CodeAttribute(argsSize = 2, code)
 
-  return makeBinaryMethodInfo(methodName = "__neq__", codeAttribute = codeAttribute)
+  return makeBinaryMethodInfo(methodName = "__neq__", codeAttribute = codeAttribute, listOf())
 }
 
-private fun makeBinaryMethodInfo(methodName: String, codeAttribute: CodeAttribute) = MethodInfo(
+private fun makeBinaryMethodInfo(
+  methodName: String,
+  codeAttribute: CodeAttribute,
+  localVariables: List<VerificationTypeInfo>
+) = MethodInfo(
   methodName = methodName,
   accessFlagList = listOf(
     MethodAccessFlags.STATIC,
@@ -229,7 +245,8 @@ private fun makeBinaryMethodInfo(methodName: String, codeAttribute: CodeAttribut
   signature = MethodSignature(
     listOf(ObjectVti(loxObjectClassInfo), ObjectVti(loxObjectClassInfo)),
     ObjectVti(loxObjectClassInfo)
-  )
+  ),
+  localVariables = localVariables
 )
 
 private fun makeUnaryMethodInfo(methodName: String, codeAttribute: CodeAttribute) = MethodInfo(
@@ -253,8 +270,9 @@ internal fun unaryMinusMagicMethod(methodName: String): MethodInfo {
       name = methodName.toUtf8Value(),
       descriptor = "()LLoxDouble;".toUtf8Value()
     ),
-    argsSize = 2,
-    returnSize = 1
+    argsSize = 1,
+    returnSize = 1,
+    returnTypeInfo = ObjectVti(loxDoubleClassInfo, isArray = false),
   )
 
   val code = listOf(
@@ -296,7 +314,8 @@ internal fun notOperatorMagicMethod(): MethodInfo {
       descriptor = "()LLoxObject;".toUtf8Value()
     ),
     argsSize = 1,
-    returnSize = 1
+    returnSize = 1,
+    returnTypeInfo = ObjectVti(loxObjectClassInfo, isArray = false)
   )
 
   val code = listOf(
@@ -316,9 +335,9 @@ internal fun notOperatorMagicMethod(): MethodInfo {
 }
 
 internal fun generateRuntimeError(message: String) = listOf(
-  ShortConstantOperation(Opcode.OP_NEW, loxRuntimeErrorClassInfo),
+  ShortConstantOperation(Opcode.OP_NEW, loxRuntimeErrorClassInfo, ObjectVti(loxRuntimeErrorClassInfo)),
   SimpleOperation(Opcode.OP_DUP),
-  ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(message)),
+  ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(message), javaLangStringObjectVti),
   ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, runtimeErrorConstructorRef()),
   SimpleOperation(Opcode.OP_ATHROW),
 )

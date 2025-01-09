@@ -19,6 +19,7 @@ import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
+import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.loxBoolean
 import org.example.rlc.jvm.ir.loxClassClassName
 import org.example.rlc.jvm.ir.loxDouble
@@ -107,7 +108,8 @@ private fun loxObjectStaticInitializer(): MethodInfo {
       descriptor = "(Ljava/lang/String;)V".toUtf8Value(),
     ),
     argsSize = 2,
-    returnSize = 1
+    returnSize = 0,
+    returnTypeInfo = EmptyVti()
   )
 
   val loxDoubleClassField = FieldRefInfo(
@@ -151,28 +153,29 @@ private fun loxObjectStaticInitializer(): MethodInfo {
   )
 
   // TODO: Create better code generator
+  val loxClassVti = ObjectVti(loxClassInfo)
   val code = listOf(
-    ShortConstantOperation(Opcode.OP_NEW, loxClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxClassInfo, loxClassVti),
     SimpleOperation(Opcode.OP_DUP),
-    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(loxDouble)),
+    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(loxDouble), javaLangStringObjectVti),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxClassConstructor),
     ShortConstantOperation(Opcode.OP_PUTSTATIC, loxDoubleClassField),
 
-    ShortConstantOperation(Opcode.OP_NEW, loxClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxClassInfo, loxClassVti),
     SimpleOperation(Opcode.OP_DUP),
-    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(loxNil)),
+    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(loxNil), javaLangStringObjectVti),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxClassConstructor),
     ShortConstantOperation(Opcode.OP_PUTSTATIC, loxNilClassField),
 
-    ShortConstantOperation(Opcode.OP_NEW, loxClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxClassInfo, loxClassVti),
     SimpleOperation(Opcode.OP_DUP),
-    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(loxBoolean)),
+    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(loxBoolean), javaLangStringObjectVti),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxClassConstructor),
     ShortConstantOperation(Opcode.OP_PUTSTATIC, loxBoolClassField),
 
-    ShortConstantOperation(Opcode.OP_NEW, loxClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxClassInfo, loxClassVti),
     SimpleOperation(Opcode.OP_DUP),
-    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(loxString)),
+    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(loxString), javaLangStringObjectVti),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxClassConstructor),
     ShortConstantOperation(Opcode.OP_PUTSTATIC, loxStringClassField),
 
@@ -249,7 +252,7 @@ private fun abstractTruthyMethod(): MethodInfo = MethodInfo(
 
 internal fun alwaysTruthy(): MethodInfo {
   val code = listOf(
-    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo, ObjectVti(loxBooleanClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ICONST_1),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),

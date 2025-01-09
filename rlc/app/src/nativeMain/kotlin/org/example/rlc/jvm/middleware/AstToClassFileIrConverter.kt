@@ -11,12 +11,15 @@ import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
+import org.example.rlc.jvm.ir.BooleanVti
 import org.example.rlc.jvm.ir.ByteConstantOperation
 import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
+import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.CodeAttribute
 import org.example.rlc.jvm.ir.ControlFlowOperation
 import org.example.rlc.jvm.ir.DoubleValue
+import org.example.rlc.jvm.ir.DoubleVti
 import org.example.rlc.jvm.ir.EmptyVti
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
@@ -28,6 +31,7 @@ import org.example.rlc.jvm.ir.Operation
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
+import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.loxMainClassName
 
 
@@ -90,7 +94,8 @@ class AstToClassFileIrConverter {
   }
 
   private fun visitPrintStmt(printStmt: PrintStmt) {
-    currentCode.add(ShortConstantOperation(Opcode.OP_GETSTATIC, systemOutField))
+    val printStreamVti = ObjectVti(ClassInfo(className = "java/io/PrintStream"), isArray = false)
+    currentCode.add(ShortConstantOperation(Opcode.OP_GETSTATIC, systemOutField, printStreamVti))
     visitExpr(printStmt.expr)
     currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, printMethodRef))
   }
@@ -146,7 +151,7 @@ class AstToClassFileIrConverter {
     currentCode.add(SimpleOperation(Opcode.OP_DUP))
     currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, loxObjectTruthyMri))
     currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, loxBooleanClassInfo))
-    currentCode.add(ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo))
+    currentCode.add(ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo, BooleanVti()))
     val insertBranchHere = currentCode.size
     // currentCode.add(ControlFlowOperation(Opcode.OP_IFEQ, n))
     // I guess that before we add operations from the second branch,
@@ -185,7 +190,7 @@ class AstToClassFileIrConverter {
     }
 
     val ops = listOf(
-      ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+      ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo, ObjectVti(loxObjectClassInfo)),
       SimpleOperation(Opcode.OP_DUP),
       SimpleOperation(valueOp),
       ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo)
@@ -196,9 +201,9 @@ class AstToClassFileIrConverter {
 
   private fun compileNumber(literal: Literal) {
     val ops = listOf(
-      ShortConstantOperation(Opcode.OP_NEW, loxDoubleClassInfo),
+      ShortConstantOperation(Opcode.OP_NEW, loxDoubleClassInfo, ObjectVti(loxDoubleClassInfo)),
       SimpleOperation(Opcode.OP_DUP),
-      ShortConstantOperation(Opcode.OP_LDC2_W, DoubleValue(literal.value)),
+      ShortConstantOperation(Opcode.OP_LDC2_W, DoubleValue(literal.value), DoubleVti()),
       ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxDoubleConstructorInfo)
     )
 
@@ -207,7 +212,7 @@ class AstToClassFileIrConverter {
 
   private fun compileNil() {
     val ops = listOf(
-      ShortConstantOperation(Opcode.OP_NEW, loxNilClassInfo),
+      ShortConstantOperation(Opcode.OP_NEW, loxNilClassInfo, ObjectVti(loxNilClassInfo)),
       SimpleOperation(Opcode.OP_DUP),
       ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxNilConstructorInfo),
     )
@@ -217,9 +222,9 @@ class AstToClassFileIrConverter {
 
   private fun compileString(literal: Literal) {
     val ops = listOf(
-      ShortConstantOperation(Opcode.OP_NEW, loxStringClassInfo),
+      ShortConstantOperation(Opcode.OP_NEW, loxStringClassInfo, ObjectVti(loxNilClassInfo)),
       SimpleOperation(Opcode.OP_DUP),
-      ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(literal.value)),
+      ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(literal.value), javaLangStringObjectVti),
       ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxStringConstructorInfo)
     )
 
@@ -266,7 +271,8 @@ class AstToClassFileIrConverter {
         )
       ),
       isStatic = true,
-      signature = MethodSignature(listOf(), EmptyVti())
+      signature = MethodSignature(listOf(), EmptyVti()),
+      localVariables = listOf(ObjectVti(javaLangObjectClassInfo))
     )
   }
 
@@ -283,7 +289,8 @@ class AstToClassFileIrConverter {
       classInfo = loxMainClassInfo,
       nameAndType = nameAndType,
       argsSize = 2,
-      returnSize = 1
+      returnSize = 1,
+      returnTypeInfo = ObjectVti(loxObjectClassInfo, isArray = false)
     )
   }
 
@@ -296,7 +303,8 @@ class AstToClassFileIrConverter {
       classInfo = loxMainClassInfo,
       nameAndType = nameAndType,
       argsSize = 1,
-      returnSize = 1
+      returnSize = 1,
+      returnTypeInfo = ObjectVti(loxObjectClassInfo, isArray = false)
     )
   }
 }

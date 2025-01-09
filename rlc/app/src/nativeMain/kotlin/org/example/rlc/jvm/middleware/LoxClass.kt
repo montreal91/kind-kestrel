@@ -17,6 +17,7 @@ import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
+import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.toUtf8Value
 
 /***
@@ -82,6 +83,7 @@ private fun loxClassConstructor(): MethodInfo {
     exceptionTable = 0,
     attributes = listOf(),
   )
+
   return MethodInfo(
     methodName = constructorMethodName,
     accessFlagList = listOf(MethodAccessFlags.NONE),
@@ -102,10 +104,10 @@ private fun loxClassEqualsMethod(): MethodInfo {
       ShortConstantOperation(Opcode.OP_INSTANCEOF, loxClassInfo),
       ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 10),
       SimpleOperation(Opcode.OP_ALOAD_0),
-      ShortConstantOperation(Opcode.OP_GETFIELD, nameRef()),
+      ShortConstantOperation(Opcode.OP_GETFIELD, nameRef(), javaLangStringObjectVti),
       SimpleOperation(Opcode.OP_ALOAD_1),
       ShortConstantOperation(Opcode.OP_CHECKCAST, loxClassInfo),
-      ShortConstantOperation(Opcode.OP_GETFIELD, nameRef()),
+      ShortConstantOperation(Opcode.OP_GETFIELD, nameRef(), javaLangStringObjectVti),
       ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, stringEquals()),
       SimpleOperation(Opcode.OP_IRETURN),
       SimpleOperation(Opcode.OP_ICONST_0),
@@ -118,7 +120,10 @@ private fun loxClassEqualsMethod(): MethodInfo {
     methodName = "equals",
     accessFlagList = listOf(MethodAccessFlags.PUBLIC),
     attributeList = listOf(code),
-    isStatic = true,
-    signature = MethodSignature(listOf(ObjectVti(javaLangObjectClassInfo)), BooleanVti())
+    isStatic = false,
+    signature = MethodSignature(
+      listOf(ObjectVti(loxClassInfo), ObjectVti(javaLangObjectClassInfo)),
+      BooleanVti()
+    )
   )
 }
