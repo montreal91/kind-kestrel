@@ -148,6 +148,7 @@ class AstToClassFileIrConverter {
   }
 
   private fun compileLogical(expr: Logical) {
+    println("Compiling Logical: ${expr.operator.type}")
     currentCode.add(SimpleOperation(Opcode.OP_DUP))
     currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, loxObjectTruthyMri))
     currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, loxBooleanClassInfo))

@@ -8,7 +8,7 @@ but it holds a special place in my heart because it is my birthplace.
 My Lox Compiler compiles to JVM bytecode.
 It's not objectively special, but it's my first JVM backend compiler, so it's special to me.
 
-## Features (6/33)
+## Features (9/33)
 The brief list of features I want to implement
 
 ### Meta
@@ -24,9 +24,9 @@ The brief list of features I want to implement
 ### Expressions
 - [x] Arithmetic
 - [x] Comparison and Equality
-- [ ] Logical Operators
-- [ ] Precedence
-- [ ] Grouping
+- [x] Logical Operators
+- [x] Precedence
+- [x] Grouping
 
 ### Statements
 - [x] Expr Statement

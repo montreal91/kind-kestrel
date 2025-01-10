@@ -190,10 +190,8 @@ class StackMapTableMaker {
           val args = mri.argsSize
 
 
-          println("    ${operations[i].opcode} $args")
-//          stack.forEach {
-//            println("        $it")
-//          }
+          println("    Label: ${mri.label}")
+          println("    Arguments Size: ${operations[i].opcode} $args")
 
           repeat(args) {
             stack.removeLast()
