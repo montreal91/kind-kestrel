@@ -195,7 +195,8 @@ private fun toString(): MethodInfo {
     methodName = "toString",
     accessFlagList = listOf(MethodAccessFlags.PUBLIC),
     attributeList = listOf(codeAttribute),
-    isStatic = true,
-    signature = MethodSignature(listOf(ObjectVti(loxBooleanClassInfo)), ObjectVti(javaLangStringClassInfo)),
+    isStatic = false,
+    signature = MethodSignature(listOf(), ObjectVti(javaLangStringClassInfo)),
+    localVariables = listOf()
   )
 }

@@ -85,6 +85,7 @@ class MethodInfo(
       is ObjectVti -> res.append(objectVtiToDescriptor(value))
       is EmptyVti -> res.append("V")
       is BooleanVti -> res.append("Z")
+      is NullVariableVti -> {}
     }
 
     return res.toString()

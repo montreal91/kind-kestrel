@@ -14,7 +14,7 @@ class SameFrame(tag: Byte) : StackMapFrame(tag) {
 private const val FULL_FRAME: Byte = 255.toByte()
 
 class FullFrame(
-  val offsetDelta: Byte,
+  val offsetDelta: Short,
   locals: List<VerificationTypeInfo>,
   stack: List<VerificationTypeInfo>,
 ) : StackMapFrame(FULL_FRAME) {

@@ -60,6 +60,7 @@ class CodeAttribute(
   }
 
   private fun opToLocalRef(operation: Opcode) = when (operation) {
+    Opcode.OP_ACONST_NULL -> 0
     Opcode.OP_ALOAD_0 -> 1
     Opcode.OP_ALOAD_1 -> 2
     Opcode.OP_ALOAD_2 -> 3

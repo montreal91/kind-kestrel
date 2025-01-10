@@ -2,6 +2,7 @@ package org.example.rlc.jvm.middleware
 
 import org.example.rlc.jvm.ir.ByteConstantOperation
 import org.example.rlc.jvm.ir.ClassFile
+import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.CodeAttribute
 import org.example.rlc.jvm.ir.ControlFlowOperation
 import org.example.rlc.jvm.ir.DoubleVti
@@ -11,6 +12,8 @@ import org.example.rlc.jvm.ir.FullFrameBuilder
 import org.example.rlc.jvm.ir.IntegerVti
 import org.example.rlc.jvm.ir.MethodInfo
 import org.example.rlc.jvm.ir.MethodRefInfo
+import org.example.rlc.jvm.ir.NullVariableVti
+import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.Operation
 import org.example.rlc.jvm.ir.ShortConstantOperation
@@ -32,19 +35,22 @@ class StackMapTableMaker {
   private fun processClass(classFile: ClassFile) {
     println("\nAdding attributes if required for class ${classFile.filename}")
     println("------------------------------------------------------------------")
-    classFile.methodList.forEach(this::addAttributeIfRequired)
+//    classFile.methodList.forEach(this::addAttributeIfRequired)
+    for (method in classFile.methodList) {
+      addAttributeIfRequired(method, classFile.thisClassInfo)
+    }
   }
 
-  private fun addAttributeIfRequired(methodInfo: MethodInfo) {
+  private fun addAttributeIfRequired(methodInfo: MethodInfo, thisClassInfo: ClassInfo) {
     if (methodInfo.isAbstract) {
       return
     }
 
     val codeAttribute = extractCodeFromMethodInfo(methodInfo)
     val jumpTargets = calculateJumpTargets(codeAttribute.code)
-    val localVariables = composeArrayOfLocalVariables(methodInfo)
+    val localVariables = composeArrayOfLocalVariables(methodInfo, thisClassInfo)
 //    println()
-    println("\nMaking code attribute for ${methodInfo.methodName.encodedString}")
+    println("\nMaking Stack Map Table attribute for ${methodInfo.methodName.encodedString}")
 //    println("------------------------------------------------------------------")
     codeAttribute.addAttribute(makeStackMapTable(
       codeAttribute.code,
@@ -96,6 +102,10 @@ class StackMapTableMaker {
 
 //    val stackTable = mutableListOf<StackMapFrame>()
     val offsets = calculateOffsets(operations)
+    println("Offsets")
+    for ((i, offset) in offsets.withIndex()) {
+      println("$i, $offset, ${operations[i].opcode}")
+    }
     val jumpTable = makeJumpTable(operations)
     val frames = List(operations.size) { FullFrameBuilder() }
 
@@ -103,13 +113,14 @@ class StackMapTableMaker {
     var maxStackSize = 0
     val stack = ArrayDeque<VerificationTypeInfo>()
 
-//    localVariables.forEach {
-//      println(it)
-//    }
+    localVariables.forEach {
+      println("    $it")
+    }
 
     for ((i, jumps) in jumpTable.withIndex()) {
       println("$i, ${operations[i].opcode}")
       when (operations[i].opcode) {
+        Opcode.OP_ACONST_NULL -> stack.addLast(NullVariableVti())
         Opcode.OP_ALOAD_0 -> stack.addLast(localVariables[0])
         Opcode.OP_ALOAD_1 -> stack.addLast(localVariables[1])
         Opcode.OP_ALOAD_2 -> stack.addLast(localVariables[2])
@@ -216,22 +227,26 @@ class StackMapTableMaker {
 
   private fun makeFrames(frameBuilders: List<FullFrameBuilder>, offsets: List<Int>): List<FullFrame> {
     val res = mutableListOf<FullFrame>()
-    var currentOffset = 0
+    var lastOffset = 0
+
+//    offsets.forEach {
+//      println(it)
+//    }
+
+    var one = 0
     for ((i, fb) in frameBuilders.withIndex()) {
       if (i == 0) {
-        currentOffset += offsets[i]
+//        currentOffset += offsets[i]
         continue
       }
 
       if (fb.toBuild) {
-        println("        Offset: $currentOffset")
-        res.add(fb.offsetDelta(currentOffset.toByte()).build())
-        currentOffset = 0
+        val frameOffset = offsets[i] - lastOffset - one
+//        println("        Offset: $currentOffset")
+        res.add(fb.offsetDelta(frameOffset.toShort()).build())
+        lastOffset = offsets[i]
+        one = 1
       }
-      else {
-        currentOffset += offsets[i]
-      }
-
     }
 
     return res
@@ -245,7 +260,7 @@ class StackMapTableMaker {
       res.add(offset)
 
       offset += when (op) {
-        is ControlFlowOperation -> 2
+        is ControlFlowOperation -> 3
         is ByteConstantOperation -> 2
         is ShortConstantOperation -> 3
         is SimpleOperation -> 1
@@ -279,8 +294,12 @@ class StackMapTableMaker {
     else -> OpType.SEQUENTIAL_OP
   }
 
-  private fun composeArrayOfLocalVariables(methodInfo: MethodInfo): List<VerificationTypeInfo> {
+  private fun composeArrayOfLocalVariables(methodInfo: MethodInfo, thisClassInfo: ClassInfo): List<VerificationTypeInfo> {
     val res = mutableListOf<VerificationTypeInfo>()
+
+    if (!methodInfo.isStatic) {
+      res.add(ObjectVti(thisClassInfo))
+    }
 
     for (arg in methodInfo.signature.arguments) {
       res.add(arg)

@@ -4,7 +4,18 @@ import org.example.rlc.jvm.middleware.javaLangStringClassInfo
 
 
 sealed class VerificationTypeInfo(val type: Type) {
-  enum class Type { TOP, BOOLEAN, INTEGER, OBJECT, DOUBLE, EMPTY }
+  enum class Type { TOP, BOOLEAN, INTEGER, OBJECT, DOUBLE, EMPTY, NULL }
+
+  val tag: Byte
+    get() = when (type) {
+      Type.TOP -> 0.toByte()
+      Type.BOOLEAN -> 1.toByte()
+      Type.INTEGER -> 1.toByte()
+      Type.OBJECT -> 7.toByte()
+      Type.DOUBLE -> 3.toByte()
+      Type.EMPTY -> 0.toByte()
+      Type.NULL -> 5.toByte()
+    }
 }
 
 // VTI stands for Verification Type Info
@@ -27,5 +38,7 @@ class BooleanVti : VerificationTypeInfo(Type.BOOLEAN)
 class DoubleVti : VerificationTypeInfo(Type.DOUBLE)
 
 class EmptyVti : VerificationTypeInfo(Type.EMPTY)
+
+class NullVariableVti : VerificationTypeInfo(Type.NULL)
 
 val javaLangStringObjectVti = ObjectVti(javaLangStringClassInfo, isArray = false)

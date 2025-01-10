@@ -116,13 +116,14 @@ private fun loxClassEqualsMethod(): MethodInfo {
     exceptionTable = 0,
     attributes = listOf(),
   )
+
   return MethodInfo(
     methodName = "equals",
     accessFlagList = listOf(MethodAccessFlags.PUBLIC),
     attributeList = listOf(code),
     isStatic = false,
     signature = MethodSignature(
-      listOf(ObjectVti(loxClassInfo), ObjectVti(javaLangObjectClassInfo)),
+      listOf(ObjectVti(javaLangObjectClassInfo)),
       BooleanVti()
     )
   )

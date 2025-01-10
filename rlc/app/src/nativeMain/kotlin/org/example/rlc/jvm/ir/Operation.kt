@@ -16,6 +16,7 @@ sealed class Operation(val opcode: Opcode, val valueInfo: VerificationTypeInfo?)
 
   val stackModification: Int
     get() = when (opcode) {
+      Opcode.OP_ACONST_NULL -> 1
       Opcode.OP_ALOAD_0 -> 1
       Opcode.OP_ALOAD_1 -> 1
       Opcode.OP_ALOAD_2 -> 1

@@ -1,6 +1,8 @@
 package org.example.rlc.jvm.ir
 
 enum class Opcode(val value: Byte) {
+  OP_ACONST_NULL(0x1.toByte()),
+
   // Opcodes stored alphabetically by mnemonics
   OP_ALOAD_0(0x2A.toByte()),  // Load reference from local variable 0
   OP_ALOAD_1(0x2B.toByte()),  // Load reference from local variable 1

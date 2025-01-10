@@ -10,6 +10,7 @@ import org.example.rlc.jvm.ir.MethodInfo
 import org.example.rlc.jvm.ir.MethodRefInfo
 import org.example.rlc.jvm.ir.MethodSignature
 import org.example.rlc.jvm.ir.NameAndTypeInfo
+import org.example.rlc.jvm.ir.NullVariableVti
 import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
@@ -71,13 +72,17 @@ internal fun addMethod(): MethodInfo {
 
   // This code will change after a while
   val code = mutableListOf(
+    SimpleOperation(Opcode.OP_ACONST_NULL),
+    SimpleOperation(Opcode.OP_ASTORE_2, value = ObjectVti(loxDoubleClassInfo)),
+    SimpleOperation(Opcode.OP_ACONST_NULL),
+    SimpleOperation(Opcode.OP_ASTORE_3, value = ObjectVti(loxObjectClassInfo)),
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(Opcode.OP_INSTANCEOF, loxDoubleClassInfo),
     // Hmm, maybe I need something like labels for these purposes
-    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 16),
+    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 20),
     SimpleOperation(Opcode.OP_ALOAD_1),
     ShortConstantOperation(Opcode.OP_INSTANCEOF, loxDoubleClassInfo),
-    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 16),
+    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 20),
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(Opcode.OP_CHECKCAST, loxDoubleClassInfo),
     SimpleOperation(Opcode.OP_ASTORE_2, ObjectVti(loxDoubleClassInfo)),
@@ -90,10 +95,10 @@ internal fun addMethod(): MethodInfo {
     SimpleOperation(Opcode.OP_ARETURN),
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(Opcode.OP_INSTANCEOF, loxStringClassInfo),
-    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 32),
+    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 36),
     SimpleOperation(Opcode.OP_ALOAD_1),
     ShortConstantOperation(Opcode.OP_INSTANCEOF, loxStringClassInfo),
-    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 32),
+    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 36),
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(Opcode.OP_CHECKCAST, loxStringClassInfo),
     SimpleOperation(Opcode.OP_ASTORE_2, ObjectVti(loxStringClassInfo)),
@@ -113,19 +118,28 @@ internal fun addMethod(): MethodInfo {
     code = code.toList(),
   )
 
-  return makeBinaryMethodInfo(methodName = "__add__", codeAttribute = codeAttribute, listOf(ObjectVti(loxObjectClassInfo), ObjectVti(
-    loxObjectClassInfo)
-  ))
+  return makeBinaryMethodInfo(
+    methodName = "__add__",
+    codeAttribute = codeAttribute,
+    localVariables = listOf(
+      ObjectVti(loxObjectClassInfo),
+      ObjectVti(loxObjectClassInfo),
+    )
+  )
 }
 
 internal fun equalsMethod(): MethodInfo {
   val code = listOf(
+    SimpleOperation(Opcode.OP_ACONST_NULL),
+    SimpleOperation(Opcode.OP_ASTORE_2, value = NullVariableVti()),
+    SimpleOperation(Opcode.OP_ACONST_NULL),
+    SimpleOperation(Opcode.OP_ASTORE_3, value = NullVariableVti()),
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, getClassMri),
     SimpleOperation(Opcode.OP_ALOAD_1),
     ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, getClassMri),
     ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, objectEqualsMri),
-    ControlFlowOperation(Opcode.OP_IFNE, jumpTo = 11),
+    ControlFlowOperation(Opcode.OP_IFNE, jumpTo = 15),
     ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo, ObjectVti(loxBooleanClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ICONST_0),
@@ -133,7 +147,7 @@ internal fun equalsMethod(): MethodInfo {
     SimpleOperation(Opcode.OP_ARETURN),
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(Opcode.OP_INSTANCEOF, loxNilClassInfo),
-    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 19),
+    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 23),
     ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo, ObjectVti(loxBooleanClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ICONST_1),
@@ -165,12 +179,16 @@ internal fun numberMagicMethod(methodName: String, returnType: String): MethodIn
   )
 
   val code = listOf(
+    SimpleOperation(Opcode.OP_ACONST_NULL),
+    SimpleOperation(Opcode.OP_ASTORE_2, value = NullVariableVti()),
+    SimpleOperation(Opcode.OP_ACONST_NULL),
+    SimpleOperation(Opcode.OP_ASTORE_3, value = NullVariableVti()),
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(Opcode.OP_INSTANCEOF, loxDoubleClassInfo),
-    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 16),
+    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 20),
     SimpleOperation(Opcode.OP_ALOAD_1),
     ShortConstantOperation(Opcode.OP_INSTANCEOF, loxDoubleClassInfo),
-    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 16),
+    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 20),
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(Opcode.OP_CHECKCAST, loxDoubleClassInfo),
     SimpleOperation(Opcode.OP_ASTORE_2, ObjectVti(loxDoubleClassInfo)),
