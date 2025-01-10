@@ -59,6 +59,9 @@ enum class Opcode(val value: Byte) {
   // Takes two bytes as an operand
   OP_GETSTATIC(0xB2.toByte()),
 
+  // Unconditional jump
+  OP_GOTO(0xA7.toByte()),
+
   // Push int constant 0
   OP_ICONST_0(0x3.toByte()),
 

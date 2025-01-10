@@ -3,20 +3,26 @@
 // Return the first non-true argument.
 print "Expect: false";
 print false and 1; // expect: false
-// print "Expect: 1";
-// print true and 1; // expect: 1
-// print "Expect: false";
-// print 1 and 2 and false; // expect: false
+print "Expect: 1";
+print true and 1; // expect: 1
+print "Expect: false";
+print 1 and 2 and false; // expect: false
 
-// print "Expect: false";
-// print 1 and False and 2;
+print "Expect: false";
+print 1 and false and 2;
 
-// print "Expect nil";
+print "";
+print "Expect nil";
+print nil and true;
+
+print "Expect nil";
+print true and nil;
 
 
 // Return the last argument if all are true.
 
-// print "Expect: true";
-// print 1 and true; // expect: true
-// print "Expect: 3";
-// print 1 and 2 and 3; // expect: 3
+print "";
+print "Expect: true";
+print 1 and true; // expect: true
+print "Expect: 3";
+print 1 and 2 and 3; // expect: 3

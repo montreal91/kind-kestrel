@@ -17,6 +17,8 @@ import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StackMapFrame
 import org.example.rlc.jvm.ir.StackMapTableAttribute
+import org.example.rlc.jvm.middleware.javaLangObjectClassInfo
+import org.example.rlc.jvm.middleware.javaLangStringClassInfo
 
 internal class ClassCompiler {
   private val constantPool : ConstantPool = ConstantPool()
@@ -69,10 +71,15 @@ internal class ClassCompiler {
   private fun composeConstantPool(classFile: ClassFile) {
     constantPool.addConstantPoolInfo(classFile.thisClassInfo)
     constantPool.addConstantPoolInfo(classFile.superClassInfo)
+    constantPool.addConstantPoolInfo(javaLangObjectClassInfo)
+    constantPool.addConstantPoolInfo(javaLangStringClassInfo)
 
     for (method in classFile.methodList) {
+      println("    Adding method to constant poo: ${method.methodName.encodedString}")
       constantPool.addConstantPoolInfo(method.methodName)
       constantPool.addConstantPoolInfo(method.methodDescriptor)
+
+      constantPool.addAllConstantPoolInfos(method.signatureConstants)
 
       for (attribute in method.attributeList) {
         constantPool.addConstantPoolInfo(attribute.attributeName)
@@ -208,7 +215,15 @@ internal class ClassCompiler {
       }
     }
 
-    res.addAll(0.toShort().toBytes()) // temporary all stacks are empty
+    res.addAll(frame.stack.size.toShort().toBytes())
+
+    for (s in frame.stack) {
+      res.add(s.tag)
+
+      if (s is ObjectVti) {
+        res.addAll(constantPool[s.classInfo.label].toBytes())
+      }
+    }
 
     return res
   }

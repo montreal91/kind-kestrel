@@ -30,7 +30,9 @@ class MethodInfo(
       res.append(")")
       res.append(makeDescriptorValueFromSignature(signature.returnType))
 
-      return Utf8Value(res.toString())
+      val resStr = res.toString()
+      println("            Calculated method ref: $resStr")
+      return Utf8Value(resStr)
     }
 
   constructor(
@@ -75,6 +77,16 @@ class MethodInfo(
       return res
     }
 
+  val signatureConstants: List<ConstantPoolInfo>
+    get() {
+      val res = mutableListOf<ConstantPoolInfo>()
+      for (s in signature.arguments) {
+        res.add(vtiToCpi(s))
+      }
+      res.add(vtiToCpi(signature.returnType))
+      return res
+    }
+
   private fun makeDescriptorValueFromSignature(value: VerificationTypeInfo): String {
     val res = StringBuilder()
 
@@ -91,11 +103,28 @@ class MethodInfo(
     return res.toString()
   }
 
+  private fun vtiToCpi(value: VerificationTypeInfo): ConstantPoolInfo = when(value) {
+    is ObjectVti -> objectVtiToClassInfo(value)
+    is BooleanVti -> "Z".toUtf8Value()
+    is DoubleVti -> "D".toUtf8Value()
+    is EmptyVti -> "".toUtf8Value()
+    is IntegerVti -> "I".toUtf8Value()
+    is NullVariableVti -> "".toUtf8Value()
+    is TopVti -> "".toUtf8Value()
+  }
+
+  private fun objectVtiToClassInfo(objectVti: ObjectVti): ClassInfo {
+//    if (objectVti.isArray) {
+//      return ClassInfo(className = "[L${objectVti.classInfo.className.encodedString};")
+//    }
+    return objectVti.classInfo
+  }
+
   private fun objectVtiToDescriptor(vti: ObjectVti): String {
     val res = StringBuilder()
 
     if (vti.isArray) {
-      res.append("[")
+      return vti.classInfo.className.encodedString
     }
 
     res.append("L")

@@ -6,6 +6,10 @@ import org.example.rlc.jvm.middleware.javaLangStringClassInfo
 sealed class VerificationTypeInfo(val type: Type) {
   enum class Type { TOP, BOOLEAN, INTEGER, OBJECT, DOUBLE, EMPTY, NULL }
 
+  override fun toString(): String {
+    return type.toString()
+  }
+
   val tag: Byte
     get() = when (type) {
       Type.TOP -> 0.toByte()
@@ -29,7 +33,7 @@ class ObjectVti(
   constructor(classInfo: ClassInfo) : this(classInfo, isArray = false)
 
   override fun toString(): String {
-    return "ObjectVti[${classInfo.className.encodedString}, isArray=${isArray}]"
+    return "ObjectVti[${classInfo.className.encodedString}]"
   }
 }
 

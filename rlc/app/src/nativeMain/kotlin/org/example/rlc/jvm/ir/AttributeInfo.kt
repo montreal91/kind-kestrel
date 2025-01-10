@@ -104,5 +104,6 @@ class CodeAttribute(
     Opcode.OP_PUTFIELD -> 0
     Opcode.OP_PUTSTATIC -> 0
     Opcode.OP_RETURN -> 0
+    Opcode.OP_GOTO -> 0
   }
 }

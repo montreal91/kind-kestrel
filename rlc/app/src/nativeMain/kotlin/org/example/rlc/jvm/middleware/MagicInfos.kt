@@ -20,6 +20,7 @@ import org.example.rlc.jvm.ir.toUtf8Value
 
 internal val javaLangObjectClassInfo = ClassInfo(className = javaLangObject)
 internal val javaLangStringClassInfo = ClassInfo(className = "java/lang/String")
+internal val javaLangStringArrayClassInfo = ClassInfo(className = "[Ljava/lang/String;")
 internal val loxRuntimeErrorClassInfo = ClassInfo(className = "LoxRuntimeError")
 internal val loxDoubleClassInfo = ClassInfo(className = loxDouble)
 internal val loxObjectClassInfo = ClassInfo(className = loxObject)
@@ -63,7 +64,7 @@ internal val loxNilConstructorInfo = MethodRefInfo(
     name = "<init>".toUtf8Value(),
     descriptor = "()V".toUtf8Value(),
   ),
-  argsSize = 2,
+  argsSize = 1,
   returnSize = 0,
   returnTypeInfo = EmptyVti(),
 )

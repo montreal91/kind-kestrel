@@ -157,6 +157,7 @@ class AstToClassFileIrConverter {
     // I guess that before we add operations from the second branch,
     // we need to pop duplicated boolean object from the stack.
     // Though, probably, we shouldn't duplicate the result of truthy method, but the resulting object itself.
+    currentCode.add(SimpleOperation(Opcode.OP_POP))
     visitExpr(expr.right)
     val jumpToHere = currentCode.size + 1
     currentCode.add(insertBranchHere, ControlFlowOperation(Opcode.OP_IFEQ, jumpToHere))
@@ -201,7 +202,7 @@ class AstToClassFileIrConverter {
 
   private fun compileNumber(literal: Literal) {
     val ops = listOf(
-      ShortConstantOperation(Opcode.OP_NEW, loxDoubleClassInfo, ObjectVti(loxDoubleClassInfo)),
+      ShortConstantOperation(Opcode.OP_NEW, loxDoubleClassInfo, ObjectVti(loxObjectClassInfo)),
       SimpleOperation(Opcode.OP_DUP),
       ShortConstantOperation(Opcode.OP_LDC2_W, DoubleValue(literal.value), DoubleVti()),
       ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxDoubleConstructorInfo)
@@ -212,7 +213,7 @@ class AstToClassFileIrConverter {
 
   private fun compileNil() {
     val ops = listOf(
-      ShortConstantOperation(Opcode.OP_NEW, loxNilClassInfo, ObjectVti(loxNilClassInfo)),
+      ShortConstantOperation(Opcode.OP_NEW, loxNilClassInfo, ObjectVti(loxObjectClassInfo)),
       SimpleOperation(Opcode.OP_DUP),
       ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxNilConstructorInfo),
     )
@@ -222,7 +223,7 @@ class AstToClassFileIrConverter {
 
   private fun compileString(literal: Literal) {
     val ops = listOf(
-      ShortConstantOperation(Opcode.OP_NEW, loxStringClassInfo, ObjectVti(loxNilClassInfo)),
+      ShortConstantOperation(Opcode.OP_NEW, loxStringClassInfo, ObjectVti(loxObjectClassInfo)),
       SimpleOperation(Opcode.OP_DUP),
       ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(literal.value), javaLangStringObjectVti),
       ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxStringConstructorInfo)
@@ -246,7 +247,7 @@ class AstToClassFileIrConverter {
       ),
       isStatic = true,
       signature = MethodSignature(
-        listOf(ObjectVti(isArray = true, classInfo = javaLangStringClassInfo)),
+        listOf(ObjectVti(isArray = true, classInfo = javaLangStringArrayClassInfo)),
         EmptyVti()
       )
     )

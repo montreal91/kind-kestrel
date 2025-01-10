@@ -47,7 +47,7 @@ private fun loxNilConstructor(): MethodInfo {
   )
 
   val codeAttribute = CodeAttribute(
-    argsSize = 2,
+    argsSize = 1,
     code = code,
     exceptionTable = 0,
     attributes = listOf()
@@ -57,7 +57,7 @@ private fun loxNilConstructor(): MethodInfo {
     methodName = constructorMethodName,
     accessFlagList = listOf(),
     attributeList = listOf(codeAttribute),
-    isStatic = true,
+    isStatic = false,
     signature = MethodSignature(listOf(), EmptyVti())
   )
 }

@@ -169,8 +169,14 @@ class StackMapTableMaker {
           frames[ind].needToBuild(true)
           frames[ind].stack(stack.toList())
           frames[ind].locals(localVariables.toList())
-//          frames[ind].locals(localVariables.toList())
-          println("    need to build: ${frames[ind].toBuild}")
+        }
+
+        Opcode.OP_GOTO -> {
+          val ind = (operations[i] as ControlFlowOperation).jumpTo
+          println("    TEH GOTO JUMP to $ind")
+          frames[ind].needToBuild(true)
+          frames[ind].stack(stack.toList())
+          frames[ind].locals(localVariables.toList())
         }
 
         Opcode.OP_ILOAD_1 -> stack.addLast(IntegerVti())
@@ -185,9 +191,9 @@ class StackMapTableMaker {
 
 
           println("    ${operations[i].opcode} $args")
-          stack.forEach {
-            println("        $it")
-          }
+//          stack.forEach {
+//            println("        $it")
+//          }
 
           repeat(args) {
             stack.removeLast()
@@ -218,7 +224,15 @@ class StackMapTableMaker {
 
         Opcode.OP_PUTSTATIC -> stack.removeLast() // can fuck up with doubles
         Opcode.OP_RETURN -> stack.clear()
+//        Opcode.OP_GOTO -> {
+//          // Need to add stack frame, actually
+//        }
       }
+      print("    Stack: ")
+      for (s in stack) {
+        print("$s, ")
+      }
+      println()
       maxStackSize = maxOf(maxStackSize, stack.size)
     }
 

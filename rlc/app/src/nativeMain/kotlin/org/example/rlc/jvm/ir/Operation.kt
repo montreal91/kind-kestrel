@@ -60,6 +60,7 @@ sealed class Operation(val opcode: Opcode, val valueInfo: VerificationTypeInfo?)
       Opcode.OP_NEW -> 1
       Opcode.OP_PUTFIELD -> customStackModification()
       Opcode.OP_PUTSTATIC -> customStackModification()
+      Opcode.OP_GOTO -> 0
     }
 
   protected open fun customStackModification() = 0
