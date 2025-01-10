@@ -5,10 +5,8 @@ import org.example.rlc.jvm.ir.ByteConstantOperation
 import org.example.rlc.jvm.ir.ClassFile
 import org.example.rlc.jvm.ir.CodeAttribute
 import org.example.rlc.jvm.ir.ControlFlowOperation
-import org.example.rlc.jvm.ir.DoubleVti
 import org.example.rlc.jvm.ir.FieldInfo
 import org.example.rlc.jvm.ir.FullFrame
-import org.example.rlc.jvm.ir.InterfaceInfo
 import org.example.rlc.jvm.ir.MethodInfo
 import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Operation
@@ -42,7 +40,7 @@ internal class ClassCompiler {
     // Compile interfaces
     res.addAll(classFile.interfaceList.size.toShort().toBytes())
     for (anInterface in classFile.interfaceList) {
-      res.addAll(compileInterfaceToByteCode(interfaceInfo = anInterface))
+      res.addAll(compileInterfaceToByteCode())
     }
 
     // Compile fields
@@ -122,7 +120,7 @@ internal class ClassCompiler {
     return res
   }
 
-  private fun compileInterfaceToByteCode(interfaceInfo: InterfaceInfo): List<Byte> {
+  private fun compileInterfaceToByteCode(): List<Byte> {
     // To be implemented
     return listOf()
   }

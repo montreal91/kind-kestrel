@@ -141,30 +141,33 @@ class AstToClassFileIrConverter {
   private fun visitLogical(expr: Logical) {
     visitExpr(expr.left)
     when (expr.operator.type) {
-      Token.Type.AND -> compileAnd(expr)
-      Token.Type.OR -> compileOr()
+      Token.Type.AND -> compileLogical(expr)
+      Token.Type.OR -> compileLogical(expr)
       else -> throw IllegalStateException("Unsupported logical operator [${expr.operator}].")
     }
   }
 
-  private fun compileAnd(expr: Logical) {
+  private fun compileLogical(expr: Logical) {
     currentCode.add(SimpleOperation(Opcode.OP_DUP))
     currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, loxObjectTruthyMri))
     currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, loxBooleanClassInfo))
     currentCode.add(ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo, BooleanVti()))
-    val insertBranchHere = currentCode.size
-    // currentCode.add(ControlFlowOperation(Opcode.OP_IFEQ, n))
-    // I guess that before we add operations from the second branch,
-    // we need to pop duplicated boolean object from the stack.
-    // Though, probably, we shouldn't duplicate the result of truthy method, but the resulting object itself.
-    currentCode.add(SimpleOperation(Opcode.OP_POP))
-    visitExpr(expr.right)
-    val jumpToHere = currentCode.size + 1
-    currentCode.add(insertBranchHere, ControlFlowOperation(Opcode.OP_IFEQ, jumpToHere))
-  }
 
-  private fun compileOr() {
-    // Cuming during current cycle of feature implementation
+    val insertBranchHere = currentCode.size
+
+    currentCode.add(SimpleOperation(Opcode.OP_POP))
+
+    visitExpr(expr.right)
+
+    val jumpToHere = currentCode.size + 1
+
+    val opcode = when (expr.operator.type) {
+      Token.Type.AND -> Opcode.OP_IFEQ
+      Token.Type.OR -> Opcode.OP_IFNE
+      else -> throw IllegalStateException("Unsupported logical operator [${expr.operator}].")
+    }
+
+    currentCode.add(insertBranchHere, ControlFlowOperation(opcode, jumpToHere))
   }
 
   private fun visitUnary(expr: Unary) {
