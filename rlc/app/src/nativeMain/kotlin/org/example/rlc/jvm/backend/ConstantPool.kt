@@ -25,11 +25,7 @@ class ConstantPool {
       return labelIndex[label]!!.toShort()
     }
 
-    println("HUGS: Known Labels:")
-    labelIndex.keys.forEach {
-      println("    $it")
-    }
-
+    logLabels()
     throw RuntimeException("Unexpected label [$label]")
   }
 
@@ -82,10 +78,16 @@ class ConstantPool {
       is DoubleValue -> addDoubleConstant(constantValue)
 
       else -> {
-        println("HUGS: Known Labels")
-        println(labelIndex.keys.toString())
+        logLabels()
         throw IllegalArgumentException("Unexpected constant value type ${constantValue.value}")
       }
+    }
+  }
+
+  private fun logLabels() {
+    println("Known Constant Pool Labels")
+    labelIndex.keys.forEach {
+      println("    $it")
     }
   }
 

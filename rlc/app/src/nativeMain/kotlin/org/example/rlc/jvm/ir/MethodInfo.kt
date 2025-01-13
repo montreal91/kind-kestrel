@@ -114,9 +114,6 @@ class MethodInfo(
   }
 
   private fun objectVtiToClassInfo(objectVti: ObjectVti): ClassInfo {
-//    if (objectVti.isArray) {
-//      return ClassInfo(className = "[L${objectVti.classInfo.className.encodedString};")
-//    }
     return objectVti.classInfo
   }
 

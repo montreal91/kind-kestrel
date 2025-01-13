@@ -22,10 +22,6 @@ import org.example.rlc.jvm.ir.StackMapTableAttribute
 import org.example.rlc.jvm.ir.VerificationTypeInfo
 
 class StackMapTableMaker {
-  private enum class OpType {
-    RETURN_OP, JUMP_OP, SEQUENTIAL_OP
-  }
-
   fun fillStackMapTables(classes: List<ClassFile>) {
     classes.forEach { classFile ->
       processClass(classFile)
@@ -35,7 +31,6 @@ class StackMapTableMaker {
   private fun processClass(classFile: ClassFile) {
     println("\nAdding attributes if required for class ${classFile.filename}")
     println("------------------------------------------------------------------")
-//    classFile.methodList.forEach(this::addAttributeIfRequired)
     for (method in classFile.methodList) {
       addAttributeIfRequired(method, classFile.thisClassInfo)
     }
@@ -49,9 +44,7 @@ class StackMapTableMaker {
     val codeAttribute = extractCodeFromMethodInfo(methodInfo)
     val jumpTargets = calculateJumpTargets(codeAttribute.code)
     val localVariables = composeArrayOfLocalVariables(methodInfo, thisClassInfo)
-//    println()
     println("\nMaking Stack Map Table attribute for ${methodInfo.methodName.encodedString}")
-//    println("------------------------------------------------------------------")
     codeAttribute.addAttribute(makeStackMapTable(
       codeAttribute.code,
       localVariables,
@@ -100,16 +93,13 @@ class StackMapTableMaker {
       return StackMapTableAttribute(frames = listOf())
     }
 
-//    val stackTable = mutableListOf<StackMapFrame>()
     val offsets = calculateOffsets(operations)
     println("Offsets")
     for ((i, offset) in offsets.withIndex()) {
       println("$i, $offset, ${operations[i].opcode}")
     }
-    val jumpTable = makeJumpTable(operations)
+
     val frames = List(operations.size) { FullFrameBuilder() }
-
-
     var maxStackSize = 0
     val stack = ArrayDeque<VerificationTypeInfo>()
 
@@ -117,7 +107,7 @@ class StackMapTableMaker {
       println("    $it")
     }
 
-    for ((i, jumps) in jumpTable.withIndex()) {
+    for ((i, _) in operations.withIndex()) {
       println("$i, ${operations[i].opcode}")
       when (operations[i].opcode) {
         Opcode.OP_ACONST_NULL -> stack.addLast(NullVariableVti())
@@ -130,6 +120,7 @@ class StackMapTableMaker {
         Opcode.OP_ASTORE_3 -> stack.removeLast()
         Opcode.OP_ATHROW -> stack.clear()
         Opcode.OP_CHECKCAST -> {}
+
         Opcode.OP_DADD, Opcode.OP_DDIV, Opcode.OP_DMUL, Opcode.OP_DSUB -> {
           stack.removeLast()
           stack.removeLast()
@@ -140,15 +131,15 @@ class StackMapTableMaker {
           stack.removeLast()
           stack.addLast(IntegerVti())
         }
-//        Opcode.OP_DDIV -> stack.removeLast()
+
         Opcode.OP_DLOAD_0, Opcode.OP_DLOAD_1 -> {
           stack.addLast(DoubleVti())
           stack.addLast(EmptyVti())
         }
-//        Opcode.OP_DMUL -> stack.removeLast()
+
         Opcode.OP_DNEG -> {}
-//        Opcode.OP_DSUB -> stack.removeLast()
         Opcode.OP_DUP -> stack.addLast(stack.last())
+
         Opcode.OP_GETFIELD -> {
           stack.removeLast()
           stack.addLast(operations[i].valueInfo!!)
@@ -222,10 +213,8 @@ class StackMapTableMaker {
 
         Opcode.OP_PUTSTATIC -> stack.removeLast() // can fuck up with doubles
         Opcode.OP_RETURN -> stack.clear()
-//        Opcode.OP_GOTO -> {
-//          // Need to add stack frame, actually
-//        }
       }
+
       print("    Stack: ")
       for (s in stack) {
         print("$s, ")
@@ -241,20 +230,14 @@ class StackMapTableMaker {
     val res = mutableListOf<FullFrame>()
     var lastOffset = 0
 
-//    offsets.forEach {
-//      println(it)
-//    }
-
     var one = 0
     for ((i, fb) in frameBuilders.withIndex()) {
       if (i == 0) {
-//        currentOffset += offsets[i]
         continue
       }
 
       if (fb.toBuild) {
         val frameOffset = offsets[i] - lastOffset - one
-//        println("        Offset: $currentOffset")
         res.add(fb.offsetDelta(frameOffset.toShort()).build())
         lastOffset = offsets[i]
         one = 1
@@ -282,29 +265,29 @@ class StackMapTableMaker {
     return res
   }
 
-  private fun makeJumpTable(ops: List<Operation>): List<List<Int>> {
-    val jumpTable = mutableListOf<List<Int>>()
+//  private fun makeJumpTable(ops: List<Operation>): List<List<Int>> {
+//    val jumpTable = mutableListOf<List<Int>>()
+//
+//    for ((ind, op) in ops.withIndex()) {
+//      when (opType(op)) {
+//        OpType.RETURN_OP -> jumpTable.add(listOf())
+//        OpType.JUMP_OP -> jumpTable.add(listOf((op as ControlFlowOperation).getJumpTo()))
+//        OpType.SEQUENTIAL_OP -> jumpTable.add(listOf())
+//      }
+//    }
+//
+//    return jumpTable
+//  }
 
-    for ((ind, op) in ops.withIndex()) {
-      when (opType(op)) {
-        OpType.RETURN_OP -> jumpTable.add(listOf())
-        OpType.JUMP_OP -> jumpTable.add(listOf((op as ControlFlowOperation).getJumpTo()))
-        OpType.SEQUENTIAL_OP -> jumpTable.add(listOf())
-      }
-    }
-
-    return jumpTable
-  }
-
-  private fun opType(op: Operation) = when (op.opcode) {
-    Opcode.OP_RETURN -> OpType.RETURN_OP
-    Opcode.OP_IRETURN -> OpType.RETURN_OP
-    Opcode.OP_IFEQ -> OpType.JUMP_OP
-    Opcode.OP_IFNE -> OpType.JUMP_OP
-    Opcode.OP_ARETURN -> OpType.RETURN_OP
-    Opcode.OP_ATHROW -> OpType.RETURN_OP
-    else -> OpType.SEQUENTIAL_OP
-  }
+//  private fun opType(op: Operation) = when (op.opcode) {
+//    Opcode.OP_RETURN -> OpType.RETURN_OP
+//    Opcode.OP_IRETURN -> OpType.RETURN_OP
+//    Opcode.OP_IFEQ -> OpType.JUMP_OP
+//    Opcode.OP_IFNE -> OpType.JUMP_OP
+//    Opcode.OP_ARETURN -> OpType.RETURN_OP
+//    Opcode.OP_ATHROW -> OpType.RETURN_OP
+//    else -> OpType.SEQUENTIAL_OP
+//  }
 
   private fun composeArrayOfLocalVariables(methodInfo: MethodInfo, thisClassInfo: ClassInfo): List<VerificationTypeInfo> {
     val res = mutableListOf<VerificationTypeInfo>()
