@@ -82,7 +82,7 @@ class StackMapTableMaker {
     val res = mutableListOf<Int>()
     for (operation in operationList) {
       when (operation) {
-        is ControlFlowOperation -> res.add(operation.jumpTo)
+        is ControlFlowOperation -> res.add(operation.getJumpTo())
         else -> continue
       }
     }
@@ -164,7 +164,7 @@ class StackMapTableMaker {
         Opcode.OP_IFEQ, Opcode.OP_IFNE -> {
           stack.removeLast()
           // here we should set stack map frame at the destination where we are jumping
-          val ind = (operations[i] as ControlFlowOperation).jumpTo
+          val ind = (operations[i] as ControlFlowOperation).getJumpTo()
           println("    TEH JUMP to $ind")
           frames[ind].needToBuild(true)
           frames[ind].stack(stack.toList())
@@ -172,7 +172,7 @@ class StackMapTableMaker {
         }
 
         Opcode.OP_GOTO -> {
-          val ind = (operations[i] as ControlFlowOperation).jumpTo
+          val ind = (operations[i] as ControlFlowOperation).getJumpTo()
           println("    TEH GOTO JUMP to $ind")
           frames[ind].needToBuild(true)
           frames[ind].stack(stack.toList())
@@ -288,7 +288,7 @@ class StackMapTableMaker {
     for ((ind, op) in ops.withIndex()) {
       when (opType(op)) {
         OpType.RETURN_OP -> jumpTable.add(listOf())
-        OpType.JUMP_OP -> jumpTable.add(listOf((op as ControlFlowOperation).jumpTo))
+        OpType.JUMP_OP -> jumpTable.add(listOf((op as ControlFlowOperation).getJumpTo()))
         OpType.SEQUENTIAL_OP -> jumpTable.add(listOf())
       }
     }

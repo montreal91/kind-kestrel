@@ -85,7 +85,13 @@ class SimpleOperation(
   constructor(opcode: Opcode) : this(opcode, value = null)
 }
 
-class ControlFlowOperation(opcode: Opcode, val jumpTo: Int) : Operation(opcode, valueInfo = null)
+class ControlFlowOperation(opcode: Opcode, private var jumpTo: Int) : Operation(opcode, valueInfo = null) {
+  fun setJumpTo(offset: Int) {
+    jumpTo = offset
+  }
+
+  fun getJumpTo() = jumpTo
+}
 
 class ByteConstantOperation(
   opcode: Opcode,

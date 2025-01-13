@@ -244,7 +244,7 @@ internal class ClassCompiler {
         continue
       }
 
-      val targetOffset = opIndex[operation.jumpTo]
+      val targetOffset = opIndex[operation.getJumpTo()]
       jumpTargets.add(targetOffset.toInt())
       val jump = (targetOffset - opIndex[i]).toShort()
       res.overwriteShort(

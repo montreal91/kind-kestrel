@@ -154,21 +154,19 @@ class AstToClassFileIrConverter {
     currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, loxBooleanClassInfo))
     currentCode.add(ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo, BooleanVti()))
 
-    val insertBranchHere = currentCode.size
-
-    currentCode.add(SimpleOperation(Opcode.OP_POP))
-
-    visitExpr(expr.right)
-
-    val jumpToHere = currentCode.size + 1
-
     val opcode = when (expr.operator.type) {
       Token.Type.AND -> Opcode.OP_IFEQ
       Token.Type.OR -> Opcode.OP_IFNE
       else -> throw IllegalStateException("Unsupported logical operator [${expr.operator}].")
     }
 
-    currentCode.add(insertBranchHere, ControlFlowOperation(opcode, jumpToHere))
+    val branch = ControlFlowOperation(opcode, jumpTo = -1)
+    currentCode.add(branch)
+    currentCode.add(SimpleOperation(Opcode.OP_POP))
+
+    visitExpr(expr.right)
+
+    branch.setJumpTo(currentCode.size)
   }
 
   private fun visitUnary(expr: Unary) {
