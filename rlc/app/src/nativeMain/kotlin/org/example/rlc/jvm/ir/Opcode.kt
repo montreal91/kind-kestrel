@@ -1,6 +1,8 @@
 package org.example.rlc.jvm.ir
 
 enum class Opcode(val value: Byte) {
+  OP_ACONST_NULL(0x1.toByte()),
+
   // Opcodes stored alphabetically by mnemonics
   OP_ALOAD_0(0x2A.toByte()),  // Load reference from local variable 0
   OP_ALOAD_1(0x2B.toByte()),  // Load reference from local variable 1
@@ -57,6 +59,9 @@ enum class Opcode(val value: Byte) {
   // Takes two bytes as an operand
   OP_GETSTATIC(0xB2.toByte()),
 
+  // Unconditional jump
+  OP_GOTO(0xA7.toByte()),
+
   // Push int constant 0
   OP_ICONST_0(0x3.toByte()),
 
@@ -83,7 +88,7 @@ enum class Opcode(val value: Byte) {
   // Succeeds if and only if value = 0
   OP_IFEQ(0x99.toByte()),
 
-  // Branch if int comparison with zero succeeds.
+  // Branch if int comparison with zero fails.
   // Succeeds if and only if value != 0
   OP_IFNE(0x9A.toByte()),
 

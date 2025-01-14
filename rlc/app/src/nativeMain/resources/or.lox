@@ -1,0 +1,20 @@
+// Return the first true argument.
+print "Expect: 1";
+print 1 or true; // expect: 1
+print "Expect: 1";
+print false or 1; // expect: 1
+print "Expect: true";
+print false or false or true; // expect: true
+
+// Return the last argument if all are false.
+print "Expect: false";
+print false or false; // expect: false
+print "Expect: false";
+print false or false or false; // expect: false
+
+print "Expect: false";
+print nil or false; // expect: false
+print "Expect: nil";
+print false or nil; // expect: nil
+print "Expect: nil";
+print nil or nil;

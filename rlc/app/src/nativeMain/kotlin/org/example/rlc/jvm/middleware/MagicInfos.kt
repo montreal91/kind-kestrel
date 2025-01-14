@@ -1,20 +1,34 @@
 package org.example.rlc.jvm.middleware
 
 import org.example.rlc.frontend.Token
+import org.example.rlc.jvm.ir.BooleanVti
+import org.example.rlc.jvm.ir.ClassInfo
+import org.example.rlc.jvm.ir.EmptyVti
 import org.example.rlc.jvm.ir.FieldRefInfo
 import org.example.rlc.jvm.ir.MethodRefInfo
 import org.example.rlc.jvm.ir.NameAndTypeInfo
-import org.example.rlc.jvm.ir.toClassInfo
+import org.example.rlc.jvm.ir.ObjectVti
+import org.example.rlc.jvm.ir.javaLangObject
+import org.example.rlc.jvm.ir.loxBoolean
+import org.example.rlc.jvm.ir.loxDouble
+import org.example.rlc.jvm.ir.loxMainClassName
+import org.example.rlc.jvm.ir.loxNil
+import org.example.rlc.jvm.ir.loxObject
+import org.example.rlc.jvm.ir.loxString
 import org.example.rlc.jvm.ir.toUtf8Value
 
 
-internal val loxRuntimeError = "LoxRuntimeError".toClassInfo()
-internal val loxDoubleClassInfo = "LoxDouble".toClassInfo()
-internal val loxObjectClassInfo = "LoxObject".toClassInfo()
-internal val loxNilClassInfo = "LoxNil".toClassInfo()
-internal val loxBooleanClassInfo = "LoxBoolean".toClassInfo()
-internal val loxClassInfo = "LoxClass".toClassInfo()
-internal val loxStringClassInfo = "LoxString".toClassInfo()
+internal val javaLangObjectClassInfo = ClassInfo(className = javaLangObject)
+internal val javaLangStringClassInfo = ClassInfo(className = "java/lang/String")
+internal val javaLangStringArrayClassInfo = ClassInfo(className = "[Ljava/lang/String;")
+internal val loxRuntimeErrorClassInfo = ClassInfo(className = "LoxRuntimeError")
+internal val loxDoubleClassInfo = ClassInfo(className = loxDouble)
+internal val loxObjectClassInfo = ClassInfo(className = loxObject)
+internal val loxNilClassInfo = ClassInfo(className = loxNil)
+internal val loxBooleanClassInfo = ClassInfo(className = loxBoolean)
+internal val loxClassInfo = ClassInfo(className = "LoxClass")
+internal val loxStringClassInfo = ClassInfo(className = loxString)
+internal val loxMainClassInfo = ClassInfo(className = loxMainClassName)
 
 internal val loxDoubleConstructorInfo = MethodRefInfo(
   label = "LoxDouble.\"<init>\":(D)V",
@@ -25,7 +39,8 @@ internal val loxDoubleConstructorInfo = MethodRefInfo(
     descriptor = "(D)V".toUtf8Value(),
   ),
   argsSize = 3,
-  returnSize = 1
+  returnSize = 0,
+  returnTypeInfo = EmptyVti(),
 )
 
 internal val loxBooleanConstructorInfo = MethodRefInfo(
@@ -37,7 +52,8 @@ internal val loxBooleanConstructorInfo = MethodRefInfo(
     descriptor = "(Z)V".toUtf8Value(),
   ),
   argsSize = 2,
-  returnSize = 1
+  returnSize = 0,
+  returnTypeInfo = EmptyVti(),
 )
 
 internal val loxNilConstructorInfo = MethodRefInfo(
@@ -48,8 +64,9 @@ internal val loxNilConstructorInfo = MethodRefInfo(
     name = "<init>".toUtf8Value(),
     descriptor = "()V".toUtf8Value(),
   ),
-  argsSize = 2,
-  returnSize = 1
+  argsSize = 1,
+  returnSize = 0,
+  returnTypeInfo = EmptyVti(),
 )
 
 internal val loxStringConstructorInfo = MethodRefInfo(
@@ -61,7 +78,8 @@ internal val loxStringConstructorInfo = MethodRefInfo(
     descriptor = "(Ljava/lang/String;)V".toUtf8Value(),
   ),
   argsSize = 2,
-  returnSize = 1
+  returnSize = 1,
+  returnTypeInfo = EmptyVti()
 )
 
 internal val doubleValueFieldRefInfo = FieldRefInfo(
@@ -90,10 +108,11 @@ internal val initializerNameAndType = NameAndTypeInfo(
 
 internal val objectConstructor = MethodRefInfo(
   label = "java/lang/Object.\"<init>\":()V",
-  classInfo = "java/lang/Object".toClassInfo(),
+  classInfo = javaLangObjectClassInfo,
   nameAndType = initializerNameAndType,
   argsSize = 1,
-  returnSize = 1
+  returnSize = 0,
+  returnTypeInfo = EmptyVti(),
 )
 
 internal val loxObjectConstructor = MethodRefInfo(
@@ -105,18 +124,18 @@ internal val loxObjectConstructor = MethodRefInfo(
     descriptor = "(LLoxClass;)V".toUtf8Value(),
   ),
   argsSize = 2,
-  returnSize = 1
+  returnSize = 0,
+  returnTypeInfo = EmptyVti(),
 )
-
-internal val javaLangObjectClassInfo = "java/lang/Object".toClassInfo()
 
 internal val javaStringDescriptor = "Ljava/lang/String;".toUtf8Value()
 
-internal val constructorMethodName = "<init>".toUtf8Value()
+internal const val constructorMethodName = "<init>"
+internal const val staticInitializerMethodName = "<clinit>"
 
 internal val systemOutField = FieldRefInfo(
   label = "java/lang/System.out:Ljava/io/PrintStream;",
-  classInfo = "java/lang/System".toClassInfo(),
+  classInfo = ClassInfo(className = "java/lang/System"),
   nameAndType = NameAndTypeInfo(
     label = "System.err:PrintStream",
     name = "out".toUtf8Value(),
@@ -126,14 +145,15 @@ internal val systemOutField = FieldRefInfo(
 
 internal val printMethodRef = MethodRefInfo(
   label = "java/io/PrintStream.println:(Ljava/lang/Object;)V",
-  classInfo = "java/io/PrintStream".toClassInfo(),
+  classInfo = ClassInfo(className = "java/io/PrintStream"),
   nameAndType = NameAndTypeInfo(
     label = "println:(Ljava/lang/Object;)V",
     name = "println".toUtf8Value(),
     descriptor = "(Ljava/lang/Object;)V".toUtf8Value(),
   ),
   argsSize = 2,
-  returnSize = 0
+  returnSize = 0,
+  returnTypeInfo = EmptyVti(),
 )
 
 private const val binaryOpDescriptor = "(LLoxObject;LLoxObject;)LLoxObject;"
@@ -157,14 +177,15 @@ internal fun stringEquals(): MethodRefInfo {
   val typeInfo = "(Ljava/lang/Object;)Z".toUtf8Value()
   return MethodRefInfo(
     label = "java/lang/String.equals:(Ljava/lang/Object;)Z",
-    classInfo = "java/lang/String".toClassInfo(),
+    classInfo = ClassInfo(className = "java/lang/String"),
     nameAndType = NameAndTypeInfo(
       label = "equals:(Ljava/lang/Object;)Z",
       name = nameInfo,
       descriptor = typeInfo,
     ),
     argsSize = 2,
-    returnSize = 1
+    returnSize = 1,
+    returnTypeInfo = BooleanVti(),
   )
 }
 
@@ -182,6 +203,7 @@ internal fun loxBooleanNegMri(): MethodRefInfo {
     ),
     argsSize = 1,
     returnSize = 1,
+    returnTypeInfo = ObjectVti(loxObjectClassInfo, isArray = false)
   )
 }
 
@@ -212,6 +234,7 @@ internal val getClassMri = MethodRefInfo(
   ),
   argsSize = 1,
   returnSize = 1,
+  returnTypeInfo = ObjectVti(javaLangObjectClassInfo, isArray = false)
 )
 
 internal val objectEqualsMri = MethodRefInfo(
@@ -224,6 +247,7 @@ internal val objectEqualsMri = MethodRefInfo(
   ),
   argsSize = 2,
   returnSize = 1,
+  returnTypeInfo = BooleanVti(),
 )
 
 internal val loxObjectEqMri = MethodRefInfo(
@@ -236,4 +260,18 @@ internal val loxObjectEqMri = MethodRefInfo(
   ),
   argsSize = 2,
   returnSize = 1,
+  returnTypeInfo = ObjectVti(loxObjectClassInfo, isArray = false),
+)
+
+internal val loxObjectTruthyMri = MethodRefInfo(
+  label = "LoxObject.__truthy__:(LLoxObject;)LLoxObject;",
+  classInfo = loxObjectClassInfo,
+  nameAndType = NameAndTypeInfo(
+    label = "__truthy__:(LLoxObject;)LLoxObject;",
+    name = "__truthy__".toUtf8Value(),
+    descriptor = loxUnaryOpDescriptor,
+  ),
+  argsSize = 1,
+  returnSize = 1,
+  returnTypeInfo = ObjectVti(loxObjectClassInfo, isArray = false)
 )

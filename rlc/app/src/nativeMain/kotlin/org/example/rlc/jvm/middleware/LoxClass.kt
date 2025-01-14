@@ -1,19 +1,23 @@
 package org.example.rlc.jvm.middleware
 
+import org.example.rlc.jvm.ir.BooleanVti
 import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
 import org.example.rlc.jvm.ir.CodeAttribute
 import org.example.rlc.jvm.ir.ControlFlowOperation
+import org.example.rlc.jvm.ir.EmptyVti
 import org.example.rlc.jvm.ir.FieldAccessFlags
 import org.example.rlc.jvm.ir.FieldInfo
 import org.example.rlc.jvm.ir.FieldRefInfo
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
+import org.example.rlc.jvm.ir.MethodSignature
 import org.example.rlc.jvm.ir.NameAndTypeInfo
+import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
-import org.example.rlc.jvm.ir.toClassInfo
+import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.toUtf8Value
 
 /***
@@ -39,7 +43,7 @@ import org.example.rlc.jvm.ir.toUtf8Value
  * ```
  */
 internal fun loxClass() = ClassFile(
-  thisClassInfo = "LoxClass".toClassInfo(),
+  thisClassInfo = loxClassInfo,
   superClassInfo = javaLangObjectClassInfo,
   accessFlagList = listOf(ClassAccessFlags.SUPER),
   attributeList = listOf(),
@@ -47,8 +51,6 @@ internal fun loxClass() = ClassFile(
   methodList = listOf(loxClassConstructor(), loxClassEqualsMethod()),
   interfaceList = listOf()
 )
-
-private fun loxClassInfo() = "LoxClass".toClassInfo()
 
 
 private fun finalStringName() = FieldInfo(
@@ -59,7 +61,7 @@ private fun finalStringName() = FieldInfo(
 
 private fun nameRef() = FieldRefInfo(
   label = "LoxClass.name:Ljava/lang/String;",
-  classInfo = loxClassInfo(),
+  classInfo = loxClassInfo,
   nameAndType = NameAndTypeInfo(
     label = "name:Ljava/lang/String;",
     name = "name".toUtf8Value(),
@@ -81,11 +83,16 @@ private fun loxClassConstructor(): MethodInfo {
     exceptionTable = 0,
     attributes = listOf(),
   )
+
   return MethodInfo(
     methodName = constructorMethodName,
-    methodDescriptor = "(Ljava/lang/String;)V".toUtf8Value(),
     accessFlagList = listOf(MethodAccessFlags.NONE),
     attributeList = listOf(code),
+    isStatic = true,
+    signature = MethodSignature(
+      listOf(ObjectVti(classInfo = javaLangStringClassInfo, isArray = false)),
+      EmptyVti()
+    ),
   )
 }
 
@@ -94,13 +101,13 @@ private fun loxClassEqualsMethod(): MethodInfo {
     argsSize = 2,
     code = listOf(
       SimpleOperation(Opcode.OP_ALOAD_1),
-      ShortConstantOperation(Opcode.OP_INSTANCEOF, loxClassInfo()),
+      ShortConstantOperation(Opcode.OP_INSTANCEOF, loxClassInfo),
       ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 10),
       SimpleOperation(Opcode.OP_ALOAD_0),
-      ShortConstantOperation(Opcode.OP_GETFIELD, nameRef()),
+      ShortConstantOperation(Opcode.OP_GETFIELD, nameRef(), javaLangStringObjectVti),
       SimpleOperation(Opcode.OP_ALOAD_1),
-      ShortConstantOperation(Opcode.OP_CHECKCAST, loxClassInfo()),
-      ShortConstantOperation(Opcode.OP_GETFIELD, nameRef()),
+      ShortConstantOperation(Opcode.OP_CHECKCAST, loxClassInfo),
+      ShortConstantOperation(Opcode.OP_GETFIELD, nameRef(), javaLangStringObjectVti),
       ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, stringEquals()),
       SimpleOperation(Opcode.OP_IRETURN),
       SimpleOperation(Opcode.OP_ICONST_0),
@@ -109,10 +116,15 @@ private fun loxClassEqualsMethod(): MethodInfo {
     exceptionTable = 0,
     attributes = listOf(),
   )
+
   return MethodInfo(
-    methodName = "equals".toUtf8Value(),
-    methodDescriptor = "(Ljava/lang/Object;)Z".toUtf8Value(),
+    methodName = "equals",
     accessFlagList = listOf(MethodAccessFlags.PUBLIC),
-    attributeList = listOf(code)
+    attributeList = listOf(code),
+    isStatic = false,
+    signature = MethodSignature(
+      listOf(ObjectVti(javaLangObjectClassInfo)),
+      BooleanVti()
+    )
   )
 }

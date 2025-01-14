@@ -25,7 +25,12 @@ class ConstantPool {
       return labelIndex[label]!!.toShort()
     }
 
+    logLabels()
     throw RuntimeException("Unexpected label [$label]")
+  }
+
+  fun addAllConstantPoolInfos(infos: List<ConstantPoolInfo>) {
+    infos.forEach(this::addConstantPoolInfo)
   }
 
   fun addConstantPoolInfo(constantPoolInfo: ConstantPoolInfo) {
@@ -62,16 +67,27 @@ class ConstantPool {
     )
   }
 
-  private fun addConstantValue(constantValue: ConstantValue) = when (constantValue) {
-    is Utf8Value -> addConstant(
-      constantValue.label,
-      Constant(constantValue.type, constantValue.size, constantValue.value)
-    )
+  private fun addConstantValue(constantValue: ConstantValue) {
+    println("        Adding constant to the constant poo: ${constantValue.label}")
+    when (constantValue) {
+      is Utf8Value -> addConstant(
+        constantValue.label,
+        Constant(constantValue.type, constantValue.size, constantValue.value)
+      )
 
-    is DoubleValue -> addDoubleConstant(constantValue)
+      is DoubleValue -> addDoubleConstant(constantValue)
 
-    else -> {
-      throw IllegalArgumentException("Unexpected constant value type ${constantValue.value}")
+      else -> {
+        logLabels()
+        throw IllegalArgumentException("Unexpected constant value type ${constantValue.value}")
+      }
+    }
+  }
+
+  private fun logLabels() {
+    println("Known Constant Pool Labels")
+    labelIndex.keys.forEach {
+      println("    $it")
     }
   }
 
@@ -90,6 +106,8 @@ class ConstantPool {
   private fun addMethodRefInfo(info: MethodRefInfo) {
     addConstantPoolInfo(info.classInfo)
     addConstantPoolInfo(info.nameAndType)
+
+    println("        Adding Method Ref Info: ${info.nameAndType.label}")
 
     val constant = Constant(
       info.type,

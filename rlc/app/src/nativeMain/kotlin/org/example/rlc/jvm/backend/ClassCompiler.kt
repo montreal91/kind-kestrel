@@ -6,19 +6,23 @@ import org.example.rlc.jvm.ir.ClassFile
 import org.example.rlc.jvm.ir.CodeAttribute
 import org.example.rlc.jvm.ir.ControlFlowOperation
 import org.example.rlc.jvm.ir.FieldInfo
-import org.example.rlc.jvm.ir.InterfaceInfo
+import org.example.rlc.jvm.ir.FullFrame
 import org.example.rlc.jvm.ir.MethodInfo
+import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Operation
 import org.example.rlc.jvm.ir.SameFrame
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StackMapFrame
 import org.example.rlc.jvm.ir.StackMapTableAttribute
+import org.example.rlc.jvm.middleware.javaLangObjectClassInfo
+import org.example.rlc.jvm.middleware.javaLangStringClassInfo
 
 internal class ClassCompiler {
   private val constantPool : ConstantPool = ConstantPool()
 
   fun compileClass(classFile: ClassFile): CompiledBinaryFile {
+    println("Compiling class: ${classFile.filename}")
     val res = mutableListOf<Byte>()
 
     res.addAll(MAGIC_NUMBER.toBytes())
@@ -36,7 +40,7 @@ internal class ClassCompiler {
     // Compile interfaces
     res.addAll(classFile.interfaceList.size.toShort().toBytes())
     for (anInterface in classFile.interfaceList) {
-      res.addAll(compileInterfaceToByteCode(interfaceInfo = anInterface))
+      res.addAll(compileInterfaceToByteCode())
     }
 
     // Compile fields
@@ -65,10 +69,15 @@ internal class ClassCompiler {
   private fun composeConstantPool(classFile: ClassFile) {
     constantPool.addConstantPoolInfo(classFile.thisClassInfo)
     constantPool.addConstantPoolInfo(classFile.superClassInfo)
+    constantPool.addConstantPoolInfo(javaLangObjectClassInfo)
+    constantPool.addConstantPoolInfo(javaLangStringClassInfo)
 
     for (method in classFile.methodList) {
+      println("    Adding method to constant poo: ${method.methodName.encodedString}")
       constantPool.addConstantPoolInfo(method.methodName)
       constantPool.addConstantPoolInfo(method.methodDescriptor)
+
+      constantPool.addAllConstantPoolInfos(method.signatureConstants)
 
       for (attribute in method.attributeList) {
         constantPool.addConstantPoolInfo(attribute.attributeName)
@@ -111,12 +120,13 @@ internal class ClassCompiler {
     return res
   }
 
-  private fun compileInterfaceToByteCode(interfaceInfo: InterfaceInfo): List<Byte> {
+  private fun compileInterfaceToByteCode(): List<Byte> {
     // To be implemented
     return listOf()
   }
 
   private fun compileMethodToByteCode(methodInfo: MethodInfo): List<Byte> {
+    println("  Compiling method: ${methodInfo.methodName.encodedString}")
     val res = mutableListOf<Byte>()
     res.addAll(methodInfo.accessFlags.toBytes())
     res.addAll(constantPool[methodInfo.methodName.label].toBytes())
@@ -137,11 +147,6 @@ internal class ClassCompiler {
     res.addAll(constantPool[codeAttribute.attributeName.label].toBytes())
 
     val codeCompilationResult = compileCode(codeAttribute.code)
-
-    if (!codeCompilationResult.stackMapTableAttribute.isEmpty()) {
-      codeAttribute.addAttribute(codeCompilationResult.stackMapTableAttribute)
-    }
-
     val codeItself = codeCompilationResult.bytes
     val attributeBytes = mutableListOf<Byte>()
 
@@ -169,10 +174,11 @@ internal class ClassCompiler {
     res.addAll(constantPool[stackMapTableAttribute.attributeName.label].toBytes())
 
     val numberOfEntries = stackMapTableAttribute.frames.size.toShort()
+    println("    Number of frames: ${stackMapTableAttribute.frames.size}")
     val entriesBytes = mutableListOf<Byte>()
 
     for (entry in stackMapTableAttribute.frames) {
-      entriesBytes.addAll(entry.toBytes())
+      entriesBytes.addAll(compileStackMapFrame(entry))
     }
 
     val attributeLength: Int = 2 + entriesBytes.size
@@ -180,6 +186,42 @@ internal class ClassCompiler {
     res.addAll(attributeLength.toBytes())
     res.addAll(numberOfEntries.toBytes())
     res.addAll(entriesBytes)
+
+    return res
+  }
+
+  private fun compileStackMapFrame(stackMapFrame: StackMapFrame): List<Byte> {
+    if (stackMapFrame is SameFrame) {
+      println("OOPS, Same Frame")
+      return listOf()
+    }
+
+    val res = mutableListOf<Byte>()
+
+    val frame = stackMapFrame as FullFrame
+
+    res.add(frame.tag)
+    println("      Offset: ${frame.offsetDelta}")
+    res.addAll(frame.offsetDelta.toBytes())
+    res.addAll(frame.locals.size.toShort().toBytes())
+
+    for (local in frame.locals) {
+      res.add(local.tag)
+
+      if (local is ObjectVti) {
+        res.addAll(constantPool[local.classInfo.label].toBytes())
+      }
+    }
+
+    res.addAll(frame.stack.size.toShort().toBytes())
+
+    for (s in frame.stack) {
+      res.add(s.tag)
+
+      if (s is ObjectVti) {
+        res.addAll(constantPool[s.classInfo.label].toBytes())
+      }
+    }
 
     return res
   }
@@ -202,7 +244,7 @@ internal class ClassCompiler {
         continue
       }
 
-      val targetOffset = opIndex[operation.jumpTo]
+      val targetOffset = opIndex[operation.getJumpTo()]
       jumpTargets.add(targetOffset.toInt())
       val jump = (targetOffset - opIndex[i]).toShort()
       res.overwriteShort(
@@ -211,21 +253,8 @@ internal class ClassCompiler {
       )
     }
 
-    val stackTable = mutableListOf<StackMapFrame>()
-    val sortedTargets = jumpTargets.toList().sorted()
-
-    for ((i, targetOffset) in sortedTargets.withIndex()) {
-      if (i == 0) {
-        stackTable.add(SameFrame(targetOffset.toByte()))
-        continue
-      }
-      val relativeOffset = targetOffset - sortedTargets[i - 1] - 1
-      stackTable.add(SameFrame(relativeOffset.toByte()))
-    }
-
     return CodeCompilationResult(
       bytes = res.toList(),
-      stackMapTableAttribute = StackMapTableAttribute(stackTable.toList())
     )
   }
 

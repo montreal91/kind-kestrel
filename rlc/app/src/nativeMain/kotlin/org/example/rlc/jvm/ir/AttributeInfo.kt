@@ -5,21 +5,7 @@ import kotlin.math.max
 sealed class AttributeInfo(val attributeName: Utf8Value)
 
 
-sealed class StackMapFrame(val tag: Byte) {
-  abstract fun toBytes(): List<Byte>
-}
 
-class SameFrame(tag: Byte) : StackMapFrame(tag) {
-  override fun toBytes(): List<Byte> {
-    return listOf(tag)
-  }
-}
-
-class StackMapTableAttribute(
-  val frames: List<StackMapFrame>
-) : AttributeInfo(stackMapTableAttributeName) {
-  fun isEmpty() = frames.isEmpty()
-}
 
 class CodeAttribute(
   private val argsSize: Int,
@@ -74,6 +60,7 @@ class CodeAttribute(
   }
 
   private fun opToLocalRef(operation: Opcode) = when (operation) {
+    Opcode.OP_ACONST_NULL -> 0
     Opcode.OP_ALOAD_0 -> 1
     Opcode.OP_ALOAD_1 -> 2
     Opcode.OP_ALOAD_2 -> 3
@@ -117,5 +104,6 @@ class CodeAttribute(
     Opcode.OP_PUTFIELD -> 0
     Opcode.OP_PUTSTATIC -> 0
     Opcode.OP_RETURN -> 0
+    Opcode.OP_GOTO -> 0
   }
 }

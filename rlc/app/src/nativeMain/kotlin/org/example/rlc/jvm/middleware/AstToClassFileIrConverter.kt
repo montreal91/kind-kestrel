@@ -11,34 +11,39 @@ import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
+import org.example.rlc.jvm.ir.BooleanVti
 import org.example.rlc.jvm.ir.ByteConstantOperation
 import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
+import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.CodeAttribute
+import org.example.rlc.jvm.ir.ControlFlowOperation
+import org.example.rlc.jvm.ir.DoubleValue
+import org.example.rlc.jvm.ir.DoubleVti
+import org.example.rlc.jvm.ir.EmptyVti
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
 import org.example.rlc.jvm.ir.MethodRefInfo
+import org.example.rlc.jvm.ir.MethodSignature
+import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.Operation
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
+import org.example.rlc.jvm.ir.StringRefInfo
+import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.loxMainClassName
-import org.example.rlc.jvm.ir.toClassInfo
-import org.example.rlc.jvm.ir.toStringRefInfo
-import org.example.rlc.jvm.ir.toUtf8Value
 
 
 class AstToClassFileIrConverter {
-  private val constructor = "<init>".toUtf8Value()
-  private val noArgsVoidDescriptor = "()V".toUtf8Value()
-  private val objectClass = "java/lang/Object".toClassInfo()
+  private val objectClass = javaLangObjectClassInfo
   private val classes = mutableListOf(
     loxClass(),
-    loxObject(),
-    loxBoolean(),
-    loxDouble(),
-    loxNil(),
-    loxString(),
+    loxObjectCf(),
+    loxBooleanCf(),
+    loxDoubleCf(),
+    loxNilCf(),
+    loxStringCf(),
     loxRuntimeError(),
   )
   private val currentCode = mutableListOf<Operation>()
@@ -52,7 +57,7 @@ class AstToClassFileIrConverter {
 
   private fun finalizeClass() {
     val c = ClassFile(
-      thisClassInfo = loxMainClassName.toClassInfo(),
+      thisClassInfo = loxMainClassInfo,
       superClassInfo = objectClass,
       accessFlagList = listOf(ClassAccessFlags.PUBLIC),
       attributeList = listOf(),
@@ -89,7 +94,8 @@ class AstToClassFileIrConverter {
   }
 
   private fun visitPrintStmt(printStmt: PrintStmt) {
-    currentCode.add(ShortConstantOperation(Opcode.OP_GETSTATIC, systemOutField))
+    val printStreamVti = ObjectVti(ClassInfo(className = "java/io/PrintStream"), isArray = false)
+    currentCode.add(ShortConstantOperation(Opcode.OP_GETSTATIC, systemOutField, printStreamVti))
     visitExpr(printStmt.expr)
     currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, printMethodRef))
   }
@@ -133,7 +139,34 @@ class AstToClassFileIrConverter {
   }
 
   private fun visitLogical(expr: Logical) {
-    TODO("Not implemented yet.")
+    visitExpr(expr.left)
+    when (expr.operator.type) {
+      Token.Type.AND -> compileLogical(expr)
+      Token.Type.OR -> compileLogical(expr)
+      else -> throw IllegalStateException("Unsupported logical operator [${expr.operator}].")
+    }
+  }
+
+  private fun compileLogical(expr: Logical) {
+    println("Compiling Logical: ${expr.operator.type}")
+    currentCode.add(SimpleOperation(Opcode.OP_DUP))
+    currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, loxObjectTruthyMri))
+    currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, loxBooleanClassInfo))
+    currentCode.add(ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo, BooleanVti()))
+
+    val opcode = when (expr.operator.type) {
+      Token.Type.AND -> Opcode.OP_IFEQ
+      Token.Type.OR -> Opcode.OP_IFNE
+      else -> throw IllegalStateException("Unsupported logical operator [${expr.operator}].")
+    }
+
+    val branch = ControlFlowOperation(opcode, jumpTo = -1)
+    currentCode.add(branch)
+    currentCode.add(SimpleOperation(Opcode.OP_POP))
+
+    visitExpr(expr.right)
+
+    branch.setJumpTo(currentCode.size)
   }
 
   private fun visitUnary(expr: Unary) {
@@ -160,7 +193,7 @@ class AstToClassFileIrConverter {
     }
 
     val ops = listOf(
-      ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo),
+      ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo, ObjectVti(loxObjectClassInfo)),
       SimpleOperation(Opcode.OP_DUP),
       SimpleOperation(valueOp),
       ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo)
@@ -171,9 +204,9 @@ class AstToClassFileIrConverter {
 
   private fun compileNumber(literal: Literal) {
     val ops = listOf(
-      ShortConstantOperation(Opcode.OP_NEW, loxDoubleClassInfo),
+      ShortConstantOperation(Opcode.OP_NEW, loxDoubleClassInfo, ObjectVti(loxObjectClassInfo)),
       SimpleOperation(Opcode.OP_DUP),
-      ShortConstantOperation(Opcode.OP_LDC2_W, literal.toConstant()),
+      ShortConstantOperation(Opcode.OP_LDC2_W, DoubleValue(literal.value), DoubleVti()),
       ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxDoubleConstructorInfo)
     )
 
@@ -182,7 +215,7 @@ class AstToClassFileIrConverter {
 
   private fun compileNil() {
     val ops = listOf(
-      ShortConstantOperation(Opcode.OP_NEW, loxNilClassInfo),
+      ShortConstantOperation(Opcode.OP_NEW, loxNilClassInfo, ObjectVti(loxObjectClassInfo)),
       SimpleOperation(Opcode.OP_DUP),
       ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxNilConstructorInfo),
     )
@@ -192,9 +225,9 @@ class AstToClassFileIrConverter {
 
   private fun compileString(literal: Literal) {
     val ops = listOf(
-      ShortConstantOperation(Opcode.OP_NEW, loxStringClassInfo),
+      ShortConstantOperation(Opcode.OP_NEW, loxStringClassInfo, ObjectVti(loxObjectClassInfo)),
       SimpleOperation(Opcode.OP_DUP),
-      ByteConstantOperation(Opcode.OP_LDC, literal.value.toStringRefInfo()),
+      ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(literal.value), javaLangStringObjectVti),
       ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxStringConstructorInfo)
     )
 
@@ -204,8 +237,7 @@ class AstToClassFileIrConverter {
   private fun publicStaticVoidMain(): MethodInfo {
     currentCode.add(SimpleOperation(opcode = Opcode.OP_RETURN))
     return MethodInfo(
-      methodName = "main".toUtf8Value(),
-      methodDescriptor = "([Ljava/lang/String;)V".toUtf8Value(),
+      methodName = "main",
       accessFlagList = listOf(MethodAccessFlags.PUBLIC, MethodAccessFlags.STATIC),
       attributeList = listOf(
         CodeAttribute(
@@ -214,6 +246,11 @@ class AstToClassFileIrConverter {
           exceptionTable = 0,
           attributes = listOf()
         )
+      ),
+      isStatic = true,
+      signature = MethodSignature(
+        listOf(ObjectVti(isArray = true, classInfo = javaLangStringArrayClassInfo)),
+        EmptyVti()
       )
     )
   }
@@ -226,8 +263,7 @@ class AstToClassFileIrConverter {
     )
 
     return MethodInfo(
-      methodName = constructor,
-      methodDescriptor = noArgsVoidDescriptor,
+      methodName = constructorMethodName,
       accessFlagList = listOf(MethodAccessFlags.PUBLIC),
       attributeList = listOf(
         CodeAttribute(
@@ -236,7 +272,10 @@ class AstToClassFileIrConverter {
           exceptionTable = 0,
           attributes = listOf()
         )
-      )
+      ),
+      isStatic = true,
+      signature = MethodSignature(listOf(), EmptyVti()),
+      localVariables = listOf(ObjectVti(javaLangObjectClassInfo))
     )
   }
 
@@ -250,10 +289,11 @@ class AstToClassFileIrConverter {
 
     return MethodRefInfo(
       label = label,
-      classInfo = loxMainClassName.toClassInfo(),
+      classInfo = loxMainClassInfo,
       nameAndType = nameAndType,
       argsSize = 2,
-      returnSize = 1
+      returnSize = 1,
+      returnTypeInfo = ObjectVti(loxObjectClassInfo, isArray = false)
     )
   }
 
@@ -263,10 +303,11 @@ class AstToClassFileIrConverter {
 
     return MethodRefInfo(
       label = label,
-      classInfo = loxMainClassName.toClassInfo(),
+      classInfo = loxMainClassInfo,
       nameAndType = nameAndType,
       argsSize = 1,
-      returnSize = 1
+      returnSize = 1,
+      returnTypeInfo = ObjectVti(loxObjectClassInfo, isArray = false)
     )
   }
 }
