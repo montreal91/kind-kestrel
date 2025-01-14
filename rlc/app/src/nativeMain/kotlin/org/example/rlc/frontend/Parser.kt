@@ -1,6 +1,7 @@
 package org.example.rlc.frontend
 
 import org.example.rlc.frontend.ast.Binary
+import org.example.rlc.frontend.ast.BlockStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.Grouping
@@ -63,7 +64,7 @@ private class ParserException(msg: String) : Exception(msg)
 class Parser(private val tokens: List<Token>) {
   val hasErrors: Boolean get() = errors.isNotEmpty()
 
-  private val statements = mutableListOf<Stmt>()
+  private val statements = mutableListOf<MutableList<Stmt>>()
   private val errors = mutableListOf<LoxCompileError>()
 
   private var index = 0
@@ -73,8 +74,9 @@ class Parser(private val tokens: List<Token>) {
   private val isLastToken: Boolean get() = index == tokens.size - 1
 
   fun parse(): List<Stmt> {
+    statements.add(mutableListOf())
     program()
-    return statements
+    return statements.last().toList()
   }
 
   fun getErrors() = errors.toList()
@@ -97,20 +99,35 @@ class Parser(private val tokens: List<Token>) {
 
   private fun statement() = when (currentToken.type) {
     Token.Type.PRINT -> printStatement()
+    Token.Type.LEFT_BRACE -> block()
     else -> exprStatement()
   }
 
+  private fun block() {
+    consume(Token.Type.LEFT_BRACE, message = "Expect '{'")
+    statements.add(mutableListOf())
+
+    while (!isLastToken && currentToken.type != Token.Type.RIGHT_BRACE) {
+      declaration()
+    }
+
+    val block = BlockStmt(statements = statements.removeLast())
+    statements.last().add(block)
+
+    consume(Token.Type.RIGHT_BRACE, message = "Expect '}' at the end of the block.")
+  }
+
   private fun printStatement() {
-    consume(Token.Type.PRINT, "Expect print statement")
+    consume(Token.Type.PRINT, message = "Expect print statement")
     val expr = expression()
     consume(Token.Type.SEMICOLON, message = "Expect ';' after value.")
-    statements.add(PrintStmt(expr))
+    statements.last().add(PrintStmt(expr))
   }
 
   private fun exprStatement() {
     val expr = expression()
     consume(Token.Type.SEMICOLON, message = "Expect ';' after value.")
-    statements.add(ExprStmt(expr))
+    statements.last().add(ExprStmt(expr))
   }
 
   private fun expression(): Expr {

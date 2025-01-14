@@ -1,0 +1,10 @@
+print "Outer scope";
+
+{
+  print "Inner scope";
+  {
+    print "Nested scope";
+  }
+  print "Inner scope again";
+}
+print "Outer scope again";

@@ -3,6 +3,7 @@ package org.example.rlc.jvm.middleware
 import org.example.rlc.frontend.Token
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
+import org.example.rlc.frontend.ast.BlockStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.Grouping
@@ -50,7 +51,7 @@ class AstToClassFileIrConverter {
   private val methodRefs = mutableMapOf<Token.Type, MethodRefInfo>()
 
   fun convert(roots: Ast): List<ClassFile> {
-    roots.forEach { root -> visit(root) }
+    roots.forEach(this::visitStmt)
     finalizeClass()
     return classes.toList()
   }
@@ -84,9 +85,10 @@ class AstToClassFileIrConverter {
     classes.add(c)
   }
 
-  private fun visit(stmt: Stmt) = when (stmt) {
+  private fun visitStmt(stmt: Stmt) = when (stmt) {
     is ExprStmt -> visitExprStmt(stmt)
     is PrintStmt -> visitPrintStmt(stmt)
+    is BlockStmt -> visitBlockStmt(stmt)
   }
 
   private fun visitExprStmt(exprStmt: ExprStmt) {
@@ -98,6 +100,10 @@ class AstToClassFileIrConverter {
     currentCode.add(ShortConstantOperation(Opcode.OP_GETSTATIC, systemOutField, printStreamVti))
     visitExpr(printStmt.expr)
     currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, printMethodRef))
+  }
+
+  private fun visitBlockStmt(stmt: BlockStmt) {
+    stmt.statements.forEach(this::visitStmt)
   }
 
   private fun visitExpr(expr: Expr) = when (expr) {
