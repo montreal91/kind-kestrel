@@ -82,6 +82,7 @@ private fun loxClassConstructor(): MethodInfo {
     ),
     exceptionTable = 0,
     attributes = listOf(),
+    maxLocals2 = 2
   )
 
   return MethodInfo(
@@ -115,6 +116,7 @@ private fun loxClassEqualsMethod(): MethodInfo {
     ),
     exceptionTable = 0,
     attributes = listOf(),
+    maxLocals2 = 2
   )
 
   return MethodInfo(

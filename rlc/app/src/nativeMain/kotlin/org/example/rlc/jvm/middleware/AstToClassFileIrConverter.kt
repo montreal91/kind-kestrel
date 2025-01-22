@@ -7,11 +7,16 @@ import org.example.rlc.frontend.ast.BlockStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.Grouping
+import org.example.rlc.frontend.ast.Identifier
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
+import org.example.rlc.frontend.ast.VarDeclStmt
+import org.example.rlc.frontend.scope.LocalVariable
+import org.example.rlc.frontend.scope.UnresolvedVariable
+import org.example.rlc.frontend.scope.VariableResolutionTable
 import org.example.rlc.jvm.ir.BooleanVti
 import org.example.rlc.jvm.ir.ByteConstantOperation
 import org.example.rlc.jvm.ir.ClassAccessFlags
@@ -29,14 +34,17 @@ import org.example.rlc.jvm.ir.MethodSignature
 import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.Operation
+import org.example.rlc.jvm.ir.OperationWithIndex
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
 import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.loxMainClassName
+import kotlin.uuid.ExperimentalUuidApi
 
 
-class AstToClassFileIrConverter {
+@OptIn(ExperimentalUuidApi::class)
+class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionTable) {
   private val objectClass = javaLangObjectClassInfo
   private val classes = mutableListOf(
     loxClass(),
@@ -89,6 +97,16 @@ class AstToClassFileIrConverter {
     is ExprStmt -> visitExprStmt(stmt)
     is PrintStmt -> visitPrintStmt(stmt)
     is BlockStmt -> visitBlockStmt(stmt)
+    is VarDeclStmt -> visitVarDecl(stmt)
+  }
+
+  private fun visitExpr(expr: Expr) = when (expr) {
+    is Binary -> visitBinary(expr)
+    is Grouping -> visitGrouping(expr)
+    is Literal -> visitLiteral(expr)
+    is Logical -> visitLogical(expr)
+    is Unary -> visitUnary(expr)
+    is Identifier -> visitIdentifier(expr)
   }
 
   private fun visitExprStmt(exprStmt: ExprStmt) {
@@ -106,12 +124,22 @@ class AstToClassFileIrConverter {
     stmt.statements.forEach(this::visitStmt)
   }
 
-  private fun visitExpr(expr: Expr) = when (expr) {
-    is Binary -> visitBinary(expr)
-    is Grouping -> visitGrouping(expr)
-    is Literal -> visitLiteral(expr)
-    is Logical -> visitLogical(expr)
-    is Unary -> visitUnary(expr)
+  private fun visitVarDecl(stmt: VarDeclStmt) {
+    if (stmt.initializer == null) {
+      compileNil()
+    }
+    else {
+      visitExpr(stmt.initializer)
+    }
+
+    when (val resolution = resolutionTable.get(stmt.uid)) {
+      is LocalVariable -> currentCode.add(OperationWithIndex(
+        Opcode.OP_ASTORE, getActualLocalVariableIndex(resolution).toByte(), ObjectVti(loxObjectClassInfo)
+      ))
+      UnresolvedVariable -> throw IllegalStateException(
+        "Variable ${stmt.identifier} is unresolved, but expected to be resolved"
+      )
+    }
   }
 
   private fun visitLiteral(expr: Literal) = when (expr.type) {
@@ -119,6 +147,19 @@ class AstToClassFileIrConverter {
     Literal.Type.BOOLEAN -> compileBoolean(expr)
     Literal.Type.STRING -> compileString(expr)
     Literal.Type.NIL_TYPE -> compileNil()
+  }
+
+  private fun visitIdentifier(expr: Identifier) {
+    when (val resolution = resolutionTable.get(expr.uid)) {
+      is LocalVariable -> currentCode.add(OperationWithIndex(
+        Opcode.OP_ALOAD,
+        getActualLocalVariableIndex(resolution).toByte(),
+        ObjectVti(loxObjectClassInfo)
+      ))
+      UnresolvedVariable -> throw IllegalStateException(
+        "Variable ${expr.identifier} is unresolved, but expected to be resolved"
+      )
+    }
   }
 
   private fun visitBinary(expr: Binary) {
@@ -229,6 +270,10 @@ class AstToClassFileIrConverter {
     currentCode.addAll(ops)
   }
 
+  private fun getActualLocalVariableIndex(resolution: LocalVariable): Int {
+    return resolution.variableArrayIndex + 1
+  }
+
   private fun compileString(literal: Literal) {
     val ops = listOf(
       ShortConstantOperation(Opcode.OP_NEW, loxStringClassInfo, ObjectVti(loxObjectClassInfo)),
@@ -240,6 +285,8 @@ class AstToClassFileIrConverter {
     currentCode.addAll(ops)
   }
 
+  private fun getLocalVariableArraySize() = resolutionTable.getMaxIndex() + 2
+
   private fun publicStaticVoidMain(): MethodInfo {
     currentCode.add(SimpleOperation(opcode = Opcode.OP_RETURN))
     return MethodInfo(
@@ -250,7 +297,8 @@ class AstToClassFileIrConverter {
           argsSize = 1,
           code = currentCode.toList(),
           exceptionTable = 0,
-          attributes = listOf()
+          attributes = listOf(),
+          maxLocals2 = getLocalVariableArraySize()
         )
       ),
       isStatic = true,
@@ -276,7 +324,8 @@ class AstToClassFileIrConverter {
           argsSize = 1,
           code = code,
           exceptionTable = 0,
-          attributes = listOf()
+          attributes = listOf(),
+          maxLocals2 = 1
         )
       ),
       isStatic = true,

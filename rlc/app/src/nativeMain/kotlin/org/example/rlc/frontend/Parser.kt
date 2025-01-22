@@ -5,11 +5,13 @@ import org.example.rlc.frontend.ast.BlockStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.Grouping
+import org.example.rlc.frontend.ast.Identifier
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
+import org.example.rlc.frontend.ast.VarDeclStmt
 import org.example.rlc.frontend.ast.tokenTypeToLiteralType
 
 private val equalityTokens = setOf(
@@ -91,10 +93,35 @@ class Parser(private val tokens: List<Token>) {
 
   private fun declaration() {
     try {
-      statement()
+      when (currentToken.type) {
+        Token.Type.VAR -> varDecl()
+        else -> statement()
+      }
     } catch (e: ParserException) {
       synchronize()
     }
+  }
+
+  private fun varDecl() {
+    consume(Token.Type.VAR, message = "Expect 'var'")
+    consume(Token.Type.IDENTIFIER, message = "Expect identifier")
+    val identifier = previous
+
+    var expression: Expr? = null
+
+    if (currentToken.type == Token.Type.EQUAL) {
+      consume(Token.Type.EQUAL, message = "Expect '='")
+      expression = expression()
+    }
+
+    val decl = VarDeclStmt(
+      identifier = identifier.value,
+      token = identifier,
+      initializer = expression
+    )
+
+    consume(Token.Type.SEMICOLON, message = "Expect ';' after value.")
+    statements.last().add(decl)
   }
 
   private fun statement() = when (currentToken.type) {
@@ -230,6 +257,11 @@ class Parser(private val tokens: List<Token>) {
     if (currentToken.isTerminal()) {
       val token = currentToken
       matchAny(terminals.toList())
+
+      if (token.type == Token.Type.IDENTIFIER) {
+        return Identifier(token.value)
+      }
+
       return Literal(token.value, tokenTypeToLiteralType(token.type))
     }
 

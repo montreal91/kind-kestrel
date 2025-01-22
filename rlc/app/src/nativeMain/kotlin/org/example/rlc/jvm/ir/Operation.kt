@@ -61,6 +61,8 @@ sealed class Operation(val opcode: Opcode, val valueInfo: VerificationTypeInfo?)
       Opcode.OP_PUTFIELD -> customStackModification()
       Opcode.OP_PUTSTATIC -> customStackModification()
       Opcode.OP_GOTO -> 0
+      Opcode.OP_ALOAD -> 1
+      Opcode.OP_ASTORE -> -1
     }
 
   protected open fun customStackModification() = 0
@@ -100,6 +102,12 @@ class ByteConstantOperation(
 ) : Operation(opcode, valueInfo = value) {
   constructor(opcode: Opcode, constant: ConstantPoolInfo) : this(opcode, constant, value = null)
 }
+
+class OperationWithIndex(
+  opcode: Opcode,
+  val index: Byte,
+  value: VerificationTypeInfo?
+) : Operation(opcode, valueInfo = value)
 
 class ShortConstantOperation(
   opcode: Opcode,

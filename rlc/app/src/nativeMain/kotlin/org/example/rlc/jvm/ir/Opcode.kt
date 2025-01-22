@@ -7,6 +7,9 @@ enum class Opcode(val value: Byte) {
   OP_ALOAD_0(0x2A.toByte()),  // Load reference from local variable 0
   OP_ALOAD_1(0x2B.toByte()),  // Load reference from local variable 1
 
+  // Load reference from local variable and put it on the stack
+  OP_ALOAD(0x19.toByte()),
+
   // Load reference from local variable 2
   OP_ALOAD_2(0x2C.toByte()),
 
@@ -15,6 +18,9 @@ enum class Opcode(val value: Byte) {
 
   // Return reference from method
   OP_ARETURN(0xB0.toByte()),
+
+  // Pops reference from the stack and stores reference into local variable
+  OP_ASTORE(0x3A.toByte()),
 
   // Store reference into local variable
   OP_ASTORE_2(0x4D.toByte()),

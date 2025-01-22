@@ -4,14 +4,12 @@ import kotlin.math.max
 
 sealed class AttributeInfo(val attributeName: Utf8Value)
 
-
-
-
 class CodeAttribute(
   private val argsSize: Int,
   val code: List<Operation>,
   val exceptionTable: Any, // Replace with actual type later
   private val attributes: List<AttributeInfo>,
+  private val maxLocals2: Int
 ): AttributeInfo(codeAttributeName) {
   private val computedAttributes = mutableListOf<AttributeInfo>()
   private val _maxLocals: Int
@@ -26,7 +24,8 @@ class CodeAttribute(
     argsSize = argsSize,
     code = code,
     exceptionTable = 0,
-    attributes = listOf()
+    attributes = listOf(),
+    maxLocals2 = -1
   )
 
   val allAttributes: List<AttributeInfo> get() = attributes + computedAttributes
@@ -36,6 +35,10 @@ class CodeAttribute(
   fun addAttribute(attribute: AttributeInfo) = computedAttributes.add(attribute)
 
   private fun calculateMaxLocals(): Int {
+    if (maxLocals2 != -1) {
+      return maxLocals2
+    }
+
     var res = 0
 
     for (operation in code) {
@@ -105,5 +108,7 @@ class CodeAttribute(
     Opcode.OP_PUTSTATIC -> 0
     Opcode.OP_RETURN -> 0
     Opcode.OP_GOTO -> 0
+    Opcode.OP_ALOAD -> 0
+    Opcode.OP_ASTORE -> 0
   }
 }

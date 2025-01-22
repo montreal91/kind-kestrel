@@ -19,6 +19,7 @@ import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.toUtf8Value
+import kotlin.math.max
 
 internal fun loxStringCf() = ClassFile(
   thisClassInfo = loxStringClassInfo,
@@ -67,7 +68,8 @@ private fun loxStringConstructor(): MethodInfo {
     argsSize = 2,
     code = code,
     exceptionTable = 0,
-    attributes = listOf()
+    attributes = listOf(),
+    maxLocals2 = 2
   )
 
   return MethodInfo(
@@ -90,7 +92,8 @@ private fun toString(): MethodInfo {
     argsSize = 1,
     code = code,
     exceptionTable = 0,
-    attributes = listOf()
+    attributes = listOf(),
+    maxLocals2 = 1
   )
 
   return MethodInfo(
@@ -196,7 +199,8 @@ private fun stringConcatenation(): MethodInfo {
     argsSize = 2,
     code = code,
     exceptionTable = 0,
-    attributes = listOf()
+    attributes = listOf(),
+    maxLocals2 = 3
   )
 
   return MethodInfo(
