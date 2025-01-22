@@ -54,6 +54,7 @@ class AstPrettyPrinter {
   }
 
   private fun visitVarDeclStmt(stmt: VarDeclStmt) {
+    addIndent()
     sb.append("VAR DECL: ${stmt.identifier}\n")
 
     if (stmt.initializer != null) {
