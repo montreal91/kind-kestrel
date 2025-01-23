@@ -3,25 +3,25 @@ package org.example.rlc.frontend
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
-import org.example.rlc.frontend.ast.ExprStmt
-import org.example.rlc.frontend.ast.Literal
-import org.example.rlc.frontend.ast.PrintStmt
-import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Expr
+import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.Grouping
 import org.example.rlc.frontend.ast.Identifier
+import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
+import org.example.rlc.frontend.ast.PrintStmt
+import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
 import org.example.rlc.frontend.scope.LocalVariable
 import org.example.rlc.frontend.scope.UnresolvedVariable
+import org.example.rlc.frontend.scope.VariableResolutionResult
 import org.example.rlc.frontend.scope.VariableResolutionTable
-import platform.posix.srand
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
 class Resolver {
-  private val res = VariableResolutionTable()
+  private val resolutionTable = VariableResolutionTable()
   private val frameStack = FrameStack()
   private val errors = mutableListOf<LoxCompileError>()
 
@@ -30,7 +30,7 @@ class Resolver {
   fun resolve(program: Ast): VariableResolutionTable {
     program.forEach(this::visitStmt)
 
-    return res
+    return resolutionTable
   }
 
   fun getErrors() = errors.toList()
@@ -52,15 +52,9 @@ class Resolver {
   }
 
   private fun visitBlockStmt(stmt: BlockStmt) {
-    // create new frame
     frameStack.addNewFrame()
     stmt.statements.forEach(this::visitStmt)
     frameStack.popFrame()
-
-//    for ((identifier, astId) in prev) {
-//
-//    }
-//    // pop frame
   }
 
   private fun visitExprStmt(stmt: ExprStmt) {
@@ -77,7 +71,7 @@ class Resolver {
     }
 
     frameStack.declareVariable(stmt.identifier)
-    res.set(stmt.uid, LocalVariable(frameStack.lookup(stmt.identifier)))
+    resolutionTable.set(stmt.uid, LocalVariable(frameStack.lookup(stmt.identifier)))
   }
 
   private fun error(message: String, token: Token) {
@@ -96,12 +90,7 @@ class Resolver {
   }
 
   private fun visitIdentifier(expr: Identifier) {
-    if (!frameStack.existInAllFrames(expr.identifier)) {
-      res.set(expr.uid, UnresolvedVariable)
-    }
-    else {
-      res.set(expr.uid, LocalVariable(frameStack.lookup(expr.identifier)))
-    }
+    resolutionTable.set(expr.uid, resolveVariable(expr.identifier))
   }
 
   private fun visitLogical(expr: Logical) {
@@ -112,4 +101,11 @@ class Resolver {
   private fun visitUnary(expr: Unary) {
     visitExpr(expr.right)
   }
+
+  private fun resolveVariable(identifier: String): VariableResolutionResult =
+    if (frameStack.existInAllFrames(identifier)) {
+      LocalVariable(frameStack.lookup(identifier))
+    } else {
+      UnresolvedVariable
+    }
 }
