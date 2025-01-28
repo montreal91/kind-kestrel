@@ -1,12 +1,13 @@
 package org.example.rlc.frontend
 
+import org.example.rlc.frontend.ast.Assignment
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.Grouping
-import org.example.rlc.frontend.ast.Identifier
+import org.example.rlc.frontend.ast.Variable
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
@@ -46,9 +47,10 @@ class Resolver {
     is Literal -> visitLiteral()
     is Binary -> visitBinary(expr)
     is Grouping -> visitGrouping(expr)
-    is Identifier -> visitIdentifier(expr)
+    is Variable -> visitIdentifier(expr)
     is Logical -> visitLogical(expr)
     is Unary -> visitUnary(expr)
+    is Assignment -> visitAssignment(expr)
   }
 
   private fun visitBlockStmt(stmt: BlockStmt) {
@@ -66,12 +68,12 @@ class Resolver {
   }
 
   private fun visitVarDeclStmt(stmt: VarDeclStmt) {
-    if (frameStack.existInCurrentFrame(stmt.identifier)) {
+    if (frameStack.existInCurrentFrame(stmt.variable)) {
       error(message = "This identifier already exists.", stmt.token)
     }
 
-    frameStack.declareVariable(stmt.identifier)
-    resolutionTable.set(stmt.uid, LocalVariable(frameStack.lookup(stmt.identifier)))
+    frameStack.declareVariable(stmt.variable)
+    resolutionTable.set(stmt.uid, LocalVariable(frameStack.lookup(stmt.variable)))
   }
 
   private fun error(message: String, token: Token) {
@@ -89,8 +91,8 @@ class Resolver {
     visitExpr(expr.expression)
   }
 
-  private fun visitIdentifier(expr: Identifier) {
-    resolutionTable.set(expr.uid, resolveVariable(expr.identifier))
+  private fun visitIdentifier(expr: Variable) {
+    resolutionTable.set(expr.uid, resolveVariable(expr.variable))
   }
 
   private fun visitLogical(expr: Logical) {
@@ -99,6 +101,11 @@ class Resolver {
   }
 
   private fun visitUnary(expr: Unary) {
+    visitExpr(expr.right)
+  }
+
+  private fun visitAssignment(expr: Assignment) {
+    visitExpr(expr.left)
     visitExpr(expr.right)
   }
 

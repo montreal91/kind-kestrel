@@ -1,19 +1,20 @@
 package org.example.rlc.jvm.middleware
 
 import org.example.rlc.frontend.Token
+import org.example.rlc.frontend.ast.Assignment
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.Grouping
-import org.example.rlc.frontend.ast.Identifier
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
+import org.example.rlc.frontend.ast.Variable
 import org.example.rlc.frontend.scope.LocalVariable
 import org.example.rlc.frontend.scope.UnresolvedVariable
 import org.example.rlc.frontend.scope.VariableResolutionTable
@@ -106,7 +107,8 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     is Literal -> visitLiteral(expr)
     is Logical -> visitLogical(expr)
     is Unary -> visitUnary(expr)
-    is Identifier -> visitIdentifier(expr)
+    is Variable -> visitVariable(expr)
+    is Assignment -> visitAssignment(expr)
   }
 
   private fun visitExprStmt(exprStmt: ExprStmt) {
@@ -133,11 +135,9 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     }
 
     when (val resolution = resolutionTable.get(stmt.uid)) {
-      is LocalVariable -> currentCode.add(OperationWithIndex(
-        Opcode.OP_ASTORE, getActualLocalVariableIndex(resolution).toByte(), ObjectVti(loxObjectClassInfo)
-      ))
+      is LocalVariable -> storeLocalVariable(resolution)
       UnresolvedVariable -> throw IllegalStateException(
-        "Variable ${stmt.identifier} is unresolved, but expected to be resolved"
+        "Variable ${stmt.variable} is unresolved, but expected to be resolved"
       )
     }
   }
@@ -149,7 +149,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     Literal.Type.NIL_TYPE -> compileNil()
   }
 
-  private fun visitIdentifier(expr: Identifier) {
+  private fun visitVariable(expr: Variable) {
     when (val resolution = resolutionTable.get(expr.uid)) {
       is LocalVariable -> currentCode.add(OperationWithIndex(
         Opcode.OP_ALOAD,
@@ -157,7 +157,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
         ObjectVti(loxObjectClassInfo)
       ))
       UnresolvedVariable -> throw IllegalStateException(
-        "Variable ${expr.identifier} is unresolved, but expected to be resolved"
+        "Variable ${expr.variable} is unresolved, but expected to be resolved"
       )
     }
   }
@@ -192,6 +192,16 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       Token.Type.OR -> compileLogical(expr)
       else -> throw IllegalStateException("Unsupported logical operator [${expr.operator}].")
     }
+  }
+
+  private fun storeLocalVariable(resolution: LocalVariable) {
+    val op = OperationWithIndex(
+      Opcode.OP_ASTORE,
+      getActualLocalVariableIndex(resolution).toByte(),
+      ObjectVti(loxObjectClassInfo)
+    )
+
+    currentCode.add(op)
   }
 
   private fun compileLogical(expr: Logical) {
@@ -230,6 +240,20 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
 
   private fun visitGrouping(expr: Grouping) {
     visitExpr(expr.expression)
+  }
+
+  private fun visitAssignment(expr: Assignment) {
+    visitExpr(expr.right)
+    currentCode.add(SimpleOperation(Opcode.OP_DUP))
+
+    if (expr.left is Variable) {
+      when (val resolution = resolutionTable.get(expr.left.uid)) {
+        is LocalVariable -> storeLocalVariable(resolution)
+        UnresolvedVariable -> {
+          // actually here we need to do runtime variable resolution
+        }
+      }
+    }
   }
 
   private fun compileBoolean(expr: Literal) {

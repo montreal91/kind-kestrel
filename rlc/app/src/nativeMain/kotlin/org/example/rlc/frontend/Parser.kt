@@ -1,17 +1,18 @@
 package org.example.rlc.frontend
 
+import org.example.rlc.frontend.ast.Assignment
 import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.Grouping
-import org.example.rlc.frontend.ast.Identifier
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
+import org.example.rlc.frontend.ast.Variable
 import org.example.rlc.frontend.ast.tokenTypeToLiteralType
 
 private val equalityTokens = setOf(
@@ -26,13 +27,12 @@ private val comparisonTokens = setOf(
   Token.Type.LESS_EQUAL,
 )
 
-private fun Token.isPlusOrMinus(): Boolean {
-  return when (this.type) {
-    Token.Type.PLUS -> true
-    Token.Type.MINUS -> true
-    else -> false
-  }
+private fun Token.isPlusOrMinus() = when (this.type) {
+  Token.Type.PLUS -> true
+  Token.Type.MINUS -> true
+  else -> false
 }
+
 
 private fun Token.isStarOrSlash() = when (this.type) {
   Token.Type.STAR -> true
@@ -115,7 +115,7 @@ class Parser(private val tokens: List<Token>) {
     }
 
     val decl = VarDeclStmt(
-      identifier = identifier.value,
+      variable = identifier.value,
       token = identifier,
       initializer = expression
     )
@@ -162,7 +162,25 @@ class Parser(private val tokens: List<Token>) {
   }
 
   private fun assignment(): Expr {
-    return logicOr()
+    val left = logicOr()
+    println(
+      "Prev: [${previous.type}, ${previous.value}] " + "Curr: [${currentToken.type}, ${currentToken.value}], " + "Left Type: [${left::class}]"
+    )
+
+    if (currentToken.type != Token.Type.EQUAL) {
+      return left
+    }
+
+    val equalToken = currentToken
+    consume(Token.Type.EQUAL, message = "Expect '=' on assignment expression")
+
+    val right = assignment()
+
+    if (left is Variable) {
+      return Assignment(left, right)
+    }
+
+    throw error(message = "Invalid assignment target.", token = equalToken)
   }
 
   private fun logicOr(): Expr {
@@ -259,7 +277,7 @@ class Parser(private val tokens: List<Token>) {
       matchAny(terminals.toList())
 
       if (token.type == Token.Type.IDENTIFIER) {
-        return Identifier(token.value)
+        return Variable(token.value)
       }
 
       return Literal(token.value, tokenTypeToLiteralType(token.type))

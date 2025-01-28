@@ -7,6 +7,7 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 sealed class Expr {
   val uid = Uuid.random()
+  open val canAssign = false
 }
 
 class Literal(val value: String, val type: Type) : Expr() {
@@ -31,4 +32,9 @@ class Binary(val left: Expr, val operator: Token, val right: Expr) : Expr()
 class Logical(val left: Expr, val operator: Token, val right: Expr) : Expr()
 class Unary(val operator: Token, val right: Expr) : Expr()
 class Grouping(val expression: Expr) : Expr()
-class Identifier(val identifier: String) : Expr()
+
+class Variable(val variable: String) : Expr() {
+  override val canAssign = true
+}
+
+class Assignment(val left: Expr, val right: Expr) : Expr()

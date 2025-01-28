@@ -1,12 +1,13 @@
 package org.example.rlc.jvm.middleware
 
+import org.example.rlc.frontend.ast.Assignment
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.Grouping
-import org.example.rlc.frontend.ast.Identifier
+import org.example.rlc.frontend.ast.Variable
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
@@ -55,7 +56,7 @@ class AstPrettyPrinter {
 
   private fun visitVarDeclStmt(stmt: VarDeclStmt) {
     addIndent()
-    sb.append("VAR DECL: ${stmt.identifier}\n")
+    sb.append("VAR DECL: ${stmt.variable}\n")
 
     if (stmt.initializer != null) {
       depth++
@@ -67,10 +68,11 @@ class AstPrettyPrinter {
   private fun visitExpr(expr: Expr) = when (expr) {
     is Binary -> visitBinary(expr)
     is Grouping -> visitGrouping(expr)
-    is Identifier -> visitIdentifier(expr)
+    is Variable -> visitIdentifier(expr)
     is Literal -> visitLiteral(expr)
     is Logical -> visitLogical(expr)
     is Unary -> visitUnary(expr)
+    is Assignment -> visitAssignment(expr)
   }
 
   private fun visitBinary(expr: Binary) {
@@ -91,9 +93,9 @@ class AstPrettyPrinter {
     depth--
   }
 
-  private fun visitIdentifier(expr: Identifier) {
+  private fun visitIdentifier(expr: Variable) {
     addIndent()
-    sb.append("Access Identifier: ${expr.identifier}\n")
+    sb.append("Access Variable: ${expr.variable}\n")
   }
 
   private fun visitLiteral(expr: Literal) {
@@ -115,6 +117,15 @@ class AstPrettyPrinter {
     addIndent()
     sb.append("UNARY ${expr.operator.type} \n")
     depth++
+    visitExpr(expr.right)
+    depth--
+  }
+
+  private fun visitAssignment(expr: Assignment) {
+    addIndent()
+    sb.append("ASSIGN:\n")
+    depth++
+    visitExpr(expr.left)
     visitExpr(expr.right)
     depth--
   }
