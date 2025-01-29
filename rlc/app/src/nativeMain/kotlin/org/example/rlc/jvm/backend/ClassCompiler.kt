@@ -10,6 +10,7 @@ import org.example.rlc.jvm.ir.FullFrame
 import org.example.rlc.jvm.ir.MethodInfo
 import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Operation
+import org.example.rlc.jvm.ir.OperationWithIndex
 import org.example.rlc.jvm.ir.SameFrame
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
@@ -98,6 +99,7 @@ internal class ClassCompiler {
         is ControlFlowOperation -> {}
         is ShortConstantOperation -> constantPool.addConstantPoolInfo(operation.constant)
         is SimpleOperation -> {}
+        is OperationWithIndex -> {}
       }
     }
   }
@@ -263,11 +265,17 @@ internal class ClassCompiler {
     is ByteConstantOperation -> compileSingleByteConstantOperation(operation)
     is ShortConstantOperation -> compileShortConstantOperation(operation)
     is ControlFlowOperation -> compileControlFlowOperation(operation)
+    is OperationWithIndex -> compileOperationWithIndex(operation)
   }
 
   private fun compileSingleByteConstantOperation(operation: ByteConstantOperation) = listOf(
     operation.opcode.value,
     constantPool[operation.constant.label].toByte()
+  )
+
+  private fun compileOperationWithIndex(operation: OperationWithIndex) = listOf(
+    operation.opcode.value,
+    operation.index
   )
 
   private fun compileShortConstantOperation(operation: ShortConstantOperation) =

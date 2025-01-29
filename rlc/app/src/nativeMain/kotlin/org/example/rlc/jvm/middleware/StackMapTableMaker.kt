@@ -16,6 +16,7 @@ import org.example.rlc.jvm.ir.NullVariableVti
 import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.Operation
+import org.example.rlc.jvm.ir.OperationWithIndex
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StackMapTableAttribute
@@ -213,6 +214,8 @@ class StackMapTableMaker {
 
         Opcode.OP_PUTSTATIC -> stack.removeLast() // can fuck up with doubles
         Opcode.OP_RETURN -> stack.clear()
+        Opcode.OP_ALOAD -> {}
+        Opcode.OP_ASTORE -> stack.removeLast()
       }
 
       print("    Stack: ")
@@ -259,6 +262,7 @@ class StackMapTableMaker {
         is ByteConstantOperation -> 2
         is ShortConstantOperation -> 3
         is SimpleOperation -> 1
+        is OperationWithIndex -> 2
       }
     }
 

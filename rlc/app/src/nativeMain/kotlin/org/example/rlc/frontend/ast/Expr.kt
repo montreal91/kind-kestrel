@@ -1,8 +1,13 @@
 package org.example.rlc.frontend.ast
 
 import org.example.rlc.frontend.Token
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
-sealed class Expr
+@OptIn(ExperimentalUuidApi::class)
+sealed class Expr {
+  val uid = Uuid.random()
+}
 
 class Literal(val value: String, val type: Type) : Expr() {
   enum class Type {
@@ -26,3 +31,4 @@ class Binary(val left: Expr, val operator: Token, val right: Expr) : Expr()
 class Logical(val left: Expr, val operator: Token, val right: Expr) : Expr()
 class Unary(val operator: Token, val right: Expr) : Expr()
 class Grouping(val expression: Expr) : Expr()
+class Identifier(val identifier: String) : Expr()

@@ -8,6 +8,7 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.refTo
 import kotlinx.cinterop.toKString
 import org.example.rlc.frontend.Parser
+import org.example.rlc.frontend.Resolver
 import org.example.rlc.frontend.Scanner
 import org.example.rlc.jvm.backend.CodeGenerator
 import org.example.rlc.jvm.middleware.AstToClassFileIrConverter
@@ -30,7 +31,18 @@ internal class Cli : CliktCommand() {
     help="Enable debug stuff."
   ).flag()
 
+  private val printAst: Boolean by option(
+    names = arrayOf("--print-ast"),
+    metavar = "-p",
+    help = "Pretty-print ast of the program."
+  ).flag()
+
   override fun run() {
+    if (printAst) {
+      prettyPrintAst(path)
+      return
+    }
+
     compile(path, debugMode)
   }
 }
@@ -69,6 +81,9 @@ private fun compile(pathName: String, debugMode: Boolean) {
   val parser = Parser(scanner.scan())
   val ast = parser.parse()
 
+  val resolver = Resolver()
+  val resolutionTable = resolver.resolve(ast)
+
   if (scanner.hasErrors or parser.hasErrors) {
     for (error in scanner.getErrors()) {
       fprintf(__stream = stderr, __format = error.toString())
@@ -80,7 +95,13 @@ private fun compile(pathName: String, debugMode: Boolean) {
     exit(_Code = 65)
   }
 
-  val astConverter = AstToClassFileIrConverter()
+  if (resolver.hasErrors) {
+    for (error in resolver.getErrors()) {
+      fprintf(__stream = stderr, __format = error.toString())
+    }
+  }
+
+  val astConverter = AstToClassFileIrConverter(resolutionTable)
   val classes = astConverter.convert(ast)
   val stackMapTableMaker = StackMapTableMaker()
   stackMapTableMaker.fillStackMapTables(classes)

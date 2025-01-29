@@ -79,7 +79,8 @@ private fun loxBooleanConstructor(): MethodInfo {
     argsSize = 2,
     code = code,
     exceptionTable = 0,
-    attributes = listOf()
+    attributes = listOf(),
+    maxLocals2 = 2
   )
 
   return MethodInfo(
@@ -158,7 +159,8 @@ private fun truthy(): MethodInfo {
     argsSize = 1,
     code = code,
     exceptionTable = 0,
-    attributes = listOf()
+    attributes = listOf(),
+    maxLocals2 = 1
   )
 
   return MethodInfo(
@@ -188,7 +190,8 @@ private fun toString(): MethodInfo {
     argsSize = 1,
     code = code,
     exceptionTable = 0,
-    attributes = listOf()
+    attributes = listOf(),
+    maxLocals2 = 1
   )
 
   return MethodInfo(

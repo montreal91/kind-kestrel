@@ -65,7 +65,9 @@ private fun constructor(): MethodInfo {
     argsSize = 2,
     code = code,
     exceptionTable = 0,
-    attributes = listOf()
+    attributes = listOf(),
+    maxLocals2 = 2
+
   )
 
   return MethodInfo(

@@ -186,7 +186,8 @@ private fun loxObjectStaticInitializer(): MethodInfo {
     argsSize = 2,
     code = code,
     exceptionTable = 0,
-    attributes = listOf()
+    attributes = listOf(),
+    maxLocals2 = 2
   )
 
   return MethodInfo(
@@ -221,7 +222,8 @@ private fun loxObjectConstructor(): MethodInfo {
     argsSize = 2,
     code = code,
     exceptionTable = 0,
-    attributes = listOf()
+    attributes = listOf(),
+    maxLocals2 = 2
   )
 
   return MethodInfo(
@@ -263,7 +265,8 @@ internal fun alwaysTruthy(): MethodInfo {
     argsSize = 1,
     code = code,
     exceptionTable = 0,
-    attributes = listOf()
+    attributes = listOf(),
+    maxLocals2 = 1
   )
 
   return MethodInfo(
