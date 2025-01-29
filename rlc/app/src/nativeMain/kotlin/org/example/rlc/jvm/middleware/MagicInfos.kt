@@ -4,6 +4,8 @@ import org.example.rlc.frontend.Token
 import org.example.rlc.jvm.ir.BooleanVti
 import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.EmptyVti
+import org.example.rlc.jvm.ir.FieldAccessFlags
+import org.example.rlc.jvm.ir.FieldInfo
 import org.example.rlc.jvm.ir.FieldRefInfo
 import org.example.rlc.jvm.ir.MethodRefInfo
 import org.example.rlc.jvm.ir.NameAndTypeInfo
@@ -270,6 +272,39 @@ internal val loxObjectTruthyMri = MethodRefInfo(
     label = "__truthy__:(LLoxObject;)LLoxObject;",
     name = "__truthy__".toUtf8Value(),
     descriptor = loxUnaryOpDescriptor,
+  ),
+  argsSize = 1,
+  returnSize = 1,
+  returnTypeInfo = ObjectVti(loxObjectClassInfo, isArray = false)
+)
+
+internal fun dynamicResolutionTableField() = FieldInfo(
+  accessFlagList = listOf(FieldAccessFlags.STATIC, FieldAccessFlags.FINAL),
+  fieldName = "drt".toUtf8Value(),
+  fieldDescriptor = "Ljava/util/HashMap;".toUtf8Value(),
+)
+
+internal fun drtReference() = FieldRefInfo(
+  label = "LoxScript.drt:Ljava/util/HashMap;",
+  classInfo = ClassInfo(className = "LoxScript"),
+  nameAndType = NameAndTypeInfo(
+    label = "drt:Ljava/util/HashMap;",
+    name = "drt".toUtf8Value(),
+    descriptor = "Ljava/util/HashMap;".toUtf8Value(),
+  )
+)
+
+internal val hashMapInfo = ClassInfo(className = "java/util/HashMap")
+
+private const val putSignature = "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"
+
+internal val putMethodRef = MethodRefInfo(
+  label = "java/lang/HashMap.put:$putSignature",
+  classInfo = hashMapInfo,
+  nameAndType = NameAndTypeInfo(
+    label = "put:$putSignature",
+    name = "put".toUtf8Value(),
+    descriptor = putSignature.toUtf8Value(),
   ),
   argsSize = 1,
   returnSize = 1,

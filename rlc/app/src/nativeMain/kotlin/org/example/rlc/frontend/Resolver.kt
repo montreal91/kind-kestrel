@@ -14,6 +14,7 @@ import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
+import org.example.rlc.frontend.scope.GlobalVariable
 import org.example.rlc.frontend.scope.LocalVariable
 import org.example.rlc.frontend.scope.UnresolvedVariable
 import org.example.rlc.frontend.scope.VariableResolutionResult
@@ -70,10 +71,16 @@ class Resolver {
   private fun visitVarDeclStmt(stmt: VarDeclStmt) {
     if (frameStack.existInCurrentFrame(stmt.variable)) {
       error(message = "This identifier already exists.", stmt.token)
+      return
     }
 
-    frameStack.declareVariable(stmt.variable)
-    resolutionTable.set(stmt.uid, LocalVariable(frameStack.lookup(stmt.variable)))
+    if (frameStack.isGlobal()) {
+      resolutionTable.set(stmt.uid, GlobalVariable(stmt.variable))
+    }
+    else {
+      frameStack.declareVariable(stmt.variable)
+      resolutionTable.set(stmt.uid, LocalVariable(frameStack.lookup(stmt.variable)))
+    }
   }
 
   private fun error(message: String, token: Token) {
@@ -113,6 +120,6 @@ class Resolver {
     if (frameStack.existInAllFrames(identifier)) {
       LocalVariable(frameStack.lookup(identifier))
     } else {
-      UnresolvedVariable
+      GlobalVariable(name = identifier)
     }
 }

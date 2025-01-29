@@ -15,6 +15,7 @@ import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
 import org.example.rlc.frontend.ast.Variable
+import org.example.rlc.frontend.scope.GlobalVariable
 import org.example.rlc.frontend.scope.LocalVariable
 import org.example.rlc.frontend.scope.UnresolvedVariable
 import org.example.rlc.frontend.scope.VariableResolutionTable
@@ -32,6 +33,7 @@ import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
 import org.example.rlc.jvm.ir.MethodRefInfo
 import org.example.rlc.jvm.ir.MethodSignature
+import org.example.rlc.jvm.ir.NameAndTypeInfo
 import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.Operation
@@ -41,6 +43,7 @@ import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
 import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.loxMainClassName
+import org.example.rlc.jvm.ir.toUtf8Value
 import kotlin.uuid.ExperimentalUuidApi
 
 
@@ -71,10 +74,13 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       superClassInfo = objectClass,
       accessFlagList = listOf(ClassAccessFlags.PUBLIC),
       attributeList = listOf(),
-      fieldList = listOf(),
+      fieldList = listOf(
+        dynamicResolutionTableField()
+      ),
       interfaceList = listOf(),
       methodList = listOf(
         constructor(),
+        loxScriptStaticInitializer(),
         publicStaticVoidMain(),
         addMethod(),
         numberMagicMethod(methodName = "__sub__", returnType = "LoxDouble"),
@@ -88,6 +94,9 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
         numberMagicMethod(methodName = "__ge__", returnType = "LoxBoolean"),
         numberMagicMethod(methodName = "__lt__", returnType = "LoxBoolean"),
         numberMagicMethod(methodName = "__le__", returnType = "LoxBoolean"),
+        declGlobalVariableMethod(),
+        getGlobalVariableMethod(),
+        setGlobalVariableMethod(),
       )
     )
 
@@ -136,6 +145,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
 
     when (val resolution = resolutionTable.get(stmt.uid)) {
       is LocalVariable -> storeLocalVariable(resolution)
+      is GlobalVariable -> declGlobalVariable(resolution)
       UnresolvedVariable -> throw IllegalStateException(
         "Variable ${stmt.variable} is unresolved, but expected to be resolved"
       )
@@ -156,6 +166,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
         getActualLocalVariableIndex(resolution).toByte(),
         ObjectVti(loxObjectClassInfo)
       ))
+      is GlobalVariable -> getGlobalVariable(resolution)
       UnresolvedVariable -> throw IllegalStateException(
         "Variable ${expr.variable} is unresolved, but expected to be resolved"
       )
@@ -204,12 +215,83 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     currentCode.add(op)
   }
 
+  private fun setGlobalVariable(variable: GlobalVariable) {
+    val getGlobalMethodRef = "(LLoxObject;Ljava/lang/String;Ljava/lang/String;)V"
+    val getMethodRef = MethodRefInfo(
+      label = "LoxScript.__set_global__:$getGlobalMethodRef",
+      classInfo = ClassInfo(className = "LoxScript"),
+      nameAndType = NameAndTypeInfo(
+        label = "__set_global__:$getGlobalMethodRef",
+        name = "__set_global__".toUtf8Value(),
+        descriptor = getGlobalMethodRef.toUtf8Value(),
+      ),
+      argsSize = 3,
+      returnSize = 0,
+      returnTypeInfo = EmptyVti()
+    )
+
+    val message = "Undefined variable '${variable.name}'."
+    val ops = listOf(
+      ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(variable.name), javaLangStringObjectVti),
+      ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(value = message), javaLangStringObjectVti),
+      ShortConstantOperation(Opcode.OP_INVOKE_STATIC, getMethodRef)
+    )
+
+    currentCode.addAll(ops)
+  }
+
+  private fun declGlobalVariable(variable: GlobalVariable) {
+    val getGlobalMethodRef = "(LLoxObject;Ljava/lang/String;)V"
+    val getMethodRef = MethodRefInfo(
+      label = "LoxScript.__decl_global__:$getGlobalMethodRef",
+      classInfo = ClassInfo(className = "LoxScript"),
+      nameAndType = NameAndTypeInfo(
+        label = "__decl_global__:$getGlobalMethodRef",
+        name = "__decl_global__".toUtf8Value(),
+        descriptor = getGlobalMethodRef.toUtf8Value(),
+      ),
+      argsSize = 2,
+      returnSize = 0,
+      returnTypeInfo = EmptyVti()
+    )
+
+    currentCode.add(
+      ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(variable.name), javaLangStringObjectVti)
+    )
+    currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_STATIC, getMethodRef))
+  }
+
+  private fun getGlobalVariable(variable: GlobalVariable) {
+    val getGlobalMethodRef = "(Ljava/lang/String;Ljava/lang/String;)LLoxObject;"
+    val getMethodRef = MethodRefInfo(
+      label = "LoxScript.__get_global__:$getGlobalMethodRef",
+      classInfo = ClassInfo(className = "LoxScript"),
+      nameAndType = NameAndTypeInfo(
+        label = "__get_global__:$getGlobalMethodRef",
+        name = "__get_global__".toUtf8Value(),
+        descriptor = getGlobalMethodRef.toUtf8Value(),
+      ),
+      argsSize = 2,
+      returnSize = 1,
+      returnTypeInfo = BooleanVti()
+    )
+
+    val message = "Undefined variable '${variable.name}'."
+    currentCode.add(ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(variable.name), javaLangStringObjectVti))
+    currentCode.add(ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(value = message), javaLangStringObjectVti))
+    currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_STATIC, getMethodRef))
+  }
+
   private fun compileLogical(expr: Logical) {
     println("Compiling Logical: ${expr.operator.type}")
     currentCode.add(SimpleOperation(Opcode.OP_DUP))
     currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, loxObjectTruthyMri))
     currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, loxBooleanClassInfo))
-    currentCode.add(ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo, BooleanVti()))
+    currentCode.add(ShortConstantOperation(
+      Opcode.OP_GETFIELD,
+      booleanValueFieldRefInfo,
+      BooleanVti())
+    )
 
     val opcode = when (expr.operator.type) {
       Token.Type.AND -> Opcode.OP_IFEQ
@@ -249,9 +331,8 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     if (expr.left is Variable) {
       when (val resolution = resolutionTable.get(expr.left.uid)) {
         is LocalVariable -> storeLocalVariable(resolution)
-        UnresolvedVariable -> {
-          // actually here we need to do runtime variable resolution
-        }
+        is GlobalVariable -> setGlobalVariable(resolution)
+        UnresolvedVariable -> {}
       }
     }
   }
