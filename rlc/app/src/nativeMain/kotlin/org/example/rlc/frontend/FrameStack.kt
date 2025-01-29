@@ -20,6 +20,8 @@ internal class FrameStack {
     index++
   }
 
+  internal fun isGlobal() = frameStack.size == 1
+
   internal fun existInAllFrames(identifier: String): Boolean {
     for (frame in frameStack) {
       if (frame.containsKey(identifier)) {

@@ -1,0 +1,12 @@
+var a;
+// print a; // Expect: nil
+{
+  print a; // Expect: nil
+  a = 2;
+  {
+    var a;
+    a = 3;
+    print a; // Expect: 3
+  }
+}
+print a; // Expect: 2

@@ -73,6 +73,12 @@ internal class ClassCompiler {
     constantPool.addConstantPoolInfo(javaLangObjectClassInfo)
     constantPool.addConstantPoolInfo(javaLangStringClassInfo)
 
+    for (field in classFile.fieldList) {
+      println("    Adding field to constant poo: ${field.fieldName.label}")
+      constantPool.addConstantPoolInfo(field.fieldName)
+      constantPool.addConstantPoolInfo(field.fieldDescriptor)
+    }
+
     for (method in classFile.methodList) {
       println("    Adding method to constant poo: ${method.methodName.encodedString}")
       constantPool.addConstantPoolInfo(method.methodName)
@@ -113,6 +119,7 @@ internal class ClassCompiler {
   }
 
   private fun compileFieldToByteCode(fieldRefInfo: FieldInfo): List<Byte> {
+    println("  Compiling field: ${fieldRefInfo.fieldName.label}")
     val res = mutableListOf<Byte>()
     res.addAll(fieldRefInfo.accessFlags.toBytes())
     res.addAll(constantPool[fieldRefInfo.fieldName.label].toBytes())

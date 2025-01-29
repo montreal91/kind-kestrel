@@ -86,18 +86,18 @@ private fun compile(pathName: String, debugMode: Boolean) {
 
   if (scanner.hasErrors or parser.hasErrors) {
     for (error in scanner.getErrors()) {
-      fprintf(__stream = stderr, __format = error.toString())
+      fprintf(__stream = stderr, __format = "$error\n")
     }
 
     for (error in parser.getErrors()) {
-      fprintf(__stream = stderr, __format = error.toString())
+      fprintf(__stream = stderr, __format = "$error\n")
     }
     exit(_Code = 65)
   }
 
   if (resolver.hasErrors) {
     for (error in resolver.getErrors()) {
-      fprintf(__stream = stderr, __format = error.toString())
+      fprintf(__stream = stderr, __format = "$error\n")
     }
   }
 
