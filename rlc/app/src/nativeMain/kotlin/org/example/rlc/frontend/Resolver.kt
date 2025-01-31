@@ -7,6 +7,7 @@ import org.example.rlc.frontend.ast.BlockStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.Grouping
+import org.example.rlc.frontend.ast.IfStmt
 import org.example.rlc.frontend.ast.Variable
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
@@ -42,6 +43,7 @@ class Resolver {
     is ExprStmt -> visitExprStmt(stmt)
     is PrintStmt -> visitPrintStmt(stmt)
     is VarDeclStmt -> visitVarDeclStmt(stmt)
+    is IfStmt -> visitIfStmt(stmt)
   }
 
   private fun visitExpr(expr: Expr) = when (expr) {
@@ -81,6 +83,13 @@ class Resolver {
       frameStack.declareVariable(stmt.variable)
       resolutionTable.set(stmt.uid, LocalVariable(frameStack.lookup(stmt.variable)))
     }
+  }
+
+  private fun visitIfStmt(stmt: IfStmt) {
+    visitExpr(stmt.expr)
+    visitStmt(stmt.ifBranch)
+
+    stmt.elseBranch?.let(this::visitStmt)
   }
 
   private fun error(message: String, token: Token) {

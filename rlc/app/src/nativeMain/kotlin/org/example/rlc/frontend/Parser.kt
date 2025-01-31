@@ -6,6 +6,7 @@ import org.example.rlc.frontend.ast.BlockStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.Grouping
+import org.example.rlc.frontend.ast.IfStmt
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
@@ -127,6 +128,7 @@ class Parser(private val tokens: List<Token>) {
   private fun statement() = when (currentToken.type) {
     Token.Type.PRINT -> printStatement()
     Token.Type.LEFT_BRACE -> block()
+    Token.Type.IF -> ifStmt()
     else -> exprStatement()
   }
 
@@ -142,6 +144,33 @@ class Parser(private val tokens: List<Token>) {
     statements.last().add(block)
 
     consume(Token.Type.RIGHT_BRACE, message = "Expect '}' at the end of the block.")
+  }
+
+  private fun ifStmt() {
+    consume(Token.Type.IF, message = "Expect if statement.")
+    consume(Token.Type.LEFT_PAREN, message = "Expect '(' after if.")
+
+    val expr = expression()
+
+    consume(Token.Type.RIGHT_PAREN, message = "Expect ')' after expression.")
+
+    statement()
+
+    val ifBranch = statements.last().removeLast()
+    val elseBranch = when(currentToken.type) {
+      Token.Type.ELSE -> parseElse()
+      else -> null
+    }
+
+    val ifStmt = IfStmt(expr = expr, ifBranch = ifBranch, elseBranch = elseBranch)
+
+    statements.last().add(ifStmt)
+  }
+
+  private fun parseElse(): Stmt {
+    consume(Token.Type.ELSE, message = "Expected 'else'.")
+    statement()
+    return statements.last().removeLast()
   }
 
   private fun printStatement() {

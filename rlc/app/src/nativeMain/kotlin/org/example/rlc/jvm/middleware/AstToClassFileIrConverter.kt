@@ -8,6 +8,7 @@ import org.example.rlc.frontend.ast.BlockStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.Grouping
+import org.example.rlc.frontend.ast.IfStmt
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
@@ -108,6 +109,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     is PrintStmt -> visitPrintStmt(stmt)
     is BlockStmt -> visitBlockStmt(stmt)
     is VarDeclStmt -> visitVarDecl(stmt)
+    is IfStmt -> visitIfStatement(stmt)
   }
 
   private fun visitExpr(expr: Expr) = when (expr) {
@@ -136,12 +138,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   }
 
   private fun visitVarDecl(stmt: VarDeclStmt) {
-    if (stmt.initializer == null) {
-      compileNil()
-    }
-    else {
-      visitExpr(stmt.initializer)
-    }
+    stmt.initializer?.let(this::visitExpr) ?: compileNil()
 
     when (val resolution = resolutionTable.get(stmt.uid)) {
       is LocalVariable -> storeLocalVariable(resolution)
@@ -149,6 +146,31 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       UnresolvedVariable -> throw IllegalStateException(
         "Variable ${stmt.variable} is unresolved, but expected to be resolved"
       )
+    }
+  }
+
+  private fun visitIfStatement(stmt: IfStmt) {
+    visitExpr(stmt.expr)
+
+    currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, loxObjectTruthyMri))
+    currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, loxBooleanClassInfo))
+    currentCode.add(ShortConstantOperation(
+      Opcode.OP_GETFIELD,
+      booleanValueFieldRefInfo,
+      BooleanVti())
+    )
+
+    val branch = ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = -1)
+    currentCode.add(branch)
+    visitStmt(stmt.ifBranch)
+    branch.setJumpTo(currentCode.size)
+
+    stmt.elseBranch?.let {
+      val jump = ControlFlowOperation(Opcode.OP_GOTO, jumpTo = -1)
+      currentCode.add(jump)
+      branch.setJumpTo(currentCode.size)
+      visitStmt(stmt.elseBranch)
+      jump.setJumpTo(currentCode.size)
     }
   }
 

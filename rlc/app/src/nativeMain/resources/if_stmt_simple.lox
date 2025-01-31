@@ -1,0 +1,17 @@
+print "Before True";
+
+if (true) {
+  print true;
+}
+
+if (false) print lol;
+
+if (nil) {
+  if (nil) print "kek";
+  else print "not kek";
+}
+else {
+  print "Ohio!";
+}
+
+print "Also";

@@ -17,11 +17,11 @@ internal fun prettyPrintAst(pathName: String) {
 
   if (scanner.hasErrors or parser.hasErrors) {
     for (error in scanner.getErrors()) {
-      fprintf(__stream = stderr, __format = error.toString())
+      fprintf(__stream = stderr, __format = "$error\n")
     }
 
     for (error in parser.getErrors()) {
-      fprintf(__stream = stderr, __format = error.toString())
+      fprintf(__stream = stderr, __format = "$error\n")
     }
     exit(_Code = 65)
   }

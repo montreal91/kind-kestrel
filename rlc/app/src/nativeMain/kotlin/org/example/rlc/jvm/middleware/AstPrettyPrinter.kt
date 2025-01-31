@@ -7,6 +7,7 @@ import org.example.rlc.frontend.ast.BlockStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.Grouping
+import org.example.rlc.frontend.ast.IfStmt
 import org.example.rlc.frontend.ast.Variable
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
@@ -29,6 +30,7 @@ class AstPrettyPrinter {
     is BlockStmt -> visitBlockStmt(stmt)
     is ExprStmt -> visitExprStmt(stmt)
     is VarDeclStmt -> visitVarDeclStmt(stmt)
+    is IfStmt -> visitIfStmt(stmt)
   }
 
   private fun visitPrintStmt(stmt: PrintStmt) {
@@ -61,6 +63,23 @@ class AstPrettyPrinter {
     if (stmt.initializer != null) {
       depth++
       visitExpr(stmt.initializer)
+      depth--
+    }
+  }
+
+  private fun visitIfStmt(stmt: IfStmt) {
+    addIndent()
+    sb.append("IF:\n")
+    depth++
+    visitExpr(stmt.expr)
+    visitStmt(stmt.ifBranch)
+    depth--
+
+    if (stmt.elseBranch != null) {
+      addIndent()
+      sb.append("ELSE:\n")
+      depth++
+      visitStmt(stmt.elseBranch)
       depth--
     }
   }
