@@ -14,6 +14,7 @@ import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
 import org.example.rlc.frontend.ast.Variable
+import org.example.rlc.frontend.ast.WhileStmt
 import org.example.rlc.frontend.ast.tokenTypeToLiteralType
 
 private val equalityTokens = setOf(
@@ -129,6 +130,7 @@ class Parser(private val tokens: List<Token>) {
     Token.Type.PRINT -> printStatement()
     Token.Type.LEFT_BRACE -> block()
     Token.Type.IF -> ifStmt()
+    Token.Type.WHILE -> whileStmt()
     else -> exprStatement()
   }
 
@@ -165,6 +167,20 @@ class Parser(private val tokens: List<Token>) {
     val ifStmt = IfStmt(expr = expr, ifBranch = ifBranch, elseBranch = elseBranch)
 
     statements.last().add(ifStmt)
+  }
+
+  private fun whileStmt() {
+    consume(Token.Type.WHILE, message = "Expect while statement.")
+    consume(Token.Type.LEFT_PAREN, message = "Expect '(' after while.")
+
+    val expr = expression()
+
+    consume(Token.Type.RIGHT_PAREN, message = "Expect ')' after expression.")
+    statement()
+
+    val body = statements.last().removeLast()
+
+    statements.last().add(WhileStmt(expr, body))
   }
 
   private fun parseElse(): Stmt {

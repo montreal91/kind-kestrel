@@ -8,16 +8,16 @@ import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.Grouping
 import org.example.rlc.frontend.ast.IfStmt
-import org.example.rlc.frontend.ast.Variable
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
+import org.example.rlc.frontend.ast.Variable
+import org.example.rlc.frontend.ast.WhileStmt
 import org.example.rlc.frontend.scope.GlobalVariable
 import org.example.rlc.frontend.scope.LocalVariable
-import org.example.rlc.frontend.scope.UnresolvedVariable
 import org.example.rlc.frontend.scope.VariableResolutionResult
 import org.example.rlc.frontend.scope.VariableResolutionTable
 import kotlin.uuid.ExperimentalUuidApi
@@ -44,6 +44,7 @@ class Resolver {
     is PrintStmt -> visitPrintStmt(stmt)
     is VarDeclStmt -> visitVarDeclStmt(stmt)
     is IfStmt -> visitIfStmt(stmt)
+    is WhileStmt -> visitWhileStmt(stmt)
   }
 
   private fun visitExpr(expr: Expr) = when (expr) {
@@ -90,6 +91,11 @@ class Resolver {
     visitStmt(stmt.ifBranch)
 
     stmt.elseBranch?.let(this::visitStmt)
+  }
+
+  private fun visitWhileStmt(stmt: WhileStmt) {
+    visitExpr(stmt.expr)
+    visitStmt(stmt.body)
   }
 
   private fun error(message: String, token: Token) {

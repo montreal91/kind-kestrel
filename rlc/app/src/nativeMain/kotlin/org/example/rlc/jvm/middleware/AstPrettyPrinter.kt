@@ -15,6 +15,7 @@ import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
+import org.example.rlc.frontend.ast.WhileStmt
 
 class AstPrettyPrinter {
   private val sb = StringBuilder()
@@ -31,6 +32,7 @@ class AstPrettyPrinter {
     is ExprStmt -> visitExprStmt(stmt)
     is VarDeclStmt -> visitVarDeclStmt(stmt)
     is IfStmt -> visitIfStmt(stmt)
+    is WhileStmt -> visitWhileStmt(stmt)
   }
 
   private fun visitPrintStmt(stmt: PrintStmt) {
@@ -50,6 +52,7 @@ class AstPrettyPrinter {
   }
 
   private fun visitExprStmt(stmt: ExprStmt) {
+    addIndent()
     sb.append("EXPRESSION:\n")
     depth++
     visitExpr(stmt.expr)
@@ -75,13 +78,22 @@ class AstPrettyPrinter {
     visitStmt(stmt.ifBranch)
     depth--
 
-    if (stmt.elseBranch != null) {
+    stmt.elseBranch?.let {
       addIndent()
       sb.append("ELSE:\n")
       depth++
       visitStmt(stmt.elseBranch)
       depth--
     }
+  }
+
+  private fun visitWhileStmt(stmt: WhileStmt) {
+    addIndent()
+    sb.append("WHILE:\n")
+    depth++
+    visitExpr(stmt.expr)
+    visitStmt(stmt.body)
+    depth--
   }
 
   private fun visitExpr(expr: Expr) = when (expr) {

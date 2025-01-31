@@ -16,6 +16,7 @@ import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
 import org.example.rlc.frontend.ast.Variable
+import org.example.rlc.frontend.ast.WhileStmt
 import org.example.rlc.frontend.scope.GlobalVariable
 import org.example.rlc.frontend.scope.LocalVariable
 import org.example.rlc.frontend.scope.UnresolvedVariable
@@ -42,6 +43,7 @@ import org.example.rlc.jvm.ir.OperationWithIndex
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
+import org.example.rlc.jvm.ir.VerificationTypeInfo
 import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.loxMainClassName
 import org.example.rlc.jvm.ir.toUtf8Value
@@ -62,6 +64,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   )
   private val currentCode = mutableListOf<Operation>()
   private val methodRefs = mutableMapOf<Token.Type, MethodRefInfo>()
+  private val localVariables = mutableListOf<VerificationTypeInfo>()
 
   fun convert(roots: Ast): List<ClassFile> {
     roots.forEach(this::visitStmt)
@@ -110,6 +113,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     is BlockStmt -> visitBlockStmt(stmt)
     is VarDeclStmt -> visitVarDecl(stmt)
     is IfStmt -> visitIfStatement(stmt)
+    is WhileStmt -> visitWhileStmt(stmt)
   }
 
   private fun visitExpr(expr: Expr) = when (expr) {
@@ -124,6 +128,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
 
   private fun visitExprStmt(exprStmt: ExprStmt) {
     visitExpr(exprStmt.expr)
+    currentCode.add(SimpleOperation(Opcode.OP_POP))
   }
 
   private fun visitPrintStmt(printStmt: PrintStmt) {
@@ -172,6 +177,27 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       visitStmt(stmt.elseBranch)
       jump.setJumpTo(currentCode.size)
     }
+  }
+
+  private fun visitWhileStmt(stmt: WhileStmt) {
+    val loopBack = currentCode.size
+
+    visitExpr(stmt.expr)
+
+    currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, loxObjectTruthyMri))
+    currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, loxBooleanClassInfo))
+    currentCode.add(ShortConstantOperation(
+      Opcode.OP_GETFIELD,
+      booleanValueFieldRefInfo,
+      BooleanVti())
+    )
+
+    val exitLoop = ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = -1)
+    currentCode.add(exitLoop)
+
+    visitStmt(stmt.body)
+    currentCode.add(ControlFlowOperation(Opcode.OP_GOTO, jumpTo = loopBack))
+    exitLoop.setJumpTo(currentCode.size)
   }
 
   private fun visitLiteral(expr: Literal) = when (expr.type) {
@@ -233,6 +259,10 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       getActualLocalVariableIndex(resolution).toByte(),
       ObjectVti(loxObjectClassInfo)
     )
+
+    if (resolution.variableArrayIndex >= localVariables.size) {
+      localVariables.add(ObjectVti(loxObjectClassInfo))
+    }
 
     currentCode.add(op)
   }
@@ -432,7 +462,8 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       signature = MethodSignature(
         listOf(ObjectVti(isArray = true, classInfo = javaLangStringArrayClassInfo)),
         EmptyVti()
-      )
+      ),
+      localVariables = localVariables.toList(),
     )
   }
 

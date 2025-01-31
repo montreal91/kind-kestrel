@@ -1,0 +1,26 @@
+
+var i = 0;
+
+while (i < 10) {
+  print i;
+
+  if (i < 5) {
+    print "Klein I";
+  } else {
+    print "Gross I";
+  }
+  i = i + 1;
+}
+
+{
+  var j = 0;
+  while (j < 10) {
+    if (j < 5) {
+      print "Klein J";
+    } else {
+      print "Gross J";
+    }
+    j = j + 1;
+  }
+
+}
