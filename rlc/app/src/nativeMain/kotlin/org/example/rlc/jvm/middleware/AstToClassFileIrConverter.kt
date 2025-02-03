@@ -7,6 +7,7 @@ import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
+import org.example.rlc.frontend.ast.ForStmt
 import org.example.rlc.frontend.ast.Grouping
 import org.example.rlc.frontend.ast.IfStmt
 import org.example.rlc.frontend.ast.Literal
@@ -114,6 +115,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     is VarDeclStmt -> visitVarDecl(stmt)
     is IfStmt -> visitIfStatement(stmt)
     is WhileStmt -> visitWhileStmt(stmt)
+    is ForStmt -> visitForStmt(stmt)
   }
 
   private fun visitExpr(expr: Expr) = when (expr) {
@@ -196,6 +198,38 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     currentCode.add(exitLoop)
 
     visitStmt(stmt.body)
+    currentCode.add(ControlFlowOperation(Opcode.OP_GOTO, jumpTo = loopBack))
+    exitLoop.setJumpTo(currentCode.size)
+  }
+
+  private fun visitForStmt(stmt: ForStmt) {
+    stmt.initStmt?.let { visitStmt(stmt.initStmt) }
+    val loopBack = currentCode.size
+    val exitLoop = ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = -1)
+
+    if (stmt.conditionExpr != null) {
+      visitExpr(stmt.conditionExpr)
+      currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, loxObjectTruthyMri))
+      currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, loxBooleanClassInfo))
+      currentCode.add(ShortConstantOperation(
+        Opcode.OP_GETFIELD,
+        booleanValueFieldRefInfo,
+        BooleanVti())
+      )
+
+      currentCode.add(exitLoop)
+    } else {
+      currentCode.add(SimpleOperation(Opcode.OP_ICONST_1))
+      currentCode.add(exitLoop)
+    }
+
+    visitStmt(stmt.body)
+
+    stmt.updateExpr?.let {
+      visitExpr(stmt.updateExpr)
+      currentCode.add(SimpleOperation(Opcode.OP_POP))
+    }
+
     currentCode.add(ControlFlowOperation(Opcode.OP_GOTO, jumpTo = loopBack))
     exitLoop.setJumpTo(currentCode.size)
   }

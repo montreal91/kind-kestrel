@@ -16,4 +16,11 @@ class VarDeclStmt(val variable: String, val token: Token, val initializer: Expr?
 class IfStmt(val expr: Expr, val ifBranch: Stmt, val elseBranch: Stmt?): Stmt()
 class WhileStmt(val expr: Expr, val body: Stmt): Stmt()
 
+class ForStmt(
+  val initStmt: Stmt?,
+  val conditionExpr: Expr?,
+  val updateExpr: Expr?,
+  val body: Stmt
+): Stmt()
+
 typealias Ast = List<Stmt>

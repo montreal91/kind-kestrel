@@ -6,6 +6,7 @@ import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
+import org.example.rlc.frontend.ast.ForStmt
 import org.example.rlc.frontend.ast.Grouping
 import org.example.rlc.frontend.ast.IfStmt
 import org.example.rlc.frontend.ast.Literal
@@ -45,6 +46,7 @@ class Resolver {
     is VarDeclStmt -> visitVarDeclStmt(stmt)
     is IfStmt -> visitIfStmt(stmt)
     is WhileStmt -> visitWhileStmt(stmt)
+    is ForStmt -> visitForStmt(stmt)
   }
 
   private fun visitExpr(expr: Expr) = when (expr) {
@@ -95,6 +97,14 @@ class Resolver {
 
   private fun visitWhileStmt(stmt: WhileStmt) {
     visitExpr(stmt.expr)
+    visitStmt(stmt.body)
+  }
+
+  private fun visitForStmt(stmt: ForStmt) {
+    stmt.initStmt?.let { visitStmt(stmt.initStmt) }
+    stmt.conditionExpr?.let { visitExpr(stmt.conditionExpr) }
+    stmt.updateExpr?.let { visitExpr(stmt.updateExpr) }
+
     visitStmt(stmt.body)
   }
 

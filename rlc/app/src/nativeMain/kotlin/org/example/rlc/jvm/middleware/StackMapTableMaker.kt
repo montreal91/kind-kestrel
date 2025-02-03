@@ -266,10 +266,6 @@ class StackMapTableMaker {
 
     var one = 0
     for ((i, fb) in frameBuilders.withIndex()) {
-      if (i == 0) {
-        continue
-      }
-
       if (fb.toBuild) {
         val frameOffset = offsets[i] - lastOffset - one
         res.add(fb.offsetDelta(frameOffset.toShort()).build())

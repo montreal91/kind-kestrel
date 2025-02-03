@@ -6,6 +6,7 @@ import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
+import org.example.rlc.frontend.ast.ForStmt
 import org.example.rlc.frontend.ast.Grouping
 import org.example.rlc.frontend.ast.IfStmt
 import org.example.rlc.frontend.ast.Variable
@@ -33,6 +34,7 @@ class AstPrettyPrinter {
     is VarDeclStmt -> visitVarDeclStmt(stmt)
     is IfStmt -> visitIfStmt(stmt)
     is WhileStmt -> visitWhileStmt(stmt)
+    is ForStmt -> visitForStmt(stmt)
   }
 
   private fun visitPrintStmt(stmt: PrintStmt) {
@@ -93,6 +95,39 @@ class AstPrettyPrinter {
     depth++
     visitExpr(stmt.expr)
     visitStmt(stmt.body)
+    depth--
+  }
+
+  private fun visitForStmt(stmt: ForStmt) {
+    addIndent()
+    sb.append("FOR:\n")
+    depth++
+    stmt.initStmt?.let{
+      addIndent()
+      sb.append("INIT STMT:\n")
+      depth++
+      visitStmt(stmt.initStmt)
+      depth--
+    }
+    stmt.conditionExpr?.let {
+      addIndent()
+      sb.append("COND EXPR:\n")
+      depth++
+      visitExpr(stmt.conditionExpr)
+      depth--
+    }
+    stmt.updateExpr?.let {
+      addIndent()
+      sb.append("UPD EXPR:\n")
+      depth++
+      visitExpr(stmt.updateExpr)
+      depth--
+    }
+    addIndent()
+    sb.append("BODY:\n")
+    depth++
+    visitStmt(stmt.body)
+    depth--
     depth--
   }
 
