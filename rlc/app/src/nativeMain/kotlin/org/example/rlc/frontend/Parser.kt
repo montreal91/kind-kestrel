@@ -5,7 +5,9 @@ import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
+import org.example.rlc.frontend.ast.ForStmt
 import org.example.rlc.frontend.ast.Grouping
+import org.example.rlc.frontend.ast.IfStmt
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
@@ -13,6 +15,7 @@ import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
 import org.example.rlc.frontend.ast.Variable
+import org.example.rlc.frontend.ast.WhileStmt
 import org.example.rlc.frontend.ast.tokenTypeToLiteralType
 
 private val equalityTokens = setOf(
@@ -127,6 +130,9 @@ class Parser(private val tokens: List<Token>) {
   private fun statement() = when (currentToken.type) {
     Token.Type.PRINT -> printStatement()
     Token.Type.LEFT_BRACE -> block()
+    Token.Type.IF -> ifStmt()
+    Token.Type.WHILE -> whileStmt()
+    Token.Type.FOR -> forStmt()
     else -> exprStatement()
   }
 
@@ -142,6 +148,87 @@ class Parser(private val tokens: List<Token>) {
     statements.last().add(block)
 
     consume(Token.Type.RIGHT_BRACE, message = "Expect '}' at the end of the block.")
+  }
+
+  private fun ifStmt() {
+    consume(Token.Type.IF, message = "Expect if statement.")
+    consume(Token.Type.LEFT_PAREN, message = "Expect '(' after if.")
+
+    val expr = expression()
+
+    consume(Token.Type.RIGHT_PAREN, message = "Expect ')' after expression.")
+
+    statement()
+
+    val ifBranch = statements.last().removeLast()
+    val elseBranch = when(currentToken.type) {
+      Token.Type.ELSE -> parseElse()
+      else -> null
+    }
+
+    val ifStmt = IfStmt(expr = expr, ifBranch = ifBranch, elseBranch = elseBranch)
+
+    statements.last().add(ifStmt)
+  }
+
+  private fun whileStmt() {
+    consume(Token.Type.WHILE, message = "Expect while statement.")
+    consume(Token.Type.LEFT_PAREN, message = "Expect '(' after while.")
+
+    val expr = expression()
+
+    consume(Token.Type.RIGHT_PAREN, message = "Expect ')' after expression.")
+    statement()
+
+    val body = statements.last().removeLast()
+
+    statements.last().add(WhileStmt(expr, body))
+  }
+
+  private fun forStmt() {
+    consume(Token.Type.FOR, message = "Expect for statement.")
+    consume(Token.Type.LEFT_PAREN, message = "Expect '(' after for.")
+
+    val initStmt = when (currentToken.type) {
+      Token.Type.VAR -> {
+        varDecl()
+        statements.last().removeLast()
+      }
+      Token.Type.SEMICOLON -> {
+        consume(Token.Type.SEMICOLON, message = "Expected ';'.")
+        null
+      }
+      else -> {
+        exprStatement()
+        statements.last().removeLast()
+      }
+    }
+
+    val conditionExpr = when (currentToken.type == Token.Type.SEMICOLON) {
+      true -> null
+      false -> expression()
+    }
+
+    consume(Token.Type.SEMICOLON, message = "Expect ';' after init statement")
+
+    val updateExpr = when (currentToken.type == Token.Type.RIGHT_PAREN) {
+      true -> null
+      false -> expression()
+    }
+
+    consume(Token.Type.RIGHT_PAREN, message = "Expect ')' after expression.")
+    statement()
+
+    val body = statements.last().removeLast()
+    val forStmt = ForStmt(initStmt, conditionExpr, updateExpr, body)
+
+    statements.last().add(forStmt)
+  }
+
+  private fun parseElse(): Stmt {
+    consume(Token.Type.ELSE, message = "Expected 'else'.")
+    statement()
+    return statements.last().removeLast()
   }
 
   private fun printStatement() {

@@ -99,6 +99,7 @@ private fun compile(pathName: String, debugMode: Boolean) {
     for (error in resolver.getErrors()) {
       fprintf(__stream = stderr, __format = "$error\n")
     }
+    exit(_Code = 65)
   }
 
   val astConverter = AstToClassFileIrConverter(resolutionTable)

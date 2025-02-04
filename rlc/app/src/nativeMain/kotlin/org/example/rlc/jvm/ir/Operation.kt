@@ -106,7 +106,7 @@ class ByteConstantOperation(
 class OperationWithIndex(
   opcode: Opcode,
   val index: Byte,
-  value: VerificationTypeInfo?
+  value: VerificationTypeInfo
 ) : Operation(opcode, valueInfo = value)
 
 class ShortConstantOperation(

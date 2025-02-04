@@ -6,7 +6,9 @@ import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
+import org.example.rlc.frontend.ast.ForStmt
 import org.example.rlc.frontend.ast.Grouping
+import org.example.rlc.frontend.ast.IfStmt
 import org.example.rlc.frontend.ast.Variable
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
@@ -14,6 +16,7 @@ import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
+import org.example.rlc.frontend.ast.WhileStmt
 
 class AstPrettyPrinter {
   private val sb = StringBuilder()
@@ -29,6 +32,9 @@ class AstPrettyPrinter {
     is BlockStmt -> visitBlockStmt(stmt)
     is ExprStmt -> visitExprStmt(stmt)
     is VarDeclStmt -> visitVarDeclStmt(stmt)
+    is IfStmt -> visitIfStmt(stmt)
+    is WhileStmt -> visitWhileStmt(stmt)
+    is ForStmt -> visitForStmt(stmt)
   }
 
   private fun visitPrintStmt(stmt: PrintStmt) {
@@ -48,6 +54,7 @@ class AstPrettyPrinter {
   }
 
   private fun visitExprStmt(stmt: ExprStmt) {
+    addIndent()
     sb.append("EXPRESSION:\n")
     depth++
     visitExpr(stmt.expr)
@@ -63,6 +70,65 @@ class AstPrettyPrinter {
       visitExpr(stmt.initializer)
       depth--
     }
+  }
+
+  private fun visitIfStmt(stmt: IfStmt) {
+    addIndent()
+    sb.append("IF:\n")
+    depth++
+    visitExpr(stmt.expr)
+    visitStmt(stmt.ifBranch)
+    depth--
+
+    stmt.elseBranch?.let {
+      addIndent()
+      sb.append("ELSE:\n")
+      depth++
+      visitStmt(stmt.elseBranch)
+      depth--
+    }
+  }
+
+  private fun visitWhileStmt(stmt: WhileStmt) {
+    addIndent()
+    sb.append("WHILE:\n")
+    depth++
+    visitExpr(stmt.expr)
+    visitStmt(stmt.body)
+    depth--
+  }
+
+  private fun visitForStmt(stmt: ForStmt) {
+    addIndent()
+    sb.append("FOR:\n")
+    depth++
+    stmt.initStmt?.let{
+      addIndent()
+      sb.append("INIT STMT:\n")
+      depth++
+      visitStmt(stmt.initStmt)
+      depth--
+    }
+    stmt.conditionExpr?.let {
+      addIndent()
+      sb.append("COND EXPR:\n")
+      depth++
+      visitExpr(stmt.conditionExpr)
+      depth--
+    }
+    stmt.updateExpr?.let {
+      addIndent()
+      sb.append("UPD EXPR:\n")
+      depth++
+      visitExpr(stmt.updateExpr)
+      depth--
+    }
+    addIndent()
+    sb.append("BODY:\n")
+    depth++
+    visitStmt(stmt.body)
+    depth--
+    depth--
   }
 
   private fun visitExpr(expr: Expr) = when (expr) {

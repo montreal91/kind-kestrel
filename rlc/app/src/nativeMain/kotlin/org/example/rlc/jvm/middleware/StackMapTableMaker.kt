@@ -45,6 +45,7 @@ class StackMapTableMaker {
     val codeAttribute = extractCodeFromMethodInfo(methodInfo)
     val jumpTargets = calculateJumpTargets(codeAttribute.code)
     val localVariables = composeArrayOfLocalVariables(methodInfo, thisClassInfo)
+
     println("\nMaking Stack Map Table attribute for ${methodInfo.methodName.encodedString}")
     codeAttribute.addAttribute(makeStackMapTable(
       codeAttribute.code,
@@ -104,6 +105,8 @@ class StackMapTableMaker {
     var maxStackSize = 0
     val stack = ArrayDeque<VerificationTypeInfo>()
 
+    val currentVariables = localVariables.toMutableList()
+
     localVariables.forEach {
       println("    $it")
     }
@@ -112,13 +115,33 @@ class StackMapTableMaker {
       println("$i, ${operations[i].opcode}")
       when (operations[i].opcode) {
         Opcode.OP_ACONST_NULL -> stack.addLast(NullVariableVti())
-        Opcode.OP_ALOAD_0 -> stack.addLast(localVariables[0])
-        Opcode.OP_ALOAD_1 -> stack.addLast(localVariables[1])
-        Opcode.OP_ALOAD_2 -> stack.addLast(localVariables[2])
-        Opcode.OP_ALOAD_3 -> stack.addLast(localVariables[3])
+        Opcode.OP_ALOAD_0 -> stack.addLast(currentVariables[0])
+        Opcode.OP_ALOAD_1 -> stack.addLast(currentVariables[1])
+        Opcode.OP_ALOAD_2 -> stack.addLast(currentVariables[2])
+        Opcode.OP_ALOAD_3 -> stack.addLast(currentVariables[3])
+        Opcode.OP_ALOAD -> {
+          val op = operations[i] as OperationWithIndex
+          stack.addLast(currentVariables[op.index.toInt()])
+        }
+
         Opcode.OP_ARETURN -> stack.clear()
-        Opcode.OP_ASTORE_2 -> stack.removeLast()
-        Opcode.OP_ASTORE_3 -> stack.removeLast()
+        Opcode.OP_ASTORE_2 -> {
+          stack.removeLast()
+          val op = operations[i] as SimpleOperation
+
+          if (currentVariables.size < 3) {
+            currentVariables.add(op.valueInfo!!)
+          }
+        }
+        Opcode.OP_ASTORE_3 -> {
+          stack.removeLast()
+
+          val op = operations[i] as SimpleOperation
+
+          if (currentVariables.size < 4) {
+            currentVariables.add(op.valueInfo!!)
+          }
+        }
         Opcode.OP_ATHROW -> stack.clear()
         Opcode.OP_CHECKCAST -> {}
 
@@ -160,7 +183,7 @@ class StackMapTableMaker {
           println("    TEH JUMP to $ind")
           frames[ind].needToBuild(true)
           frames[ind].stack(stack.toList())
-          frames[ind].locals(localVariables.toList())
+          frames[ind].locals(currentVariables.toList())
         }
 
         Opcode.OP_GOTO -> {
@@ -168,7 +191,7 @@ class StackMapTableMaker {
           println("    TEH GOTO JUMP to $ind")
           frames[ind].needToBuild(true)
           frames[ind].stack(stack.toList())
-          frames[ind].locals(localVariables.toList())
+          frames[ind].locals(currentVariables.toList())
         }
 
         Opcode.OP_ILOAD_1 -> stack.addLast(IntegerVti())
@@ -214,8 +237,16 @@ class StackMapTableMaker {
 
         Opcode.OP_PUTSTATIC -> stack.removeLast() // can fuck up with doubles
         Opcode.OP_RETURN -> stack.clear()
-        Opcode.OP_ALOAD -> {}
-        Opcode.OP_ASTORE -> stack.removeLast()
+        Opcode.OP_ASTORE -> {
+          stack.removeLast()
+          val op = operations[i] as OperationWithIndex
+
+          if (currentVariables.size <= op.index.toInt()) {
+            currentVariables.add(op.valueInfo!!)
+            print("    CurrentVarsSize: ${currentVariables.size}")
+            print("    ASTORE INDEX:    ${op.index.toInt()}")
+          }
+        }
       }
 
       print("    Stack: ")
@@ -235,10 +266,6 @@ class StackMapTableMaker {
 
     var one = 0
     for ((i, fb) in frameBuilders.withIndex()) {
-      if (i == 0) {
-        continue
-      }
-
       if (fb.toBuild) {
         val frameOffset = offsets[i] - lastOffset - one
         res.add(fb.offsetDelta(frameOffset.toShort()).build())
@@ -269,31 +296,10 @@ class StackMapTableMaker {
     return res
   }
 
-//  private fun makeJumpTable(ops: List<Operation>): List<List<Int>> {
-//    val jumpTable = mutableListOf<List<Int>>()
-//
-//    for ((ind, op) in ops.withIndex()) {
-//      when (opType(op)) {
-//        OpType.RETURN_OP -> jumpTable.add(listOf())
-//        OpType.JUMP_OP -> jumpTable.add(listOf((op as ControlFlowOperation).getJumpTo()))
-//        OpType.SEQUENTIAL_OP -> jumpTable.add(listOf())
-//      }
-//    }
-//
-//    return jumpTable
-//  }
-
-//  private fun opType(op: Operation) = when (op.opcode) {
-//    Opcode.OP_RETURN -> OpType.RETURN_OP
-//    Opcode.OP_IRETURN -> OpType.RETURN_OP
-//    Opcode.OP_IFEQ -> OpType.JUMP_OP
-//    Opcode.OP_IFNE -> OpType.JUMP_OP
-//    Opcode.OP_ARETURN -> OpType.RETURN_OP
-//    Opcode.OP_ATHROW -> OpType.RETURN_OP
-//    else -> OpType.SEQUENTIAL_OP
-//  }
-
-  private fun composeArrayOfLocalVariables(methodInfo: MethodInfo, thisClassInfo: ClassInfo): List<VerificationTypeInfo> {
+  private fun composeArrayOfLocalVariables(
+    methodInfo: MethodInfo,
+    thisClassInfo: ClassInfo
+  ): List<VerificationTypeInfo> {
     val res = mutableListOf<VerificationTypeInfo>()
 
     if (!methodInfo.isStatic) {
@@ -313,14 +319,8 @@ class StackMapTableMaker {
 
     // Nope, it didn't cut it.
 
-    for (variable in methodInfo.localVariables) {
-      res.add(variable)
+    // Actually, it did. Array of local variables actually changes during runtime.
 
-      if (variable is DoubleVti) {
-        res.add(EmptyVti())
-      }
-    }
-
-    return res
+    return res.toList()
   }
 }
