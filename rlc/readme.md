@@ -8,14 +8,8 @@ but it holds a special place in my heart because it is my birthplace.
 My Lox Compiler compiles to JVM bytecode.
 It's not objectively special, but it's my first JVM backend compiler, so it's special to me.
 
-## Features (20/36)
+## Features (18/29)
 The brief list of features I want to implement
-
-### Meta
-- [x] The compiler should be a single executable file
-- [x] The result of successful compilation should be a single executable jar file
-- [ ] Run Lox testsuite for RLC
-- [ ] Set up CI/CD pipeline to run tests and testsuite before merge
 
 ### Data Types
 - [x] Booleans
@@ -56,9 +50,18 @@ The brief list of features I want to implement
 - [ ] Inheritance
 - [ ] Super
 
+## Extra (2 / 7)
+
+### Meta
+- [x] The compiler should be a single executable file
+- [x] The result of successful compilation should be a single executable jar file
+- [ ] Run Lox testsuite for RLC
+- [ ] Set up CI/CD pipeline to run tests and testsuite before merge
+
 ### Optimizations
 - [ ] Calculation of Constant Expressions
 - [ ] Data Unwrapping
 - [ ] NilChecker
+- [ ] Call-site specialization
 
 Maybe there will be more optimizations

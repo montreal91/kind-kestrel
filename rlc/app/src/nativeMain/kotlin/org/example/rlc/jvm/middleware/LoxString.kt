@@ -19,7 +19,6 @@ import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.toUtf8Value
-import kotlin.math.max
 
 internal fun loxStringCf() = ClassFile(
   thisClassInfo = loxStringClassInfo,

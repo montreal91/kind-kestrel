@@ -1,0 +1,24 @@
+
+fun printKek() {
+  print "KEK!";
+}
+
+fun printArg(arg) {
+  print arg;
+}
+
+fun printAndAdd(x, y) {
+  print x;
+  print y;
+  return x + y;
+}
+
+fun dummyReturn() {
+  print "DUMMY";
+  return;
+}
+
+print printKek;
+print printArg;
+print printAndAdd;
+print dummyReturn;

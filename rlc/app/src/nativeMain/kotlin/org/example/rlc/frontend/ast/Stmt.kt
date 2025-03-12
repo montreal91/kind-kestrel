@@ -23,4 +23,14 @@ class ForStmt(
   val body: Stmt
 ): Stmt()
 
+class FunDeclStmt(
+  val identifier: Token,
+  val parameters: Array<Token>,
+  val body: BlockStmt
+): Stmt() {
+  val arity: Int get() = parameters.size
+}
+
+class ReturnStmt(val expr: Expr?): Stmt()
+
 typealias Ast = List<Stmt>

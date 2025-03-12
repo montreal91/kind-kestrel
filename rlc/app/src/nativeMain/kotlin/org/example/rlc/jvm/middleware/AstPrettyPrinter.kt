@@ -7,12 +7,14 @@ import org.example.rlc.frontend.ast.BlockStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.ForStmt
+import org.example.rlc.frontend.ast.FunDeclStmt
 import org.example.rlc.frontend.ast.Grouping
 import org.example.rlc.frontend.ast.IfStmt
 import org.example.rlc.frontend.ast.Variable
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
+import org.example.rlc.frontend.ast.ReturnStmt
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
@@ -35,6 +37,8 @@ class AstPrettyPrinter {
     is IfStmt -> visitIfStmt(stmt)
     is WhileStmt -> visitWhileStmt(stmt)
     is ForStmt -> visitForStmt(stmt)
+    is FunDeclStmt -> visitFunDeclStmt(stmt)
+    is ReturnStmt -> visitReturnStmt(stmt)
   }
 
   private fun visitPrintStmt(stmt: PrintStmt) {
@@ -61,6 +65,17 @@ class AstPrettyPrinter {
     depth--
   }
 
+  private fun visitReturnStmt(stmt: ReturnStmt) {
+    addIndent()
+    sb.append("RETURN")
+    stmt.expr?.let {
+      sb.append(":\n")
+      depth++
+      visitExpr(stmt.expr)
+      depth--
+    } ?: sb.append("\n")
+  }
+
   private fun visitVarDeclStmt(stmt: VarDeclStmt) {
     addIndent()
     sb.append("VAR DECL: ${stmt.variable}\n")
@@ -70,6 +85,16 @@ class AstPrettyPrinter {
       visitExpr(stmt.initializer)
       depth--
     }
+  }
+
+  private fun visitFunDeclStmt(stmt: FunDeclStmt) {
+    addIndent()
+    sb.append("FUNCTION: ${stmt.identifier.value} (")
+    sb.append(stmt.parameters.joinToString(separator = ", ") { it.value })
+    sb.append(")\n")
+    depth++
+    visitBlockStmt(stmt.body)
+    depth--
   }
 
   private fun visitIfStmt(stmt: IfStmt) {
