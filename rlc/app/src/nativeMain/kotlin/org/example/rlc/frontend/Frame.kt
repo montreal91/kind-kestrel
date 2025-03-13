@@ -7,27 +7,22 @@ class Frame(private val type: Type, private var index: Int) {
 
   private val frameVariables = mutableMapOf<String, Int>()
 
-  init {
-    if (type == Type.FUNCTION) {
-      index = 1
-    }
-  }
-
   internal fun containsIdentifier(identifier: String) = frameVariables.containsKey(identifier)
   internal fun getIndex() = index
   internal fun isGlobal() = type == Type.GLOBAL
   internal fun isFunction() = type == Type.FUNCTION
 
   internal fun declareVariable(identifier: String) {
+    println("Declared variable: $identifier. Resolved index: $index")
     frameVariables[identifier] = index
     index++
   }
 
   internal fun getResolvedIndex(identifier: String): Int {
-    return frameVariables.getOrElse(identifier, this::default)
+    return frameVariables.getOrElse(identifier, this::unresolvedIndex)
   }
 
-  internal fun default(): Int {
+  private fun unresolvedIndex(): Int {
     return -1
   }
 }

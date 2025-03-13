@@ -71,6 +71,8 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   private val generatedCallables = mutableMapOf<Int, ClassFile>()
 
   fun convert(roots: Ast): List<ClassFile> {
+    println("__________________________________")
+    println("The Translation stage started.\n")
     roots.forEach(this::visitStmt)
     handleCallables()
     finalizeClass()
@@ -79,7 +81,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
 
   private fun handleCallables() {
     if (generatedCallables.isNotEmpty()) {
-      println("Generating Basic Lox Callable.")
+      classes.add(generateLoxBasicCallable())
     }
 
     classes.addAll(generatedCallables.values)
@@ -176,29 +178,42 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   }
 
   private fun visitFunDeclStmt(stmt: FunDeclStmt) {
-    println("Function: ${stmt.identifier.value} has arity: ${stmt.arity}") // Delete before merge
     val outerCode = currentCode
     currentCode = mutableListOf()
 
     visitBlockStmt(stmt.body)
 
+    if (currentCode.isEmpty() || currentCode.last().opcode != Opcode.OP_ARETURN) {
+      compileNil()
+      currentCode.add(SimpleOperation(Opcode.OP_ARETURN))
+    }
+
     val function = generateLoxFunction(stmt.identifier.value, stmt.arity, currentCode)
     classes.add(function)
-
-    val resolution = resolutionTable.get(stmt.uid)
-    println("$resolution")  // Delete before merge
-
-    // TODO:
-    //   generate code for the instantiation
-    //   put it on the stack
-    //   save it in local or global variable
-
 
     if (!generatedCallables.containsKey(stmt.arity)) {
       generatedCallables[stmt.arity] = generateAbstractCallable(stmt.arity)
     }
 
     currentCode = outerCode
+
+    val instantiationCode = listOf(
+      ShortConstantOperation(Opcode.OP_NEW, function.thisClassInfo, ObjectVti(function.thisClassInfo)),
+      SimpleOperation(Opcode.OP_DUP),
+      ShortConstantOperation(
+        Opcode.OP_INVOKE_SPECIAL,
+        generateLoxFunctionConstructorInfo("LoxFunction${stmt.identifier.value}"))
+    )
+
+    currentCode.addAll(instantiationCode)
+
+    when (val resolution = resolutionTable.get(stmt.uid)) {
+      is GlobalVariable -> declGlobalVariable(resolution)
+      is LocalVariable -> storeLocalVariable(resolution)
+      UnresolvedVariable -> throw IllegalStateException(
+        "Variable ${stmt.identifier} is unresolved, but expected to be resolved"
+      )
+    }
   }
 
   private fun visitIfStatement(stmt: IfStmt) {
@@ -602,4 +617,18 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       returnTypeInfo = ObjectVti(loxObjectClassInfo, isArray = false)
     )
   }
+
+  // Maybe I should put all such functions to some other place later.
+  private fun generateLoxFunctionConstructorInfo(className: String) = MethodRefInfo(
+    label = "${className}.\"<init>\":()V",
+    classInfo = ClassInfo(className),
+    nameAndType = NameAndTypeInfo(
+      label = "\"<init>\":()V",
+      name = "<init>".toUtf8Value(),
+      descriptor = "()V".toUtf8Value(),
+    ),
+    argsSize = 1,
+    returnSize = 0,
+    returnTypeInfo = EmptyVti(),
+  )
 }

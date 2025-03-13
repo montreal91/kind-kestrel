@@ -29,7 +29,7 @@ class CodeAttribute(
   )
 
   val allAttributes: List<AttributeInfo> get() = attributes + computedAttributes
-  val maxLocals: Short get() = max(argsSize, _maxLocals).toShort()
+  val maxLocals: Short get() = max(argsSize, _maxLocals + argsSize).toShort()
   val maxStack: Short get() = _maxStack.toShort()
 
   fun addAttribute(attribute: AttributeInfo) = computedAttributes.add(attribute)
@@ -42,7 +42,7 @@ class CodeAttribute(
     var res = 0
 
     for (operation in code) {
-      res = max(res, opToLocalRef(operation.opcode))
+      res = max(res, opToLocalRef(operation))
     }
 
     return res
@@ -62,7 +62,7 @@ class CodeAttribute(
     return res
   }
 
-  private fun opToLocalRef(operation: Opcode) = when (operation) {
+  private fun opToLocalRef(operation: Operation) = when (operation.opcode) {
     Opcode.OP_ACONST_NULL -> 0
     Opcode.OP_ALOAD_0 -> 1
     Opcode.OP_ALOAD_1 -> 2
@@ -108,7 +108,9 @@ class CodeAttribute(
     Opcode.OP_PUTSTATIC -> 0
     Opcode.OP_RETURN -> 0
     Opcode.OP_GOTO -> 0
-    Opcode.OP_ALOAD -> 0
-    Opcode.OP_ASTORE -> 0
+    Opcode.OP_ASTORE, Opcode.OP_ALOAD -> {
+      val typedOp = operation as OperationWithIndex
+      typedOp.index + 1
+    }
   }
 }

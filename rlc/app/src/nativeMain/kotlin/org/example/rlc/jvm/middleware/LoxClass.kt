@@ -43,6 +43,8 @@ import org.example.rlc.jvm.ir.toUtf8Value
  * ```
  */
 internal fun loxClass() = ClassFile(
+  // This class feels redundant in the JVM environment.
+  // But let's keep it until classes are actually implemented.
   thisClassInfo = loxClassInfo,
   superClassInfo = javaLangObjectClassInfo,
   accessFlagList = listOf(ClassAccessFlags.SUPER),

@@ -35,6 +35,8 @@ class Resolver {
   val hasErrors = errors.isNotEmpty()
 
   fun resolve(program: Ast): VariableResolutionTable {
+    println("__________________________________")
+    println("Variable resolution stage started.\n")
     program.forEach(this::visitStmt)
 
     return resolutionTable
@@ -65,6 +67,7 @@ class Resolver {
   }
 
   private fun visitBlockStmt(stmt: BlockStmt) {
+    println("Resolver visiting a block statement.")
     frameStack.addNewFrame(Frame.Type.BLOCK)
     stmt.statements.forEach(this::visitStmt)
     frameStack.popFrame()
@@ -85,6 +88,8 @@ class Resolver {
   private fun visitVarDeclStmt(stmt: VarDeclStmt) {
     checkVariable(stmt.token)
     resolveVariableDeclaration(stmt.uid, stmt.variable)
+
+    stmt.initializer?.let(this::visitExpr)
   }
 
   private fun visitFunDeclStmt(stmt: FunDeclStmt) {
@@ -128,6 +133,7 @@ class Resolver {
   private fun visitLiteral() {}
 
   private fun visitBinary(expr: Binary) {
+    println("Resolver visiting binary op: ${expr.operator}")
     visitExpr(expr.left)
     visitExpr(expr.right)
   }
@@ -137,6 +143,7 @@ class Resolver {
   }
 
   private fun visitIdentifier(expr: Variable) {
+    println("Resolver visiting identifier: ${expr.variable}")
     resolutionTable.set(expr.uid, resolveVariable(expr.variable))
   }
 
@@ -156,6 +163,7 @@ class Resolver {
 
   private fun resolveVariable(identifier: String): VariableResolutionResult =
     if (frameStack.existInAllFrames(identifier)) {
+      println("Resolved to be local: $identifier")
       LocalVariable(frameStack.lookup(identifier))
     } else {
       GlobalVariable(name = identifier)

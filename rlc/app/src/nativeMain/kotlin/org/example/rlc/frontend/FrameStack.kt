@@ -11,7 +11,7 @@ internal class FrameStack {
     val newIndex = when(type) {
       Frame.Type.GLOBAL -> 1
       Frame.Type.BLOCK -> frameStack.last().getIndex()
-      Frame.Type.FUNCTION -> 1
+      Frame.Type.FUNCTION -> 0
     }
 
     frameStack.addLast(Frame(type, newIndex))
