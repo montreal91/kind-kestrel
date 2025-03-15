@@ -1,0 +1,10 @@
+fun sqr(a) {
+  return a * a;
+}
+
+fun add(a, b) {
+  return a + b;
+}
+
+print sqr(2 + 3);
+print add(5, 5);

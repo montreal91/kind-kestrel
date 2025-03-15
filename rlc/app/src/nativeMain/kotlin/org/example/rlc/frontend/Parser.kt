@@ -3,6 +3,7 @@ package org.example.rlc.frontend
 import org.example.rlc.frontend.ast.Assignment
 import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
+import org.example.rlc.frontend.ast.CallExpr
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.ForStmt
@@ -81,6 +82,8 @@ class Parser(private val tokens: List<Token>) {
   private val isLastToken: Boolean get() = index == tokens.size - 1
 
   fun parse(): List<Stmt> {
+    println("______________________")
+    println("Parsing stage started.\n")
     statements.add(mutableListOf())
     program()
     return statements.last().toList()
@@ -408,7 +411,32 @@ class Parser(private val tokens: List<Token>) {
   }
 
   private fun call(): Expr {
-    return primary()
+    println("Parsing a call")
+    var callee = primary()
+
+    while (!isLastToken && currentToken.type == Token.Type.LEFT_PAREN) {
+      consume(Token.Type.LEFT_PAREN, message = "Expected '('.")
+      val args = arguments()
+      consume(Token.Type.RIGHT_PAREN, message = "Expected ')' after call arguments.")
+      callee = CallExpr(callee, args)
+    }
+
+    return callee
+  }
+
+  private fun arguments(): List<Expr> {
+    println("Parsing arguments.")
+    val res = mutableListOf<Expr>()
+
+    while (!isLastToken && currentToken.type != Token.Type.RIGHT_PAREN) {
+      res.add(expression())
+
+      if (currentToken.type == Token.Type.COMMA) {
+        consume(Token.Type.COMMA, message = "Expected ','.")
+      }
+    }
+
+    return res
   }
 
   private fun primary(): Expr {

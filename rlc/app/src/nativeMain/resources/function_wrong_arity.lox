@@ -1,0 +1,7 @@
+
+fun printAndAdd(a, b) {
+  print a + b;
+  return a + b;
+}
+
+print printAndAdd(printAndAdd(1, 2));

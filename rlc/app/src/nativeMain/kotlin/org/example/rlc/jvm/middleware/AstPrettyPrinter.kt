@@ -4,13 +4,13 @@ import org.example.rlc.frontend.ast.Assignment
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
+import org.example.rlc.frontend.ast.CallExpr
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.ForStmt
 import org.example.rlc.frontend.ast.FunDeclStmt
 import org.example.rlc.frontend.ast.Grouping
 import org.example.rlc.frontend.ast.IfStmt
-import org.example.rlc.frontend.ast.Variable
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
@@ -18,6 +18,7 @@ import org.example.rlc.frontend.ast.ReturnStmt
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
+import org.example.rlc.frontend.ast.Variable
 import org.example.rlc.frontend.ast.WhileStmt
 
 class AstPrettyPrinter {
@@ -164,6 +165,7 @@ class AstPrettyPrinter {
     is Logical -> visitLogical(expr)
     is Unary -> visitUnary(expr)
     is Assignment -> visitAssignment(expr)
+    is CallExpr -> visitCallExpr(expr)
   }
 
   private fun visitBinary(expr: Binary) {
@@ -218,6 +220,21 @@ class AstPrettyPrinter {
     depth++
     visitExpr(expr.left)
     visitExpr(expr.right)
+    depth--
+  }
+
+  private fun visitCallExpr(expr: CallExpr) {
+    addIndent()
+    sb.append("CALL:\n")
+    depth++
+    visitExpr(expr.callee)
+    depth--
+    if (expr.args.isNotEmpty()) {
+      addIndent()
+      sb.append("ARGUMENTS:\n")
+    }
+    depth++
+    expr.args.forEach(this::visitExpr)
     depth--
   }
 

@@ -1,10 +1,12 @@
 package org.example.rlc.jvm.middleware
 
+import kotlin.uuid.ExperimentalUuidApi
 import org.example.rlc.frontend.Token
 import org.example.rlc.frontend.ast.Assignment
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
+import org.example.rlc.frontend.ast.CallExpr
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.ForStmt
@@ -50,7 +52,6 @@ import org.example.rlc.jvm.ir.VerificationTypeInfo
 import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.loxMainClassName
 import org.example.rlc.jvm.ir.toUtf8Value
-import kotlin.uuid.ExperimentalUuidApi
 
 
 @OptIn(ExperimentalUuidApi::class)
@@ -142,6 +143,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     is Unary -> visitUnary(expr)
     is Variable -> visitVariable(expr)
     is Assignment -> visitAssignment(expr)
+    is CallExpr -> TODO()
   }
 
   private fun visitExprStmt(exprStmt: ExprStmt) {
