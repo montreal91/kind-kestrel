@@ -18,8 +18,6 @@ import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
 import org.example.rlc.jvm.ir.VerificationTypeInfo
 import org.example.rlc.jvm.ir.javaLangStringObjectVti
-import org.example.rlc.jvm.ir.loxDouble
-import org.example.rlc.jvm.ir.loxFunction
 
 private val loxObjectVti = ObjectVti(loxObjectClassInfo)
 

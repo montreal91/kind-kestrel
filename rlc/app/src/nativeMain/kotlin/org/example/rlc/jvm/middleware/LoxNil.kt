@@ -41,7 +41,7 @@ private fun loxNilConstructor(): MethodInfo {
 
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETSTATIC, loxNilClass, ObjectVti(loxNilClassInfo, isArray = false)),
+    ShortConstantOperation(Opcode.OP_GETSTATIC, loxNilClass, ObjectVti(loxNilClassInfo)),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxObjectConstructor),
     SimpleOperation(Opcode.OP_RETURN)
   )
