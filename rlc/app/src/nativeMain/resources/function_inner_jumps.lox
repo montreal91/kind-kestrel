@@ -1,0 +1,26 @@
+
+fun someIfs(arg) {
+  var cond = arg == true;
+  if (cond) {
+    print "Arg is true";
+  } else {
+    print "Arg is false";
+  }
+}
+
+fun doWhile(k) {
+  var i = 0;
+  while (i < k) {
+    print "Keep doing what you doing while K";
+  }
+}
+
+fun doFor(k) {
+  for (var i = 0; i < k; i = i + 1) {
+    print "Keep doing what you doing for K";
+  }
+}
+
+print someIfs;
+print doWhile;
+print doFor;

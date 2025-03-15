@@ -8,11 +8,13 @@ import org.example.rlc.frontend.ast.BlockStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.ForStmt
+import org.example.rlc.frontend.ast.FunDeclStmt
 import org.example.rlc.frontend.ast.Grouping
 import org.example.rlc.frontend.ast.IfStmt
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
+import org.example.rlc.frontend.ast.ReturnStmt
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
@@ -63,14 +65,26 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     loxStringCf(),
     loxRuntimeError(),
   )
-  private val currentCode = mutableListOf<Operation>()
+  private var currentCode = mutableListOf<Operation>()
   private val methodRefs = mutableMapOf<Token.Type, MethodRefInfo>()
   private val localVariables = mutableListOf<VerificationTypeInfo>()
+  private val generatedCallables = mutableMapOf<Int, ClassFile>()
 
   fun convert(roots: Ast): List<ClassFile> {
+    println("__________________________________")
+    println("The Translation stage started.\n")
     roots.forEach(this::visitStmt)
+    handleCallables()
     finalizeClass()
     return classes.toList()
+  }
+
+  private fun handleCallables() {
+    if (generatedCallables.isNotEmpty()) {
+      classes.add(generateLoxBasicCallable())
+    }
+
+    classes.addAll(generatedCallables.values)
   }
 
   private fun finalizeClass() {
@@ -116,6 +130,8 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     is IfStmt -> visitIfStatement(stmt)
     is WhileStmt -> visitWhileStmt(stmt)
     is ForStmt -> visitForStmt(stmt)
+    is FunDeclStmt -> visitFunDeclStmt(stmt)
+    is ReturnStmt -> visitReturnStmt(stmt)
   }
 
   private fun visitExpr(expr: Expr) = when (expr) {
@@ -140,6 +156,11 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, printMethodRef))
   }
 
+  private fun visitReturnStmt(stmt: ReturnStmt) {
+    stmt.expr?.let(this::visitExpr) ?: compileNil()
+    currentCode.add(SimpleOperation(Opcode.OP_ARETURN))
+  }
+
   private fun visitBlockStmt(stmt: BlockStmt) {
     stmt.statements.forEach(this::visitStmt)
   }
@@ -152,6 +173,45 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       is GlobalVariable -> declGlobalVariable(resolution)
       UnresolvedVariable -> throw IllegalStateException(
         "Variable ${stmt.variable} is unresolved, but expected to be resolved"
+      )
+    }
+  }
+
+  private fun visitFunDeclStmt(stmt: FunDeclStmt) {
+    val outerCode = currentCode
+    currentCode = mutableListOf()
+
+    visitBlockStmt(stmt.body)
+
+    if (currentCode.isEmpty() || currentCode.last().opcode != Opcode.OP_ARETURN) {
+      compileNil()
+      currentCode.add(SimpleOperation(Opcode.OP_ARETURN))
+    }
+
+    val function = generateLoxFunction(stmt.identifier.value, stmt.arity, currentCode)
+    classes.add(function)
+
+    if (!generatedCallables.containsKey(stmt.arity)) {
+      generatedCallables[stmt.arity] = generateAbstractCallable(stmt.arity)
+    }
+
+    currentCode = outerCode
+
+    val instantiationCode = listOf(
+      ShortConstantOperation(Opcode.OP_NEW, function.thisClassInfo, ObjectVti(function.thisClassInfo)),
+      SimpleOperation(Opcode.OP_DUP),
+      ShortConstantOperation(
+        Opcode.OP_INVOKE_SPECIAL,
+        generateLoxFunctionConstructorInfo("LoxFunction${stmt.identifier.value}"))
+    )
+
+    currentCode.addAll(instantiationCode)
+
+    when (val resolution = resolutionTable.get(stmt.uid)) {
+      is GlobalVariable -> declGlobalVariable(resolution)
+      is LocalVariable -> storeLocalVariable(resolution)
+      UnresolvedVariable -> throw IllegalStateException(
+        "Variable ${stmt.identifier} is unresolved, but expected to be resolved"
       )
     }
   }
@@ -557,4 +617,18 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       returnTypeInfo = ObjectVti(loxObjectClassInfo, isArray = false)
     )
   }
+
+  // Maybe I should put all such functions to some other place later.
+  private fun generateLoxFunctionConstructorInfo(className: String) = MethodRefInfo(
+    label = "${className}.\"<init>\":()V",
+    classInfo = ClassInfo(className),
+    nameAndType = NameAndTypeInfo(
+      label = "\"<init>\":()V",
+      name = "<init>".toUtf8Value(),
+      descriptor = "()V".toUtf8Value(),
+    ),
+    argsSize = 1,
+    returnSize = 0,
+    returnTypeInfo = EmptyVti(),
+  )
 }

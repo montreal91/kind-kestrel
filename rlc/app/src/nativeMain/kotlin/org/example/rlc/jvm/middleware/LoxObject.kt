@@ -23,6 +23,7 @@ import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.loxBoolean
 import org.example.rlc.jvm.ir.loxClassClassName
 import org.example.rlc.jvm.ir.loxDouble
+import org.example.rlc.jvm.ir.loxFunction
 import org.example.rlc.jvm.ir.loxNil
 import org.example.rlc.jvm.ir.loxString
 import org.example.rlc.jvm.ir.toUtf8Value
@@ -56,7 +57,8 @@ internal fun loxObjectCf() = ClassFile(
     loxDoubleClass(),
     loxNilClass(),
     loxBooleanClass(),
-    loxStringClass()
+    loxStringClass(),
+    loxFunctionClass(),
   ),
   methodList = listOf(
     loxObjectConstructor(),
@@ -95,6 +97,12 @@ private fun loxBooleanClass() = FieldInfo(
 private fun loxStringClass() = FieldInfo(
   accessFlagList = listOf(FieldAccessFlags.STATIC, FieldAccessFlags.FINAL),
   fieldName = "LOX_STRING_CLASS".toUtf8Value(),
+  fieldDescriptor = loxClassDescriptor,
+)
+
+private fun loxFunctionClass() = FieldInfo(
+  accessFlagList = listOf(FieldAccessFlags.STATIC, FieldAccessFlags.FINAL),
+  fieldName = "LOX_FUNCTION_CLASS".toUtf8Value(),
   fieldDescriptor = loxClassDescriptor,
 )
 
@@ -178,6 +186,12 @@ private fun loxObjectStaticInitializer(): MethodInfo {
     ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(loxString), javaLangStringObjectVti),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxClassConstructor),
     ShortConstantOperation(Opcode.OP_PUTSTATIC, loxStringClassField),
+
+    ShortConstantOperation(Opcode.OP_NEW, loxClassInfo, loxClassVti),
+    SimpleOperation(Opcode.OP_DUP),
+    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(loxFunction), javaLangStringObjectVti),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxClassConstructor),
+    ShortConstantOperation(Opcode.OP_PUTSTATIC, generateLoxClassFieldRef("LOX_FUNCTION_CLASS")),
 
     SimpleOperation(Opcode.OP_RETURN),
   )

@@ -1,30 +1,36 @@
 package org.example.rlc.frontend
 
 internal class FrameStack {
-  private val frameStack = ArrayDeque<MutableMap<String, Int>>()
-  private var index = 0
+  private val frameStack = ArrayDeque<Frame>()
 
   init {
-    frameStack.addLast(mutableMapOf())
+    frameStack.addLast(Frame(type = Frame.Type.GLOBAL, index = 0))
   }
 
-  internal fun addNewFrame() = frameStack.addLast(mutableMapOf())
+  internal fun addNewFrame(type: Frame.Type) {
+    val newIndex = when(type) {
+      Frame.Type.GLOBAL -> 1
+      Frame.Type.BLOCK -> frameStack.last().getIndex()
+      Frame.Type.FUNCTION -> 0
+    }
+
+    frameStack.addLast(Frame(type, newIndex))
+  }
 
   internal fun popFrame() = frameStack.removeLast()
 
   internal fun existInCurrentFrame(identifier: String)
-      = frameStack.last().containsKey(identifier)
+      = frameStack.last().containsIdentifier(identifier)
 
-  internal fun declareVariable(identifier: String) {
-    frameStack.last()[identifier] = index
-    index++
-  }
+  internal fun declareVariable(identifier: String)
+      = frameStack.last().declareVariable(identifier)
 
-  internal fun isGlobal() = frameStack.size == 1
+
+  internal fun isGlobal() = frameStack.last().isGlobal()
 
   internal fun existInAllFrames(identifier: String): Boolean {
     for (frame in frameStack) {
-      if (frame.containsKey(identifier)) {
+      if (frame.containsIdentifier(identifier)) {
         return true
       }
     }
@@ -34,8 +40,8 @@ internal class FrameStack {
 
   internal fun lookup(identifier: String): Int {
     for (frame in frameStack.reversed()) {
-      if (frame.containsKey(identifier)) {
-        return frame[identifier]!!
+      if (frame.containsIdentifier(identifier)) {
+        return frame.getResolvedIndex(identifier)
       }
     }
 

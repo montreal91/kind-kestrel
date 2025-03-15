@@ -6,11 +6,13 @@ import org.example.rlc.frontend.ast.BlockStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.ForStmt
+import org.example.rlc.frontend.ast.FunDeclStmt
 import org.example.rlc.frontend.ast.Grouping
 import org.example.rlc.frontend.ast.IfStmt
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
+import org.example.rlc.frontend.ast.ReturnStmt
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
@@ -98,6 +100,7 @@ class Parser(private val tokens: List<Token>) {
     try {
       when (currentToken.type) {
         Token.Type.VAR -> varDecl()
+        Token.Type.FUN -> funDecl()
         else -> statement()
       }
     } catch (e: ParserException) {
@@ -127,13 +130,51 @@ class Parser(private val tokens: List<Token>) {
     statements.last().add(decl)
   }
 
+  private fun funDecl() {
+    consume(Token.Type.FUN, message = "Expect 'fun'.")
+    function()
+  }
+
   private fun statement() = when (currentToken.type) {
     Token.Type.PRINT -> printStatement()
     Token.Type.LEFT_BRACE -> block()
     Token.Type.IF -> ifStmt()
     Token.Type.WHILE -> whileStmt()
     Token.Type.FOR -> forStmt()
+    Token.Type.RETURN -> returnStatement()
     else -> exprStatement()
+  }
+
+  private fun function() {
+    consume(Token.Type.IDENTIFIER, message = "Expect identifier after 'fun'.")
+    val identifier = previous
+
+    consume(Token.Type.LEFT_PAREN, message = "Expect '(' after function identifier.")
+    val formalArgs = parameters()
+    consume(Token.Type.RIGHT_PAREN, message = "Expect ')' after function parameters.")
+
+    block()
+
+    val body = statements.last().removeLast()
+    val functionDecl = FunDeclStmt(identifier, formalArgs, body as BlockStmt)
+
+    statements.last().add(functionDecl)
+  }
+
+  private fun parameters(): Array<Token> {
+    val res = mutableListOf<Token>()
+    if (currentToken.type == Token.Type.IDENTIFIER) {
+      res.add(currentToken)
+      consume(Token.Type.IDENTIFIER, "Expect identifier.")
+    }
+
+    while (currentToken.type == Token.Type.COMMA && !isLastToken) {
+      consume(Token.Type.COMMA, message = "Expect ','.")
+      consume(Token.Type.IDENTIFIER, message = "Expect identifier after ','.")
+      res.add(previous)
+    }
+
+    return res.toTypedArray()
   }
 
   private fun block() {
@@ -242,6 +283,18 @@ class Parser(private val tokens: List<Token>) {
     val expr = expression()
     consume(Token.Type.SEMICOLON, message = "Expect ';' after value.")
     statements.last().add(ExprStmt(expr))
+  }
+
+  private fun returnStatement() {
+    consume(Token.Type.RETURN, message = "Expect return statement.")
+    var expr: Expr? = null
+
+    if (currentToken.type != Token.Type.SEMICOLON) {
+      expr = expression()
+    }
+
+    consume(Token.Type.SEMICOLON, message = "Expect ';' after value.")
+    statements.last().add(ReturnStmt(expr = expr))
   }
 
   private fun expression(): Expr {
