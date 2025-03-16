@@ -27,5 +27,6 @@ class Constant(private val type: ConstantType, private val size: Short, private 
 
     ConstantType.STRING -> "Constant String: [" + this.value.toShort() + "]"
     ConstantType.DOUBLE -> "Constant Double: [" + this.value.toHexString(HexFormat.Default) + "]"
+    ConstantType.INT -> TODO()
   }
 }

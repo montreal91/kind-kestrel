@@ -247,6 +247,8 @@ class StackMapTableMaker {
             print("    ASTORE INDEX:    ${op.index.toInt()}")
           }
         }
+
+        Opcode.OP_IF_ICMPNE -> TODO()
       }
 
       print("    Stack: ")

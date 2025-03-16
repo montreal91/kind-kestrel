@@ -112,5 +112,7 @@ class CodeAttribute(
       val typedOp = operation as OperationWithIndex
       typedOp.index + 1
     }
+
+    Opcode.OP_IF_ICMPNE -> 0
   }
 }

@@ -5,6 +5,7 @@ enum class ConstantType(val value: Byte) {
   CLASS(7.toByte()),
   DOUBLE(6.toByte()),
   FIELD_REF(9.toByte()),
+  INT(0.toByte()),
   METHOD_REF(10.toByte()),
   NAME_AND_TYPE(12.toByte()),
   STRING(8.toByte()),

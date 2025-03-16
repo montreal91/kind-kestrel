@@ -68,6 +68,9 @@ enum class Opcode(val value: Byte) {
   // Unconditional jump
   OP_GOTO(0xA7.toByte()),
 
+  // Jump if two ints on the stack are not equal
+  OP_IF_ICMPNE(0xA0.toByte()),
+
   // Push int constant 0
   OP_ICONST_0(0x3.toByte()),
 

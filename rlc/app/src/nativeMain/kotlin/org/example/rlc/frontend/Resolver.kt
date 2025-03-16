@@ -65,7 +65,7 @@ class Resolver {
     is Logical -> visitLogical(expr)
     is Unary -> visitUnary(expr)
     is Assignment -> visitAssignment(expr)
-    is CallExpr -> TODO()
+    is CallExpr -> visitCallExpr(expr)
   }
 
   private fun visitBlockStmt(stmt: BlockStmt) {
@@ -161,6 +161,11 @@ class Resolver {
   private fun visitAssignment(expr: Assignment) {
     visitExpr(expr.left)
     visitExpr(expr.right)
+  }
+
+  private fun visitCallExpr(expr: CallExpr) {
+    visitExpr(expr.callee)
+    expr.args.forEach(this::visitExpr)
   }
 
   private fun resolveVariable(identifier: String): VariableResolutionResult =

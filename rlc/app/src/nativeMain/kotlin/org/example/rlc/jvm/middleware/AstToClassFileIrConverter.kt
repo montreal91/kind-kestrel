@@ -36,6 +36,7 @@ import org.example.rlc.jvm.ir.ControlFlowOperation
 import org.example.rlc.jvm.ir.DoubleValue
 import org.example.rlc.jvm.ir.DoubleVti
 import org.example.rlc.jvm.ir.EmptyVti
+import org.example.rlc.jvm.ir.IntegerVti
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
 import org.example.rlc.jvm.ir.MethodRefInfo
@@ -70,6 +71,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   private val methodRefs = mutableMapOf<Token.Type, MethodRefInfo>()
   private val localVariables = mutableListOf<VerificationTypeInfo>()
   private val generatedCallables = mutableMapOf<Int, ClassFile>()
+//  private val generatedCallSites = mutableMapOf<Int, MethodInfo>()
 
   fun convert(roots: Ast): List<ClassFile> {
     println("__________________________________")
@@ -143,7 +145,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     is Unary -> visitUnary(expr)
     is Variable -> visitVariable(expr)
     is Assignment -> visitAssignment(expr)
-    is CallExpr -> TODO()
+    is CallExpr -> visitCallExpr(expr)
   }
 
   private fun visitExprStmt(exprStmt: ExprStmt) {
@@ -204,7 +206,8 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       SimpleOperation(Opcode.OP_DUP),
       ShortConstantOperation(
         Opcode.OP_INVOKE_SPECIAL,
-        generateLoxFunctionConstructorInfo("LoxFunction${stmt.identifier.value}"))
+        generateLoxFunctionConstructorInfo("LoxFunction${stmt.identifier.value}")
+      )
     )
 
     currentCode.addAll(instantiationCode)
@@ -223,10 +226,12 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
 
     currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, loxObjectTruthyMri))
     currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, loxBooleanClassInfo))
-    currentCode.add(ShortConstantOperation(
-      Opcode.OP_GETFIELD,
-      booleanValueFieldRefInfo,
-      BooleanVti())
+    currentCode.add(
+      ShortConstantOperation(
+        Opcode.OP_GETFIELD,
+        booleanValueFieldRefInfo,
+        BooleanVti()
+      )
     )
 
     val branch = ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = -1)
@@ -250,10 +255,12 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
 
     currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, loxObjectTruthyMri))
     currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, loxBooleanClassInfo))
-    currentCode.add(ShortConstantOperation(
-      Opcode.OP_GETFIELD,
-      booleanValueFieldRefInfo,
-      BooleanVti())
+    currentCode.add(
+      ShortConstantOperation(
+        Opcode.OP_GETFIELD,
+        booleanValueFieldRefInfo,
+        BooleanVti()
+      )
     )
 
     val exitLoop = ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = -1)
@@ -273,10 +280,12 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       visitExpr(stmt.conditionExpr)
       currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, loxObjectTruthyMri))
       currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, loxBooleanClassInfo))
-      currentCode.add(ShortConstantOperation(
-        Opcode.OP_GETFIELD,
-        booleanValueFieldRefInfo,
-        BooleanVti())
+      currentCode.add(
+        ShortConstantOperation(
+          Opcode.OP_GETFIELD,
+          booleanValueFieldRefInfo,
+          BooleanVti()
+        )
       )
 
       currentCode.add(exitLoop)
@@ -296,6 +305,45 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     exitLoop.setJumpTo(currentCode.size)
   }
 
+  private fun visitCallExpr(expr: CallExpr) {
+    println("Visiting Call Expression. ${expr.args.size}")
+    visitExpr(expr.callee)
+
+    val isCallableCheckJump = ControlFlowOperation(Opcode.OP_IFNE, jumpTo = -1)
+    val arityCheckJump = ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = -1)
+
+    currentCode.add(ShortConstantOperation(Opcode.OP_INSTANCEOF, ClassInfo(className = "LoxBasicCallable")))
+    currentCode.add(isCallableCheckJump)
+    currentCode.add(
+      ShortConstantOperation(
+        Opcode.OP_NEW,
+        loxRuntimeErrorClassInfo,
+        ObjectVti(loxRuntimeErrorClassInfo)
+      )
+    )
+
+    isCallableCheckJump.setJumpTo(currentCode.size)
+
+    currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, ClassInfo(className = "LoxBasicCallable")))
+    currentCode.add(SimpleOperation(Opcode.OP_DUP, ObjectVti(ClassInfo(className = "LoxBasicCallable"))))
+    currentCode.add(
+      ShortConstantOperation(
+        Opcode.OP_INVOKE_VIRTUAL,
+        generateArityMethodRef(className = "LoxBasicCallable")
+      )
+    )
+
+    // TODO:
+    //   Generate Int Constant from args size
+    //   If arity is equal to args size, jump to actual args calculation
+    //   Generate code for runtime error
+
+    expr.args.forEach(this::visitExpr)
+
+    // TODO:
+    //   Generate actual callable invocation.
+  }
+
   private fun visitLiteral(expr: Literal) = when (expr.type) {
     Literal.Type.NUMBER -> compileNumber(expr)
     Literal.Type.BOOLEAN -> compileBoolean(expr)
@@ -305,11 +353,14 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
 
   private fun visitVariable(expr: Variable) {
     when (val resolution = resolutionTable.get(expr.uid)) {
-      is LocalVariable -> currentCode.add(OperationWithIndex(
-        Opcode.OP_ALOAD,
-        getActualLocalVariableIndex(resolution).toByte(),
-        ObjectVti(loxObjectClassInfo)
-      ))
+      is LocalVariable -> currentCode.add(
+        OperationWithIndex(
+          Opcode.OP_ALOAD,
+          getActualLocalVariableIndex(resolution).toByte(),
+          ObjectVti(loxObjectClassInfo)
+        )
+      )
+
       is GlobalVariable -> getGlobalVariable(resolution)
       UnresolvedVariable -> throw IllegalStateException(
         "Variable ${expr.variable} is unresolved, but expected to be resolved"
@@ -435,10 +486,12 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     currentCode.add(SimpleOperation(Opcode.OP_DUP))
     currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, loxObjectTruthyMri))
     currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, loxBooleanClassInfo))
-    currentCode.add(ShortConstantOperation(
-      Opcode.OP_GETFIELD,
-      booleanValueFieldRefInfo,
-      BooleanVti())
+    currentCode.add(
+      ShortConstantOperation(
+        Opcode.OP_GETFIELD,
+        booleanValueFieldRefInfo,
+        BooleanVti()
+      )
     )
 
     val opcode = when (expr.operator.type) {
@@ -588,8 +641,21 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     )
   }
 
+//  private fun compileCallabilityCheck() {
+//    val jumpOp = ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = -1)
+//    currentCode.addAll(
+//      listOf(
+//        ShortConstantOperation(Opcode.OP_INSTANCEOF, ClassInfo(className = "LoxBasicCallable")),
+//        jumpOp,
+//      )
+//    )
+//  }
+//
+//  private fun compileCallSite(arity: Int) {
+//  }
+
   private fun getArithmeticMethodRef(operation: Token.Type): MethodRefInfo {
-    return methodRefs.getOrPut(operation) {createBinaryNumericMethodRef(operation)}
+    return methodRefs.getOrPut(operation) { createBinaryNumericMethodRef(operation) }
   }
 
   private fun createBinaryNumericMethodRef(operation: Token.Type): MethodRefInfo {
@@ -632,5 +698,20 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     argsSize = 1,
     returnSize = 0,
     returnTypeInfo = EmptyVti(),
+  )
+}
+
+private fun generateArityMethodRef(className: String): MethodRefInfo {
+  return MethodRefInfo(
+    label = "$className.arity:()I",
+    classInfo = ClassInfo(className),
+    nameAndType = NameAndTypeInfo(
+      label = "arity:()I",
+      name = "arity".toUtf8Value(),
+      descriptor = "()I".toUtf8Value()
+    ),
+    argsSize = 1,
+    returnSize = 1,
+    returnTypeInfo = IntegerVti(),
   )
 }
