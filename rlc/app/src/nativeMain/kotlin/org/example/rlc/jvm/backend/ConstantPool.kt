@@ -5,6 +5,7 @@ import org.example.rlc.jvm.ir.ConstantPoolInfo
 import org.example.rlc.jvm.ir.ConstantValue
 import org.example.rlc.jvm.ir.DoubleValue
 import org.example.rlc.jvm.ir.FieldRefInfo
+import org.example.rlc.jvm.ir.IntegerValue
 import org.example.rlc.jvm.ir.MethodRefInfo
 import org.example.rlc.jvm.ir.NameAndTypeInfo
 import org.example.rlc.jvm.ir.StringRefInfo
@@ -76,10 +77,11 @@ class ConstantPool {
       )
 
       is DoubleValue -> addDoubleConstant(constantValue)
+      is IntegerValue -> addIntegerConstant(constantValue)
 
       else -> {
         logLabels()
-        throw IllegalArgumentException("Unexpected constant value type ${constantValue.value}")
+        throw IllegalArgumentException("Unexpected constant value type ${constantValue::class.simpleName}")
       }
     }
   }
@@ -162,5 +164,15 @@ class ConstantPool {
 
     addConstant(doubleValue.label, constant)
     offset += 1
+  }
+
+  private fun addIntegerConstant(integerValue: IntegerValue) {
+    val constant = Constant(
+      integerValue.type,
+      integerValue.value.size.toShort(),
+      integerValue.value
+    )
+
+    addConstant(integerValue.label, constant)
   }
 }

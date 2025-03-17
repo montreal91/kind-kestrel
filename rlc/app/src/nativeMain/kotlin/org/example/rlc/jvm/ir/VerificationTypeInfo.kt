@@ -1,7 +1,6 @@
 package org.example.rlc.jvm.ir
 
 import org.example.rlc.jvm.middleware.javaLangStringClassInfo
-import org.example.rlc.jvm.middleware.loxClassInfo
 
 
 sealed class VerificationTypeInfo(val type: Type) {

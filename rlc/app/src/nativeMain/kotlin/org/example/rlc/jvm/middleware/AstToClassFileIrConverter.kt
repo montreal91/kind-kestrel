@@ -36,6 +36,7 @@ import org.example.rlc.jvm.ir.ControlFlowOperation
 import org.example.rlc.jvm.ir.DoubleValue
 import org.example.rlc.jvm.ir.DoubleVti
 import org.example.rlc.jvm.ir.EmptyVti
+import org.example.rlc.jvm.ir.IntegerValue
 import org.example.rlc.jvm.ir.IntegerVti
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
@@ -52,6 +53,7 @@ import org.example.rlc.jvm.ir.StringRefInfo
 import org.example.rlc.jvm.ir.VerificationTypeInfo
 import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.loxMainClassName
+import org.example.rlc.jvm.ir.loxObjectClassName
 import org.example.rlc.jvm.ir.toUtf8Value
 
 
@@ -309,39 +311,14 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     println("Visiting Call Expression. ${expr.args.size}")
     visitExpr(expr.callee)
 
-    val isCallableCheckJump = ControlFlowOperation(Opcode.OP_IFNE, jumpTo = -1)
-    val arityCheckJump = ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = -1)
-
-    currentCode.add(ShortConstantOperation(Opcode.OP_INSTANCEOF, ClassInfo(className = "LoxBasicCallable")))
-    currentCode.add(isCallableCheckJump)
-    currentCode.add(
-      ShortConstantOperation(
-        Opcode.OP_NEW,
-        loxRuntimeErrorClassInfo,
-        ObjectVti(loxRuntimeErrorClassInfo)
-      )
-    )
-
-    isCallableCheckJump.setJumpTo(currentCode.size)
-
-    currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, ClassInfo(className = "LoxBasicCallable")))
-    currentCode.add(SimpleOperation(Opcode.OP_DUP, ObjectVti(ClassInfo(className = "LoxBasicCallable"))))
-    currentCode.add(
-      ShortConstantOperation(
-        Opcode.OP_INVOKE_VIRTUAL,
-        generateArityMethodRef(className = "LoxBasicCallable")
-      )
-    )
-
-    // TODO:
-    //   Generate Int Constant from args size
-    //   If arity is equal to args size, jump to actual args calculation
-    //   Generate code for runtime error
+    currentCode.add(SimpleOperation(Opcode.OP_DUP, ObjectVti(loxObjectClassInfo)))
+    currentCode.add(ByteConstantOperation(Opcode.OP_LDC, IntegerValue(expr.args.size), IntegerVti()))
+    currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_STATIC, generateCallCheckMethodRef()))
+    currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, ClassInfo(className = "LoxCallable${expr.args.size}")))
 
     expr.args.forEach(this::visitExpr)
 
-    // TODO:
-    //   Generate actual callable invocation.
+    currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, generateCallMethodRef(expr.args.size)))
   }
 
   private fun visitLiteral(expr: Literal) = when (expr.type) {
@@ -701,17 +678,44 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   )
 }
 
-private fun generateArityMethodRef(className: String): MethodRefInfo {
+private fun generateCallCheckMethodRef(): MethodRefInfo {
+  val className = "LoxBasicCallable"
+  val functionName = "__call_check__"
   return MethodRefInfo(
-    label = "$className.arity:()I",
+    label = "$className.$functionName:(L$loxObjectClassName;I)V",
     classInfo = ClassInfo(className),
     nameAndType = NameAndTypeInfo(
-      label = "arity:()I",
-      name = "arity".toUtf8Value(),
-      descriptor = "()I".toUtf8Value()
+      label = "$functionName:(L$loxObjectClassName;I)V",
+      name = functionName.toUtf8Value(),
+      descriptor = "(L$loxObjectClassName;I)V".toUtf8Value(),
     ),
-    argsSize = 1,
+    argsSize = 2,
+    returnSize = 0,
+    returnTypeInfo = EmptyVti(),
+  )
+}
+
+private fun generateCallMethodRef(arity: Int): MethodRefInfo {
+  val className = "LoxCallable$arity"
+  val functionName = "__call__"
+
+  val sb = StringBuilder()
+  sb.append("(")
+  for (i in 0..< arity) {
+    sb.append("L$loxObjectClassName;")
+  }
+  sb.append(")L$loxObjectClassName;")
+  val signature = sb.toString()
+  return MethodRefInfo(
+    label = "$className.$functionName:${signature}",
+    classInfo = ClassInfo(className),
+    nameAndType = NameAndTypeInfo(
+      label = "$functionName:${signature}",
+      name = functionName.toUtf8Value(),
+      descriptor = signature.toUtf8Value(),
+    ),
+    argsSize = arity + 1,
     returnSize = 1,
-    returnTypeInfo = IntegerVti(),
+    returnTypeInfo = ObjectVti(loxObjectClassInfo)
   )
 }
