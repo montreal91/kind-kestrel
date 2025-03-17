@@ -68,6 +68,12 @@ enum class Opcode(val value: Byte) {
   // Unconditional jump
   OP_GOTO(0xA7.toByte()),
 
+  // Jump if two ints on the stack are equal
+  OP_IF_ICMPEQ(0x9F.toByte()),
+
+  // Jump if two ints on the stack are not equal
+  OP_IF_ICMPNE(0xA0.toByte()),
+
   // Push int constant 0
   OP_ICONST_0(0x3.toByte()),
 
@@ -138,6 +144,9 @@ enum class Opcode(val value: Byte) {
   // Push long or double from run-time constant pool (wide index)
   // Takes two bytes as an operand
   OP_LDC2_W(0x14.toByte()),
+
+  // Converts Long value to Double Value
+  OP_L2D(0x8A.toByte()),
 
   // Create new object
   // Takes two bytes as an operand

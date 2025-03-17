@@ -1,0 +1,16 @@
+
+fun fibo(n) {
+  if (n == 1 or n == 0) {
+    return n;
+  }
+  return fibo(n - 1) + fibo(n - 2);
+}
+
+var t1 = clock();
+
+print fibo(40);
+
+var t2 = clock();
+
+print "Elapsed time, seconds:";
+print t2 - t1;

@@ -247,6 +247,26 @@ class StackMapTableMaker {
             print("    ASTORE INDEX:    ${op.index.toInt()}")
           }
         }
+
+        Opcode.OP_IF_ICMPNE, Opcode.OP_IF_ICMPEQ -> {
+          if (stack.size < 2) {
+            throw IllegalStateException(
+              "To operate, opcode ${operations[i].opcode} should have at least two operations on the stack.")
+          }
+          stack.removeLast()
+          stack.removeLast()
+
+          val ind = (operations[i] as ControlFlowOperation).getJumpTo()
+          println("    TEH JUMP to $ind")
+          frames[ind].needToBuild(true)
+          frames[ind].stack(stack.toList())
+          frames[ind].locals(currentVariables.toList())
+        }
+
+        Opcode.OP_L2D -> {
+          stack.removeLast()
+          stack.addLast(DoubleVti())
+        }
       }
 
       print("    Stack: ")

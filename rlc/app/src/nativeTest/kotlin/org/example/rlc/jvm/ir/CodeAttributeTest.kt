@@ -1,11 +1,12 @@
 package org.example.rlc.jvm.ir
 
-import org.example.rlc.jvm.middleware.generateRuntimeError
-import org.example.rlc.jvm.middleware.loxDoubleClassInfo
-import org.example.rlc.jvm.middleware.loxRuntimeErrorClassInfo
-import org.example.rlc.jvm.middleware.runtimeErrorConstructorRef
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import org.example.rlc.jvm.middleware.generateRuntimeError
+import org.example.rlc.jvm.middleware.loxDoubleClassInfo
+import org.example.rlc.jvm.middleware.loxObjectClassInfo
+import org.example.rlc.jvm.middleware.loxRuntimeErrorClassInfo
+import org.example.rlc.jvm.middleware.runtimeErrorConstructorRef
 
 data class TestCase(val input: CodeAttribute, val expected: Short)
 
@@ -19,7 +20,8 @@ private fun addMethodCodeAttribute(): CodeAttribute {
       descriptor = "(LLoxDouble;)LLoxDouble;".toUtf8Value()
     ),
     argsSize = 2,
-    returnSize = 1
+    returnSize = 1,
+    returnTypeInfo = ObjectVti(ClassInfo(className = "LoxObject"))
   )
 
   val code = listOf(
@@ -31,17 +33,21 @@ private fun addMethodCodeAttribute(): CodeAttribute {
     ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 16),
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(Opcode.OP_CHECKCAST, loxDoubleClassInfo),
-    SimpleOperation(Opcode.OP_ASTORE_2),
+    SimpleOperation(Opcode.OP_ASTORE_2, ObjectVti(loxObjectClassInfo)),
     SimpleOperation(Opcode.OP_ALOAD_1),
     ShortConstantOperation(Opcode.OP_CHECKCAST, loxDoubleClassInfo),
-    SimpleOperation(Opcode.OP_ASTORE_3),
+    SimpleOperation(Opcode.OP_ASTORE_3, ObjectVti(loxObjectClassInfo)),
     SimpleOperation(Opcode.OP_ALOAD_2),
     SimpleOperation(Opcode.OP_ALOAD_3),
     ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, methodRefInfo),
     SimpleOperation(Opcode.OP_ARETURN),
-    ShortConstantOperation(Opcode.OP_NEW, loxRuntimeErrorClassInfo),
+    ShortConstantOperation(Opcode.OP_NEW, loxRuntimeErrorClassInfo, ObjectVti(loxRuntimeErrorClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
-    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(value = "Both operands should be double.")),
+    ByteConstantOperation(
+      Opcode.OP_LDC,
+      StringRefInfo(value = "Both operands should be double."),
+      ObjectVti(loxObjectClassInfo)
+    ),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, runtimeErrorConstructorRef()),
     SimpleOperation(Opcode.OP_ATHROW),
   )
@@ -49,8 +55,6 @@ private fun addMethodCodeAttribute(): CodeAttribute {
   return CodeAttribute(
     argsSize = 2,
     code = code,
-    exceptionTable = 0,
-    attributes = listOf(),
   )
 }
 
@@ -65,7 +69,8 @@ private fun staticMethodNegate(): CodeAttribute {
       descriptor = "()LLoxDouble;".toUtf8Value()
     ),
     argsSize = 2,
-    returnSize = 1
+    returnSize = 1,
+    returnTypeInfo = ObjectVti(loxObjectClassInfo)
   )
 
   val code = listOf(
@@ -81,8 +86,6 @@ private fun staticMethodNegate(): CodeAttribute {
   return CodeAttribute(
     argsSize = 1,
     code = code + generateRuntimeError("Operand should be a number."),
-    exceptionTable = 0,
-    attributes = listOf(),
   )
 }
 

@@ -1,14 +1,24 @@
 package org.example.rlc.frontend
 
+import org.example.rlc.frontend.ast.Assignment
 import org.example.rlc.frontend.ast.Binary
+import org.example.rlc.frontend.ast.BlockStmt
+import org.example.rlc.frontend.ast.CallExpr
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
+import org.example.rlc.frontend.ast.ForStmt
+import org.example.rlc.frontend.ast.FunDeclStmt
 import org.example.rlc.frontend.ast.Grouping
+import org.example.rlc.frontend.ast.IfStmt
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
+import org.example.rlc.frontend.ast.ReturnStmt
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
+import org.example.rlc.frontend.ast.VarDeclStmt
+import org.example.rlc.frontend.ast.Variable
+import org.example.rlc.frontend.ast.WhileStmt
 
 
 data class Frame(
@@ -64,6 +74,14 @@ private fun printStmt(stmt: Stmt, sb: StringBuilder) {
       sb.append(')')
       sb.append('\n')
     }
+
+    is BlockStmt -> TODO()
+    is ForStmt -> TODO()
+    is FunDeclStmt -> TODO()
+    is IfStmt -> TODO()
+    is ReturnStmt -> TODO()
+    is VarDeclStmt -> TODO()
+    is WhileStmt -> TODO()
   }
 }
 
@@ -140,6 +158,10 @@ private fun printExpr(expr: Expr, sb: StringBuilder) {
         sb.append(")")
         callStack.removeFirst()
       }
+
+      is Assignment -> TODO()
+      is CallExpr -> TODO()
+      is Variable -> TODO()
     }
   }
 }

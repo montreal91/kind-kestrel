@@ -1,10 +1,12 @@
 package org.example.rlc.jvm.middleware
 
+import kotlin.uuid.ExperimentalUuidApi
 import org.example.rlc.frontend.Token
 import org.example.rlc.frontend.ast.Assignment
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
+import org.example.rlc.frontend.ast.CallExpr
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.ForStmt
@@ -34,6 +36,9 @@ import org.example.rlc.jvm.ir.ControlFlowOperation
 import org.example.rlc.jvm.ir.DoubleValue
 import org.example.rlc.jvm.ir.DoubleVti
 import org.example.rlc.jvm.ir.EmptyVti
+import org.example.rlc.jvm.ir.IntegerValue
+import org.example.rlc.jvm.ir.IntegerVti
+import org.example.rlc.jvm.ir.LongVti
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
 import org.example.rlc.jvm.ir.MethodRefInfo
@@ -49,8 +54,8 @@ import org.example.rlc.jvm.ir.StringRefInfo
 import org.example.rlc.jvm.ir.VerificationTypeInfo
 import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.loxMainClassName
+import org.example.rlc.jvm.ir.loxObjectClassName
 import org.example.rlc.jvm.ir.toUtf8Value
-import kotlin.uuid.ExperimentalUuidApi
 
 
 @OptIn(ExperimentalUuidApi::class)
@@ -73,10 +78,63 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   fun convert(roots: Ast): List<ClassFile> {
     println("__________________________________")
     println("The Translation stage started.\n")
+    initGlobals()
     roots.forEach(this::visitStmt)
     handleCallables()
     finalizeClass()
     return classes.toList()
+  }
+
+  private fun initGlobals() {
+    initClockFunction()
+  }
+
+  private fun initClockFunction() {
+    generatedCallables[0] = generateAbstractCallable(arity = 0)
+    val code = mutableListOf<Operation>()
+
+    code.add(ShortConstantOperation(Opcode.OP_NEW, loxDoubleClassInfo, ObjectVti(loxDoubleClassInfo)))
+    code.add(SimpleOperation(Opcode.OP_DUP))
+
+    val systemTimeMillisMri = MethodRefInfo(
+      label = "java/lang/System.currentTimeMillis:()J",
+      classInfo = ClassInfo(className = "java/lang/System"),
+      argsSize = 0,
+      returnSize = 2,
+      returnTypeInfo = LongVti(),
+      nameAndType = NameAndTypeInfo(
+        label = "currentTimeMillis:()J",
+        name = "currentTimeMillis".toUtf8Value(),
+        descriptor = "()J".toUtf8Value()
+      )
+    )
+
+    val clock = "clock"
+
+    code.add(ShortConstantOperation(Opcode.OP_INVOKE_STATIC, systemTimeMillisMri))
+    code.add(SimpleOperation(Opcode.OP_L2D))
+    code.add(ShortConstantOperation(Opcode.OP_LDC2_W, DoubleValue(value = "1000.0"), DoubleVti()))
+    code.add(SimpleOperation(Opcode.OP_DDIV))
+    code.add(ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxDoubleConstructorInfo))
+    code.add(SimpleOperation(Opcode.OP_ARETURN))
+
+    classes.add(generateLoxFunction(name = clock, arity = 0, code = code))
+
+    val instantiationCode = listOf(
+      ShortConstantOperation(
+        Opcode.OP_NEW,
+        ClassInfo(className = "LoxFunction$clock"),
+        ObjectVti(ClassInfo(className = "LoxFunction$clock"))
+      ),
+      SimpleOperation(Opcode.OP_DUP),
+      ShortConstantOperation(
+        Opcode.OP_INVOKE_SPECIAL,
+        generateLoxFunctionConstructorInfo("LoxFunction$clock")
+      )
+    )
+
+    currentCode.addAll(instantiationCode)
+    declGlobalVariable(GlobalVariable(clock))
   }
 
   private fun handleCallables() {
@@ -142,6 +200,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     is Unary -> visitUnary(expr)
     is Variable -> visitVariable(expr)
     is Assignment -> visitAssignment(expr)
+    is CallExpr -> visitCallExpr(expr)
   }
 
   private fun visitExprStmt(exprStmt: ExprStmt) {
@@ -202,7 +261,8 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       SimpleOperation(Opcode.OP_DUP),
       ShortConstantOperation(
         Opcode.OP_INVOKE_SPECIAL,
-        generateLoxFunctionConstructorInfo("LoxFunction${stmt.identifier.value}"))
+        generateLoxFunctionConstructorInfo("LoxFunction${stmt.identifier.value}")
+      )
     )
 
     currentCode.addAll(instantiationCode)
@@ -221,10 +281,12 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
 
     currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, loxObjectTruthyMri))
     currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, loxBooleanClassInfo))
-    currentCode.add(ShortConstantOperation(
-      Opcode.OP_GETFIELD,
-      booleanValueFieldRefInfo,
-      BooleanVti())
+    currentCode.add(
+      ShortConstantOperation(
+        Opcode.OP_GETFIELD,
+        booleanValueFieldRefInfo,
+        BooleanVti()
+      )
     )
 
     val branch = ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = -1)
@@ -248,10 +310,12 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
 
     currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, loxObjectTruthyMri))
     currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, loxBooleanClassInfo))
-    currentCode.add(ShortConstantOperation(
-      Opcode.OP_GETFIELD,
-      booleanValueFieldRefInfo,
-      BooleanVti())
+    currentCode.add(
+      ShortConstantOperation(
+        Opcode.OP_GETFIELD,
+        booleanValueFieldRefInfo,
+        BooleanVti()
+      )
     )
 
     val exitLoop = ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = -1)
@@ -271,10 +335,12 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       visitExpr(stmt.conditionExpr)
       currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, loxObjectTruthyMri))
       currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, loxBooleanClassInfo))
-      currentCode.add(ShortConstantOperation(
-        Opcode.OP_GETFIELD,
-        booleanValueFieldRefInfo,
-        BooleanVti())
+      currentCode.add(
+        ShortConstantOperation(
+          Opcode.OP_GETFIELD,
+          booleanValueFieldRefInfo,
+          BooleanVti()
+        )
       )
 
       currentCode.add(exitLoop)
@@ -294,6 +360,20 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     exitLoop.setJumpTo(currentCode.size)
   }
 
+  private fun visitCallExpr(expr: CallExpr) {
+    println("Visiting Call Expression. ${expr.args.size}")
+    visitExpr(expr.callee)
+
+    currentCode.add(SimpleOperation(Opcode.OP_DUP, ObjectVti(loxObjectClassInfo)))
+    currentCode.add(ByteConstantOperation(Opcode.OP_LDC, IntegerValue(expr.args.size), IntegerVti()))
+    currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_STATIC, generateCallCheckMethodRef()))
+    currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, ClassInfo(className = "LoxCallable${expr.args.size}")))
+
+    expr.args.forEach(this::visitExpr)
+
+    currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, generateCallMethodRef(expr.args.size)))
+  }
+
   private fun visitLiteral(expr: Literal) = when (expr.type) {
     Literal.Type.NUMBER -> compileNumber(expr)
     Literal.Type.BOOLEAN -> compileBoolean(expr)
@@ -303,11 +383,14 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
 
   private fun visitVariable(expr: Variable) {
     when (val resolution = resolutionTable.get(expr.uid)) {
-      is LocalVariable -> currentCode.add(OperationWithIndex(
-        Opcode.OP_ALOAD,
-        getActualLocalVariableIndex(resolution).toByte(),
-        ObjectVti(loxObjectClassInfo)
-      ))
+      is LocalVariable -> currentCode.add(
+        OperationWithIndex(
+          Opcode.OP_ALOAD,
+          getActualLocalVariableIndex(resolution).toByte(),
+          ObjectVti(loxObjectClassInfo)
+        )
+      )
+
       is GlobalVariable -> getGlobalVariable(resolution)
       UnresolvedVariable -> throw IllegalStateException(
         "Variable ${expr.variable} is unresolved, but expected to be resolved"
@@ -433,10 +516,12 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     currentCode.add(SimpleOperation(Opcode.OP_DUP))
     currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, loxObjectTruthyMri))
     currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, loxBooleanClassInfo))
-    currentCode.add(ShortConstantOperation(
-      Opcode.OP_GETFIELD,
-      booleanValueFieldRefInfo,
-      BooleanVti())
+    currentCode.add(
+      ShortConstantOperation(
+        Opcode.OP_GETFIELD,
+        booleanValueFieldRefInfo,
+        BooleanVti()
+      )
     )
 
     val opcode = when (expr.operator.type) {
@@ -587,7 +672,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   }
 
   private fun getArithmeticMethodRef(operation: Token.Type): MethodRefInfo {
-    return methodRefs.getOrPut(operation) {createBinaryNumericMethodRef(operation)}
+    return methodRefs.getOrPut(operation) { createBinaryNumericMethodRef(operation) }
   }
 
   private fun createBinaryNumericMethodRef(operation: Token.Type): MethodRefInfo {
@@ -630,5 +715,47 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     argsSize = 1,
     returnSize = 0,
     returnTypeInfo = EmptyVti(),
+  )
+}
+
+private fun generateCallCheckMethodRef(): MethodRefInfo {
+  val className = "LoxBasicCallable"
+  val functionName = "__call_check__"
+  return MethodRefInfo(
+    label = "$className.$functionName:(L$loxObjectClassName;I)V",
+    classInfo = ClassInfo(className),
+    nameAndType = NameAndTypeInfo(
+      label = "$functionName:(L$loxObjectClassName;I)V",
+      name = functionName.toUtf8Value(),
+      descriptor = "(L$loxObjectClassName;I)V".toUtf8Value(),
+    ),
+    argsSize = 2,
+    returnSize = 0,
+    returnTypeInfo = EmptyVti(),
+  )
+}
+
+private fun generateCallMethodRef(arity: Int): MethodRefInfo {
+  val className = "LoxCallable$arity"
+  val functionName = "__call__"
+
+  val sb = StringBuilder()
+  sb.append("(")
+  for (i in 0..< arity) {
+    sb.append("L$loxObjectClassName;")
+  }
+  sb.append(")L$loxObjectClassName;")
+  val signature = sb.toString()
+  return MethodRefInfo(
+    label = "$className.$functionName:${signature}",
+    classInfo = ClassInfo(className),
+    nameAndType = NameAndTypeInfo(
+      label = "$functionName:${signature}",
+      name = functionName.toUtf8Value(),
+      descriptor = signature.toUtf8Value(),
+    ),
+    argsSize = arity + 1,
+    returnSize = 1,
+    returnTypeInfo = ObjectVti(loxObjectClassInfo)
   )
 }

@@ -1,8 +1,8 @@
 package org.example.rlc.frontend.ast
 
-import org.example.rlc.frontend.Token
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
+import org.example.rlc.frontend.Token
 
 @OptIn(ExperimentalUuidApi::class)
 sealed class Expr {
@@ -38,3 +38,5 @@ class Variable(val variable: String) : Expr() {
 }
 
 class Assignment(val left: Expr, val right: Expr) : Expr()
+
+class CallExpr(val callee: Expr, val args: List<Expr>) : Expr()

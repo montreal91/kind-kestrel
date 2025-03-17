@@ -1,0 +1,16 @@
+
+fun outer() {
+  print "Outer";
+
+  fun inner() {
+    print "Inner";
+  }
+
+  return inner;
+}
+
+var callable = outer;
+
+callable()();
+print "";
+(callable())();

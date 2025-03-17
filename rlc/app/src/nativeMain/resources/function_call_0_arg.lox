@@ -1,0 +1,10 @@
+
+fun ZeroArg() {
+  return "Zero";
+}
+
+fun Tolerance() {
+  return "Tolerance";
+}
+
+print ZeroArg() + " " + Tolerance();

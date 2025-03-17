@@ -63,11 +63,24 @@ class DoubleValue(
   )
 }
 
+class IntegerValue(
+  label: String,
+  value: ByteArray,
+) : ConstantValue(type = ConstantType.INT, label= label, value = value) {
+  constructor(value: Int) : this(
+    label = "${value}_IntegerValue",
+    value = intToByteArray(value)
+  )
+}
+
 private fun doubleToJvmConstant(value: Double): ByteArray {
   val bits = value.toBits() // Convert the double to its raw bits
   return ByteArray(size = 8) { i -> ((bits shr (56 - i * 8)) and 0xFF).toByte() }
 }
 
+private fun intToByteArray(value: Int): ByteArray {
+  return ByteArray(size = 4) { i -> (value shr (24 - i * 8)).toByte() }
+}
 
 class Utf8Value(
   label: String,

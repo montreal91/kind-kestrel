@@ -5,11 +5,15 @@ import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
 import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.CodeAttribute
+import org.example.rlc.jvm.ir.ControlFlowOperation
 import org.example.rlc.jvm.ir.EmptyVti
+import org.example.rlc.jvm.ir.IntegerValue
+import org.example.rlc.jvm.ir.IntegerVti
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
 import org.example.rlc.jvm.ir.MethodRefInfo
 import org.example.rlc.jvm.ir.MethodSignature
+import org.example.rlc.jvm.ir.NameAndTypeInfo
 import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.Operation
@@ -18,6 +22,7 @@ import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
 import org.example.rlc.jvm.ir.VerificationTypeInfo
 import org.example.rlc.jvm.ir.javaLangStringObjectVti
+import org.example.rlc.jvm.ir.toUtf8Value
 
 private val loxObjectVti = ObjectVti(loxObjectClassInfo)
 
@@ -45,6 +50,7 @@ internal fun generateLoxFunction(name: String, arity: Int, code: List<Operation>
     methodList = listOf(
       generateConstructor(className = "LoxCallable${arity}"),
       callMethod,
+      generateArity(arity),
       generateToString(name)
     ),
     attributeList = listOf(),
@@ -96,11 +102,19 @@ internal fun generateLoxBasicCallable(): ClassFile {
     signature = MethodSignature(listOf(), EmptyVti()),
   )
 
+  val abstractArity = MethodInfo(
+    methodName = "__arity__",
+    accessFlagList = listOf(MethodAccessFlags.ABSTRACT),
+    attributeList = emptyList(),
+    isStatic = false,
+    signature = MethodSignature(listOf(), IntegerVti())
+  )
+
   return ClassFile(
     thisClassInfo = ClassInfo(className = "LoxBasicCallable"),
     superClassInfo = loxObjectClassInfo,
     interfaceList = listOf(),
-    methodList = listOf(loxCallableConstructor),
+    methodList = listOf(loxCallableConstructor, abstractArity, checkCallFunction()),
     accessFlagList = listOf(ClassAccessFlags.ABSTRACT),
     attributeList = listOf(),
     fieldList = listOf()
@@ -128,6 +142,21 @@ private fun generateToString(name: String): MethodInfo {
   )
 }
 
+private fun generateArity(arity: Int): MethodInfo {
+  val code = mutableListOf<Operation>()
+
+  code.add(ByteConstantOperation(Opcode.OP_LDC, IntegerValue(arity), IntegerVti()))
+  code.add(SimpleOperation(Opcode.OP_IRETURN))
+
+  return MethodInfo(
+    methodName = "__arity__",
+    accessFlagList = listOf(),
+    attributeList = listOf(CodeAttribute(code = code, argsSize = 1)),
+    isStatic = false,
+    signature = MethodSignature(listOf(), IntegerVti())
+  )
+}
+
 private fun generateConstructor(className: String): MethodInfo {
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
@@ -152,5 +181,56 @@ private fun generateConstructorMethodRef(className: String): MethodRefInfo {
     argsSize = 1,
     returnSize = 0,
     returnTypeInfo = EmptyVti(),
+  )
+}
+
+private fun checkCallFunction(): MethodInfo {
+  val code = mutableListOf<Operation>()
+
+  code.add(SimpleOperation(Opcode.OP_ALOAD_0))
+  code.add(ShortConstantOperation(Opcode.OP_INSTANCEOF, ClassInfo(className = "LoxBasicCallable")))
+
+  val ifCallableJump = ControlFlowOperation(Opcode.OP_IFNE, jumpTo = -1)
+
+  code.add(ifCallableJump)
+  code.addAll(generateRuntimeError("Only functions and classes are callable."))
+
+  ifCallableJump.setJumpTo(code.size)
+
+  code.add(SimpleOperation(Opcode.OP_ALOAD_0))
+  code.add(ShortConstantOperation(Opcode.OP_CHECKCAST, ClassInfo(className = "LoxBasicCallable")))
+  code.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, generateArityMethodRef(className = "LoxBasicCallable")))
+  code.add(SimpleOperation(Opcode.OP_ILOAD_1))
+
+  val goodArityJump = ControlFlowOperation(Opcode.OP_IF_ICMPEQ, jumpTo = -1)
+
+  code.add(goodArityJump)
+  code.addAll(generateRuntimeError("Wrong argument count."))
+
+  goodArityJump.setJumpTo(code.size)
+
+  code.add(SimpleOperation(Opcode.OP_RETURN))
+
+  return MethodInfo(
+    methodName = "__call_check__",
+    accessFlagList = listOf(MethodAccessFlags.STATIC),
+    attributeList = listOf(CodeAttribute(code = code, argsSize = 2)),
+    isStatic = true,
+    signature = MethodSignature(listOf(ObjectVti(loxObjectClassInfo), IntegerVti()), EmptyVti())
+  )
+}
+
+private fun generateArityMethodRef(className: String): MethodRefInfo {
+  return MethodRefInfo(
+    label = "$className.__arity__:()I",
+    classInfo = ClassInfo(className),
+    nameAndType = NameAndTypeInfo(
+      label = "__arity__:()I",
+      name = "__arity__".toUtf8Value(),
+      descriptor = "()I".toUtf8Value()
+    ),
+    argsSize = 1,
+    returnSize = 1,
+    returnTypeInfo = IntegerVti(),
   )
 }

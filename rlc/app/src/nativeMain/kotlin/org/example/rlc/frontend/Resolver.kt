@@ -1,9 +1,12 @@
 package org.example.rlc.frontend
 
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 import org.example.rlc.frontend.ast.Assignment
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
+import org.example.rlc.frontend.ast.CallExpr
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.ForStmt
@@ -23,8 +26,6 @@ import org.example.rlc.frontend.scope.GlobalVariable
 import org.example.rlc.frontend.scope.LocalVariable
 import org.example.rlc.frontend.scope.VariableResolutionResult
 import org.example.rlc.frontend.scope.VariableResolutionTable
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 class Resolver {
@@ -64,6 +65,7 @@ class Resolver {
     is Logical -> visitLogical(expr)
     is Unary -> visitUnary(expr)
     is Assignment -> visitAssignment(expr)
+    is CallExpr -> visitCallExpr(expr)
   }
 
   private fun visitBlockStmt(stmt: BlockStmt) {
@@ -159,6 +161,11 @@ class Resolver {
   private fun visitAssignment(expr: Assignment) {
     visitExpr(expr.left)
     visitExpr(expr.right)
+  }
+
+  private fun visitCallExpr(expr: CallExpr) {
+    visitExpr(expr.callee)
+    expr.args.forEach(this::visitExpr)
   }
 
   private fun resolveVariable(identifier: String): VariableResolutionResult =

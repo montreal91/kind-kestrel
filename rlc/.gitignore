@@ -7,7 +7,7 @@ build
 
 .idea/
 *.class
-*.log
+*.log*
 *.jar
 *.zip
 

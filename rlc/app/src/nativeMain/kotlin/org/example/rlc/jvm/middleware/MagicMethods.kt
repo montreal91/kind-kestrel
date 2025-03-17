@@ -257,7 +257,6 @@ private fun makeBinaryMethodInfo(
   accessFlagList = listOf(
     MethodAccessFlags.STATIC,
     MethodAccessFlags.FINAL,
-    MethodAccessFlags.PRIVATE,
   ),
   attributeList = listOf(codeAttribute),
   isStatic = true,
@@ -273,7 +272,6 @@ private fun makeUnaryMethodInfo(methodName: String, codeAttribute: CodeAttribute
   accessFlagList = listOf(
     MethodAccessFlags.STATIC,
     MethodAccessFlags.FINAL,
-    MethodAccessFlags.PRIVATE,
   ),
   attributeList = listOf(codeAttribute),
   isStatic = true,
@@ -408,7 +406,7 @@ internal fun setGlobalVariableMethod(): MethodInfo {
 
   return MethodInfo(
     methodName = "__set_global__",
-    accessFlagList = listOf(MethodAccessFlags.STATIC, MethodAccessFlags.PRIVATE),
+    accessFlagList = listOf(MethodAccessFlags.STATIC),
     attributeList = listOf(codeAttribute),
     isStatic = true,
     signature = signature
@@ -515,7 +513,7 @@ internal fun getGlobalVariableMethod(): MethodInfo {
 
   return MethodInfo(
     methodName = "__get_global__",
-    accessFlagList = listOf(MethodAccessFlags.STATIC, MethodAccessFlags.PRIVATE),
+    accessFlagList = listOf(MethodAccessFlags.STATIC),
     attributeList = listOf(codeAttribute),
     isStatic = true,
     signature = signature
@@ -547,7 +545,7 @@ internal fun declGlobalVariableMethod(): MethodInfo {
 
   return MethodInfo(
     methodName = "__decl_global__",
-    accessFlagList = listOf(MethodAccessFlags.STATIC, MethodAccessFlags.PRIVATE),
+    accessFlagList = listOf(MethodAccessFlags.STATIC),
     attributeList = listOf(codeAttribute),
     isStatic = true,
     signature = signature
