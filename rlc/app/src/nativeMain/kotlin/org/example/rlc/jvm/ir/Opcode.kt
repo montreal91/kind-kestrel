@@ -145,6 +145,9 @@ enum class Opcode(val value: Byte) {
   // Takes two bytes as an operand
   OP_LDC2_W(0x14.toByte()),
 
+  // Converts Long value to Double Value
+  OP_L2D(0x8A.toByte()),
+
   // Create new object
   // Takes two bytes as an operand
   OP_NEW(0xBB.toByte()),

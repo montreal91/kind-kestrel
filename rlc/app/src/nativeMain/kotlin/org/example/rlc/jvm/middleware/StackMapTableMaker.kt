@@ -262,6 +262,11 @@ class StackMapTableMaker {
           frames[ind].stack(stack.toList())
           frames[ind].locals(currentVariables.toList())
         }
+
+        Opcode.OP_L2D -> {
+          stack.removeLast()
+          stack.addLast(DoubleVti())
+        }
       }
 
       print("    Stack: ")

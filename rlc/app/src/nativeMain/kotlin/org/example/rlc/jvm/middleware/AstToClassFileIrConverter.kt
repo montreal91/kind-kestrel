@@ -38,6 +38,7 @@ import org.example.rlc.jvm.ir.DoubleVti
 import org.example.rlc.jvm.ir.EmptyVti
 import org.example.rlc.jvm.ir.IntegerValue
 import org.example.rlc.jvm.ir.IntegerVti
+import org.example.rlc.jvm.ir.LongVti
 import org.example.rlc.jvm.ir.MethodAccessFlags
 import org.example.rlc.jvm.ir.MethodInfo
 import org.example.rlc.jvm.ir.MethodRefInfo
@@ -73,15 +74,67 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   private val methodRefs = mutableMapOf<Token.Type, MethodRefInfo>()
   private val localVariables = mutableListOf<VerificationTypeInfo>()
   private val generatedCallables = mutableMapOf<Int, ClassFile>()
-//  private val generatedCallSites = mutableMapOf<Int, MethodInfo>()
 
   fun convert(roots: Ast): List<ClassFile> {
     println("__________________________________")
     println("The Translation stage started.\n")
+    initGlobals()
     roots.forEach(this::visitStmt)
     handleCallables()
     finalizeClass()
     return classes.toList()
+  }
+
+  private fun initGlobals() {
+    initClockFunction()
+  }
+
+  private fun initClockFunction() {
+    generatedCallables[0] = generateAbstractCallable(arity = 0)
+    val code = mutableListOf<Operation>()
+
+    code.add(ShortConstantOperation(Opcode.OP_NEW, loxDoubleClassInfo, ObjectVti(loxDoubleClassInfo)))
+    code.add(SimpleOperation(Opcode.OP_DUP))
+
+    val systemTimeMillisMri = MethodRefInfo(
+      label = "java/lang/System.currentTimeMillis:()J",
+      classInfo = ClassInfo(className = "java/lang/System"),
+      argsSize = 0,
+      returnSize = 2,
+      returnTypeInfo = LongVti(),
+      nameAndType = NameAndTypeInfo(
+        label = "currentTimeMillis:()J",
+        name = "currentTimeMillis".toUtf8Value(),
+        descriptor = "()J".toUtf8Value()
+      )
+    )
+
+    val clock = "clock"
+
+    code.add(ShortConstantOperation(Opcode.OP_INVOKE_STATIC, systemTimeMillisMri))
+    code.add(SimpleOperation(Opcode.OP_L2D))
+    code.add(ShortConstantOperation(Opcode.OP_LDC2_W, DoubleValue(value = "1000.0"), DoubleVti()))
+    code.add(SimpleOperation(Opcode.OP_DDIV))
+    code.add(ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxDoubleConstructorInfo))
+    code.add(SimpleOperation(Opcode.OP_ARETURN))
+
+    classes.add(generateLoxFunction(name = clock, arity = 0, code = code))
+
+    val instantiationCode = listOf(
+      ShortConstantOperation(
+        Opcode.OP_NEW,
+        ClassInfo(className = "LoxFunction$clock"),
+        ObjectVti(ClassInfo(className = "LoxFunction$clock"))
+      ),
+      SimpleOperation(Opcode.OP_DUP),
+      ShortConstantOperation(
+        Opcode.OP_INVOKE_SPECIAL,
+        generateLoxFunctionConstructorInfo("LoxFunction$clock")
+      )
+    )
+
+    currentCode.addAll(instantiationCode)
+    declGlobalVariable(GlobalVariable(clock))
   }
 
   private fun handleCallables() {
@@ -617,19 +670,6 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       localVariables = listOf(ObjectVti(javaLangObjectClassInfo))
     )
   }
-
-//  private fun compileCallabilityCheck() {
-//    val jumpOp = ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = -1)
-//    currentCode.addAll(
-//      listOf(
-//        ShortConstantOperation(Opcode.OP_INSTANCEOF, ClassInfo(className = "LoxBasicCallable")),
-//        jumpOp,
-//      )
-//    )
-//  }
-//
-//  private fun compileCallSite(arity: Int) {
-//  }
 
   private fun getArithmeticMethodRef(operation: Token.Type): MethodRefInfo {
     return methodRefs.getOrPut(operation) { createBinaryNumericMethodRef(operation) }

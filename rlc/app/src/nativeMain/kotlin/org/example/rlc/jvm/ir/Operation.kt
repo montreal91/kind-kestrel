@@ -65,6 +65,7 @@ sealed class Operation(val opcode: Opcode, val valueInfo: VerificationTypeInfo?)
       Opcode.OP_ASTORE -> -1
       Opcode.OP_IF_ICMPNE -> -2
       Opcode.OP_IF_ICMPEQ -> -2
+      Opcode.OP_L2D -> 0
     }
 
   protected open fun customStackModification() = 0

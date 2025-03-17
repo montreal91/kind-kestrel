@@ -98,6 +98,7 @@ class MethodInfo(
       is EmptyVti -> res.append("V")
       is BooleanVti -> res.append("Z")
       is NullVariableVti -> {}
+      is LongVti -> res.append("J")
     }
 
     return res.toString()
@@ -111,6 +112,7 @@ class MethodInfo(
     is IntegerVti -> "I".toUtf8Value()
     is NullVariableVti -> "".toUtf8Value()
     is TopVti -> "".toUtf8Value()
+    is LongVti -> "J".toUtf8Value()
   }
 
   private fun objectVtiToClassInfo(objectVti: ObjectVti): ClassInfo {

@@ -4,7 +4,7 @@ import org.example.rlc.jvm.middleware.javaLangStringClassInfo
 
 
 sealed class VerificationTypeInfo(val type: Type) {
-  enum class Type { TOP, BOOLEAN, INTEGER, OBJECT, DOUBLE, EMPTY, NULL }
+  enum class Type { TOP, BOOLEAN, INTEGER, OBJECT, DOUBLE, EMPTY, NULL, LONG }
 
   override fun toString(): String {
     return type.toString()
@@ -19,6 +19,7 @@ sealed class VerificationTypeInfo(val type: Type) {
       Type.DOUBLE -> 3.toByte()
       Type.EMPTY -> 0.toByte()
       Type.NULL -> 5.toByte()
+      Type.LONG -> 4.toByte()
     }
 }
 
@@ -44,5 +45,7 @@ class DoubleVti : VerificationTypeInfo(Type.DOUBLE)
 class EmptyVti : VerificationTypeInfo(Type.EMPTY)
 
 class NullVariableVti : VerificationTypeInfo(Type.NULL)
+
+class LongVti : VerificationTypeInfo(Type.LONG)
 
 val javaLangStringObjectVti = ObjectVti(javaLangStringClassInfo, isArray = false)
