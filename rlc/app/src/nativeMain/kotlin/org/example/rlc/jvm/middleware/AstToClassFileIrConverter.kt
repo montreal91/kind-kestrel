@@ -22,9 +22,11 @@ import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
 import org.example.rlc.frontend.ast.Variable
 import org.example.rlc.frontend.ast.WhileStmt
+import org.example.rlc.frontend.scope.EnclosedVariable
 import org.example.rlc.frontend.scope.GlobalVariable
 import org.example.rlc.frontend.scope.LocalVariable
 import org.example.rlc.frontend.scope.UnresolvedVariable
+import org.example.rlc.frontend.scope.VariableResolutionResult
 import org.example.rlc.frontend.scope.VariableResolutionTable
 import org.example.rlc.jvm.ir.BooleanVti
 import org.example.rlc.jvm.ir.ByteConstantOperation
@@ -36,6 +38,7 @@ import org.example.rlc.jvm.ir.ControlFlowOperation
 import org.example.rlc.jvm.ir.DoubleValue
 import org.example.rlc.jvm.ir.DoubleVti
 import org.example.rlc.jvm.ir.EmptyVti
+import org.example.rlc.jvm.ir.FieldRefInfo
 import org.example.rlc.jvm.ir.IntegerValue
 import org.example.rlc.jvm.ir.IntegerVti
 import org.example.rlc.jvm.ir.LongVti
@@ -71,17 +74,25 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     loxRuntimeError(),
   )
   private var currentCode = mutableListOf<Operation>()
+  private var currentFunction = "Script"
+  private var enclosedVariables = mutableMapOf<EnclosedVariable>()
+
   private val methodRefs = mutableMapOf<Token.Type, MethodRefInfo>()
   private val localVariables = mutableListOf<VerificationTypeInfo>()
   private val generatedCallables = mutableMapOf<Int, ClassFile>()
 
   fun convert(roots: Ast): List<ClassFile> {
-    println("__________________________________")
+    println("==============================")
     println("The Translation stage started.\n")
+
     initGlobals()
     roots.forEach(this::visitStmt)
     handleCallables()
     finalizeClass()
+
+    println("The Translation stage ended.\n")
+    println("============================")
+
     return classes.toList()
   }
 
@@ -230,6 +241,10 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     when (val resolution = resolutionTable.get(stmt.uid)) {
       is LocalVariable -> storeLocalVariable(resolution)
       is GlobalVariable -> declGlobalVariable(resolution)
+      is EnclosedVariable -> {
+        println("We can't declare an enclosed variable.")
+      }
+
       UnresolvedVariable -> throw IllegalStateException(
         "Variable ${stmt.variable} is unresolved, but expected to be resolved"
       )
@@ -238,7 +253,11 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
 
   private fun visitFunDeclStmt(stmt: FunDeclStmt) {
     val outerCode = currentCode
+    val outerFunction = currentFunction
+    val outerEnclosedVariables = enclosedVariables
+
     currentCode = mutableListOf()
+    currentFunction = stmt.identifier.value
 
     visitBlockStmt(stmt.body)
 
@@ -255,21 +274,29 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     }
 
     currentCode = outerCode
+    currentFunction = outerFunction
 
-    val instantiationCode = listOf(
-      ShortConstantOperation(Opcode.OP_NEW, function.thisClassInfo, ObjectVti(function.thisClassInfo)),
-      SimpleOperation(Opcode.OP_DUP),
-      ShortConstantOperation(
-        Opcode.OP_INVOKE_SPECIAL,
-        generateLoxFunctionConstructorInfo("LoxFunction${stmt.identifier.value}")
-      )
-    )
+//    val instantiationCode = listOf(
+//      ShortConstantOperation(Opcode.OP_NEW, function.thisClassInfo, ObjectVti(function.thisClassInfo)),
+//      SimpleOperation(Opcode.OP_DUP),
+//      ShortConstantOperation(
+//        Opcode.OP_INVOKE_SPECIAL,
+//        generateLoxFunctionConstructorInfo(className = "LoxFunction${stmt.identifier.value}")
+//      )
+//    )
+    val instantiationCode =
+      generateFunctionInstantiationCode(loxObjectClassInfo, stmt.identifier.value, enclosedVariables)
 
+    enclosedVariables = outerEnclosedVariables
     currentCode.addAll(instantiationCode)
 
     when (val resolution = resolutionTable.get(stmt.uid)) {
       is GlobalVariable -> declGlobalVariable(resolution)
       is LocalVariable -> storeLocalVariable(resolution)
+      is EnclosedVariable -> {
+        println("A function can't be declared as an enclosed value.")
+      }
+
       UnresolvedVariable -> throw IllegalStateException(
         "Variable ${stmt.identifier} is unresolved, but expected to be resolved"
       )
@@ -390,6 +417,19 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
           ObjectVti(loxObjectClassInfo)
         )
       )
+
+      is EnclosedVariable -> {
+        println("Accessing an enclosed variable ${expr.variable}")
+
+        val op = ShortConstantOperation(
+          Opcode.OP_GETFIELD,
+          generateEnclosedFieldRef(className = "LoxFunction$currentFunction", fieldName = resolution.name),
+          ObjectVti(loxObjectClassInfo)
+        )
+
+        currentCode.add(SimpleOperation(Opcode.OP_ALOAD_0))
+        currentCode.add(op)
+      }
 
       is GlobalVariable -> getGlobalVariable(resolution)
       UnresolvedVariable -> throw IllegalStateException(
@@ -563,6 +603,17 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       when (val resolution = resolutionTable.get(expr.left.uid)) {
         is LocalVariable -> storeLocalVariable(resolution)
         is GlobalVariable -> setGlobalVariable(resolution)
+        is EnclosedVariable -> {
+          println("Assigning an enclosed variable ${expr.left}")
+          val op = ShortConstantOperation(
+            Opcode.OP_PUTFIELD,
+            generateEnclosedFieldRef(className = "LoxFunction$currentFunction", fieldName = resolution.name)
+          )
+
+          currentCode.add(SimpleOperation(Opcode.OP_ALOAD_0))
+          currentCode.add(op)
+        }
+
         UnresolvedVariable -> {}
       }
     }
@@ -604,10 +655,6 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     )
 
     currentCode.addAll(ops)
-  }
-
-  private fun getActualLocalVariableIndex(resolution: LocalVariable): Int {
-    return resolution.variableArrayIndex + 1
   }
 
   private fun compileString(literal: Literal) {
@@ -702,21 +749,21 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       returnTypeInfo = ObjectVti(loxObjectClassInfo, isArray = false)
     )
   }
-
-  // Maybe I should put all such functions to some other place later.
-  private fun generateLoxFunctionConstructorInfo(className: String) = MethodRefInfo(
-    label = "${className}.\"<init>\":()V",
-    classInfo = ClassInfo(className),
-    nameAndType = NameAndTypeInfo(
-      label = "\"<init>\":()V",
-      name = "<init>".toUtf8Value(),
-      descriptor = "()V".toUtf8Value(),
-    ),
-    argsSize = 1,
-    returnSize = 0,
-    returnTypeInfo = EmptyVti(),
-  )
 }
+
+// Maybe I should put all such functions to some other place later.
+private fun generateLoxFunctionConstructorInfo(className: String) = MethodRefInfo(
+  label = "${className}.\"<init>\":()V",
+  classInfo = ClassInfo(className),
+  nameAndType = NameAndTypeInfo(
+    label = "\"<init>\":()V",
+    name = "<init>".toUtf8Value(),
+    descriptor = "()V".toUtf8Value(),
+  ),
+  argsSize = 1,
+  returnSize = 0,
+  returnTypeInfo = EmptyVti(),
+)
 
 private fun generateCallCheckMethodRef(): MethodRefInfo {
   val className = "LoxBasicCallable"
@@ -741,7 +788,7 @@ private fun generateCallMethodRef(arity: Int): MethodRefInfo {
 
   val sb = StringBuilder()
   sb.append("(")
-  for (i in 0..< arity) {
+  for (i in 0..<arity) {
     sb.append("L$loxObjectClassName;")
   }
   sb.append(")L$loxObjectClassName;")
@@ -758,4 +805,57 @@ private fun generateCallMethodRef(arity: Int): MethodRefInfo {
     returnSize = 1,
     returnTypeInfo = ObjectVti(loxObjectClassInfo)
   )
+}
+
+private fun generateEnclosedFieldRef(className: String, fieldName: String): FieldRefInfo {
+  return FieldRefInfo(
+    label = "$className.__enclosed_value__$fieldName:LLoxObject;",
+    classInfo = ClassInfo(className),
+    nameAndType = NameAndTypeInfo(
+      label = "__enclosed_value__$fieldName:LLoxObject;",
+      name = "__enclosed_value__$fieldName".toUtf8Value(),
+      descriptor = "LLoxObject;".toUtf8Value()
+    )
+  )
+}
+
+private fun getActualLocalVariableIndex(resolution: VariableResolutionResult) = when (resolution) {
+  is EnclosedVariable -> resolution.variableArrayIndex + 1
+  is GlobalVariable -> 0 - 1
+  is LocalVariable -> resolution.variableArrayIndex + 1
+  UnresolvedVariable -> throw IllegalArgumentException("A variable should be resolved")
+}
+
+private fun generateFunctionInstantiationCode(
+  thisClassInfo: ClassInfo,
+  functionName: String,
+  enclosedVariables: List<EnclosedVariable>
+): List<Operation> {
+  val res = mutableListOf(
+    ShortConstantOperation(Opcode.OP_NEW, thisClassInfo, ObjectVti(thisClassInfo)),
+    SimpleOperation(Opcode.OP_DUP),
+    ShortConstantOperation(
+      Opcode.OP_INVOKE_SPECIAL,
+      generateLoxFunctionConstructorInfo(className = "LoxFunction${functionName}")
+    )
+  )
+
+  for (v in enclosedVariables) {
+    res.addAll(
+      listOf(
+        SimpleOperation(Opcode.OP_DUP),
+        OperationWithIndex(
+          Opcode.OP_ALOAD,
+          getActualLocalVariableIndex(v).toByte(),
+          ObjectVti(loxObjectClassInfo)
+        ),
+        ShortConstantOperation(
+          Opcode.OP_PUTFIELD,
+          generateEnclosedFieldRef(className = "LoxFunction${functionName}", fieldName = v.name)
+        )
+      )
+    )
+  }
+
+  return res.toList()
 }

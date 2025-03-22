@@ -1,8 +1,9 @@
 package org.example.rlc.frontend.ast
 
-import org.example.rlc.frontend.Token
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
+import org.example.rlc.frontend.Token
+import org.example.rlc.frontend.scope.VariableResolutionResult
 
 @OptIn(ExperimentalUuidApi::class)
 sealed class Stmt {
@@ -29,6 +30,7 @@ class FunDeclStmt(
   val body: BlockStmt
 ): Stmt() {
   val arity: Int get() = parameters.size
+  val enclosedVariables = mutableListOf<VariableResolutionResult>()
 }
 
 class ReturnStmt(val expr: Expr?): Stmt()

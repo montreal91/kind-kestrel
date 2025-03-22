@@ -22,6 +22,7 @@ import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
 import org.example.rlc.frontend.ast.Variable
 import org.example.rlc.frontend.ast.WhileStmt
+import org.example.rlc.frontend.scope.EnclosedVariable
 import org.example.rlc.frontend.scope.GlobalVariable
 import org.example.rlc.frontend.scope.LocalVariable
 import org.example.rlc.frontend.scope.VariableResolutionResult
@@ -95,6 +96,7 @@ class Resolver {
   }
 
   private fun visitFunDeclStmt(stmt: FunDeclStmt) {
+    println("Resolving Function Declaration: ${stmt.identifier.value}")
     checkVariable(stmt.identifier)
     resolveVariableDeclaration(stmt.uid, stmt.identifier.value)
     frameStack.addNewFrame(Frame.Type.FUNCTION)
@@ -106,6 +108,7 @@ class Resolver {
 
     visitBlockStmt(stmt.body)
     frameStack.popFrame()
+    println("Finished Resolving Function Declaration: ${stmt.identifier.value}")
   }
 
   private fun visitIfStmt(stmt: IfStmt) {
@@ -171,7 +174,13 @@ class Resolver {
   private fun resolveVariable(identifier: String): VariableResolutionResult =
     if (frameStack.existInAllFrames(identifier)) {
       println("Resolved to be local: $identifier")
-      LocalVariable(frameStack.lookup(identifier))
+      val lookup = frameStack.lookup(identifier)
+
+      when (lookup.isClosure) {
+        true -> EnclosedVariable(name = identifier, variableArrayIndex = lookup.index)
+        false -> LocalVariable(lookup.index)
+      }
+
     } else {
       GlobalVariable(name = identifier)
     }
@@ -190,7 +199,10 @@ class Resolver {
     }
     else {
       frameStack.declareVariable(variable)
-      resolutionTable.set(uid, LocalVariable(frameStack.lookup(variable)))
+
+      // Defines, in which local variable array index
+      // this variable should resolve to
+      resolutionTable.set(uid, LocalVariable(frameStack.lookup(variable).index))
     }
   }
 }

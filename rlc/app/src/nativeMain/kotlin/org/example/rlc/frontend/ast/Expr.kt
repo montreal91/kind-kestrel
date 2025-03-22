@@ -35,6 +35,11 @@ class Grouping(val expression: Expr) : Expr()
 
 class Variable(val variable: String) : Expr() {
   override val canAssign = true
+
+  override fun toString(): String {
+    return "<Variable [${this.variable}]>"
+
+  }
 }
 
 class Assignment(val left: Expr, val right: Expr) : Expr()
