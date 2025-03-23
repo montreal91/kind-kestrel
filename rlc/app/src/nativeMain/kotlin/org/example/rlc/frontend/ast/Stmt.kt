@@ -31,6 +31,16 @@ class FunDeclStmt(
 ): Stmt() {
   val arity: Int get() = parameters.size
   val enclosedVariables = mutableListOf<VariableResolutionResult>()
+
+  private var isClosure = false
+
+  fun markAsClosure() {
+    isClosure = true
+  }
+
+  fun isClosure(): Boolean {
+    return isClosure
+  }
 }
 
 class ReturnStmt(val expr: Expr?): Stmt()

@@ -34,6 +34,8 @@ class Resolver {
   private val frameStack = FrameStack()
   private val errors = mutableListOf<LoxCompileError>()
 
+  private var functionContexts = ArrayDeque<FunctionContext>()
+
   val hasErrors = errors.isNotEmpty()
 
   fun resolve(program: Ast): VariableResolutionTable {
@@ -100,6 +102,7 @@ class Resolver {
     checkVariable(stmt.identifier)
     resolveVariableDeclaration(stmt.uid, stmt.identifier.value)
     frameStack.addNewFrame(Frame.Type.FUNCTION)
+    functionContexts.addLast(FunctionContext())
 
     for (param in stmt.parameters) {
       checkVariable(param)
@@ -108,6 +111,18 @@ class Resolver {
 
     visitBlockStmt(stmt.body)
     frameStack.popFrame()
+
+    val innerFunction = functionContexts.removeLast()
+
+    // Here we can do some inner function analysis
+
+    println("------------------------------------------------")
+    println("Enclosed values for function: ${stmt.identifier}")
+    for (v in innerFunction.enclosedVariables) {
+      println("${v.name}, ${v.enclosedObject}, ${v.depth}")
+    }
+    println("------------------------------------------------")
+
     println("Finished Resolving Function Declaration: ${stmt.identifier.value}")
   }
 
@@ -149,7 +164,12 @@ class Resolver {
 
   private fun visitIdentifier(expr: Variable) {
     println("Resolver visiting identifier: ${expr.variable}")
-    resolutionTable.set(expr.uid, resolveVariable(expr.variable))
+    val resolvedVariable = resolveVariable(expr.variable)
+    resolutionTable.set(expr.uid, resolvedVariable)
+
+    if (resolvedVariable is EnclosedVariable) {
+      functionContexts.last().enclosedVariables.add(resolvedVariable)
+    }
   }
 
   private fun visitLogical(expr: Logical) {
@@ -173,11 +193,18 @@ class Resolver {
 
   private fun resolveVariable(identifier: String): VariableResolutionResult =
     if (frameStack.existInAllFrames(identifier)) {
-      println("Resolved to be local: $identifier")
+      println("Resolved to be local or enclosed variable: $identifier")
       val lookup = frameStack.lookup(identifier)
 
       when (lookup.isClosure) {
-        true -> EnclosedVariable(name = identifier, variableArrayIndex = lookup.index)
+        // So, this is here, where we should decide if our enclosed variable
+        // actually from a local variable or another enclosed variable.
+        // How can we do that?
+        true -> EnclosedVariable(
+          name = identifier,
+          enclosedObject = EnclosedLocal(lookup.index),
+          depth = lookup.depth
+        )
         false -> LocalVariable(lookup.index)
       }
 
@@ -196,8 +223,7 @@ class Resolver {
   private fun resolveVariableDeclaration(uid: Uuid, variable: String) {
     if (frameStack.isGlobal()) {
       resolutionTable.set(uid, GlobalVariable(variable))
-    }
-    else {
+    } else {
       frameStack.declareVariable(variable)
 
       // Defines, in which local variable array index

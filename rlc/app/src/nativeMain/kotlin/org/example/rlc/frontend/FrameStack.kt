@@ -56,7 +56,8 @@ internal class FrameStack {
       if (frame.containsIdentifier(identifier)) {
         return LookupResult(
           index = frame.getResolvedIndex(identifier),
-          isClosure = currentDepth < getCurrentFunctionDepth()
+          isClosure = currentDepth < getCurrentFunctionDepth(),
+          depth = currentDepth,
         )
       }
 

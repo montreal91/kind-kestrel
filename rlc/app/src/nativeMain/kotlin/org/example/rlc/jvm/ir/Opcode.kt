@@ -166,4 +166,7 @@ enum class Opcode(val value: Byte) {
   // Return void fromm method
   // Takes no bytes as an operand
   OP_RETURN(0xB1.toByte()),
+
+  // Swaps two operands on the stack
+  OP_SWAP(0x5F.toByte()),
 }

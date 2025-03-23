@@ -1,32 +1,16 @@
 package org.example.rlc.jvm.middleware
 
-import org.example.rlc.jvm.ir.ByteConstantOperation
-import org.example.rlc.jvm.ir.ClassAccessFlags
-import org.example.rlc.jvm.ir.ClassFile
-import org.example.rlc.jvm.ir.ClassInfo
-import org.example.rlc.jvm.ir.CodeAttribute
-import org.example.rlc.jvm.ir.ControlFlowOperation
-import org.example.rlc.jvm.ir.EmptyVti
-import org.example.rlc.jvm.ir.IntegerValue
-import org.example.rlc.jvm.ir.IntegerVti
-import org.example.rlc.jvm.ir.MethodAccessFlags
-import org.example.rlc.jvm.ir.MethodInfo
-import org.example.rlc.jvm.ir.MethodRefInfo
-import org.example.rlc.jvm.ir.MethodSignature
-import org.example.rlc.jvm.ir.NameAndTypeInfo
-import org.example.rlc.jvm.ir.ObjectVti
-import org.example.rlc.jvm.ir.Opcode
-import org.example.rlc.jvm.ir.Operation
-import org.example.rlc.jvm.ir.ShortConstantOperation
-import org.example.rlc.jvm.ir.SimpleOperation
-import org.example.rlc.jvm.ir.StringRefInfo
-import org.example.rlc.jvm.ir.VerificationTypeInfo
-import org.example.rlc.jvm.ir.javaLangStringObjectVti
-import org.example.rlc.jvm.ir.toUtf8Value
+import org.example.rlc.frontend.scope.EnclosedVariable
+import org.example.rlc.jvm.ir.*
 
 private val loxObjectVti = ObjectVti(loxObjectClassInfo)
 
-internal fun generateLoxFunction(name: String, arity: Int, code: List<Operation>): ClassFile {
+internal fun generateLoxFunction(
+  name: String,
+  arity: Int,
+  code: List<Operation>,
+  enclosedVariables: List<EnclosedVariable>
+): ClassFile {
   val codeAttribute = CodeAttribute(
     argsSize = arity + 1,
     code = code
@@ -55,7 +39,7 @@ internal fun generateLoxFunction(name: String, arity: Int, code: List<Operation>
     ),
     attributeList = listOf(),
     accessFlagList = listOf(),
-    fieldList = listOf()
+    fieldList = generateFieldsFromEnclosedVariableList(variables = enclosedVariables)
   )
 }
 
@@ -234,3 +218,20 @@ private fun generateArityMethodRef(className: String): MethodRefInfo {
     returnTypeInfo = IntegerVti(),
   )
 }
+
+private fun generateFieldsFromEnclosedVariableList(variables: List<EnclosedVariable>): List<FieldInfo> {
+  val res = mutableListOf<FieldInfo>()
+
+  for (variable in variables) {
+    res.add(generateFieldFromEnclosedVariable(variable))
+  }
+
+  return res.toList()
+}
+
+private fun generateFieldFromEnclosedVariable(variable: EnclosedVariable) = FieldInfo(
+  accessFlagList = listOf(),
+  fieldName = "__enclosed_value__${variable.name}".toUtf8Value(),
+  fieldDescriptor = "LLoxObject;".toUtf8Value()
+)
+

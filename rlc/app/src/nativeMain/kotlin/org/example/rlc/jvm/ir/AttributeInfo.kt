@@ -116,5 +116,6 @@ class CodeAttribute(
     Opcode.OP_IF_ICMPNE -> 0
     Opcode.OP_IF_ICMPEQ -> 0
     Opcode.OP_L2D -> 0
+    Opcode.OP_SWAP -> 0
   }
 }
