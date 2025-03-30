@@ -1,8 +1,8 @@
 package org.example.rlc.jvm.middleware
 
+import kotlin.uuid.ExperimentalUuidApi
 import org.example.rlc.frontend.EnclosedField
 import org.example.rlc.frontend.EnclosedLocal
-import kotlin.uuid.ExperimentalUuidApi
 import org.example.rlc.frontend.Token
 import org.example.rlc.frontend.ast.Assignment
 import org.example.rlc.frontend.ast.Ast
@@ -74,6 +74,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     loxNilCf(),
     loxStringCf(),
     loxRuntimeError(),
+    loxPointerCf(),
   )
   private var currentCode = mutableListOf<Operation>()
   private var currentFunction = "Script"
@@ -238,8 +239,18 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   }
 
   private fun visitVarDecl(stmt: VarDeclStmt) {
+    currentCode.add(ShortConstantOperation(Opcode.OP_NEW, ClassInfo("LoxPointer"), ObjectVti(ClassInfo("LoxPointer"))))
+    currentCode.add(SimpleOperation(Opcode.OP_DUP))
+    currentCode.add(SimpleOperation(Opcode.OP_DUP))
+    currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, generateLoxFunctionConstructorInfo("LoxPointer")))
+
     stmt.initializer?.let(this::visitExpr) ?: compileNil()
 
+    currentCode.add(
+      ShortConstantOperation(Opcode.OP_PUTFIELD, generateFieldRef(className = "LoxPointer", fieldName = "__value__"))
+    )
+
+    // This actually stores LoxPointer inside global or local variable
     when (val resolution = resolutionTable.get(stmt.uid)) {
       is LocalVariable -> storeLocalVariable(resolution)
       is GlobalVariable -> declGlobalVariable(resolution)
@@ -275,7 +286,8 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       currentCode.add(SimpleOperation(Opcode.OP_ARETURN))
     }
 
-    val function = generateLoxFunction(stmt.identifier.value, stmt.arity, currentCode, enclosedVariables.values.toList())
+    val function =
+      generateLoxFunction(stmt.identifier.value, stmt.arity, currentCode, enclosedVariables.values.toList())
     classes.add(function)
 
     if (!generatedCallables.containsKey(stmt.arity)) {
@@ -424,7 +436,10 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
 
         val op = ShortConstantOperation(
           Opcode.OP_GETFIELD,
-          generateEnclosedFieldRef(className = "LoxFunction$currentFunction", fieldName = resolution.name),
+          generateFieldRef(
+            className = "LoxFunction$currentFunction",
+            fieldName = "__enclosed_value__${resolution.name}"
+          ),
           ObjectVti(loxObjectClassInfo)
         )
 
@@ -609,7 +624,10 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
           println("Assigning an enclosed variable ${expr.left}")
           val op = ShortConstantOperation(
             Opcode.OP_PUTFIELD,
-            generateEnclosedFieldRef(className = "LoxFunction$currentFunction", fieldName = resolution.name)
+            generateFieldRef(
+              className = "LoxFunction$currentFunction",
+              fieldName = "__enclosed_value__${resolution.name}"
+            )
           )
 
           currentCode.add(SimpleOperation(Opcode.OP_ALOAD_0))
@@ -811,13 +829,13 @@ private fun generateCallMethodRef(arity: Int): MethodRefInfo {
   )
 }
 
-private fun generateEnclosedFieldRef(className: String, fieldName: String): FieldRefInfo {
+private fun generateFieldRef(className: String, fieldName: String): FieldRefInfo {
   return FieldRefInfo(
-    label = "$className.__enclosed_value__$fieldName:LLoxObject;",
+    label = "$className.$fieldName:LLoxObject;",
     classInfo = ClassInfo(className),
     nameAndType = NameAndTypeInfo(
-      label = "__enclosed_value__$fieldName:LLoxObject;",
-      name = "__enclosed_value__$fieldName".toUtf8Value(),
+      label = "$fieldName:LLoxObject;",
+      name = fieldName.toUtf8Value(),
       descriptor = "LLoxObject;".toUtf8Value()
     )
   )
@@ -861,7 +879,7 @@ private fun generateFunctionInstantiationCode(
         ),
         ShortConstantOperation(
           Opcode.OP_PUTFIELD,
-          generateEnclosedFieldRef(className = "LoxFunction${functionName}", fieldName = v.name)
+          generateFieldRef(className = "LoxFunction${functionName}", fieldName = "__enclosed_value__${v.name}")
         )
       )
     )

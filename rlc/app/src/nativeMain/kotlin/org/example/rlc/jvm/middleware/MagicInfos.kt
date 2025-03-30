@@ -310,3 +310,5 @@ internal val putMethodRef = MethodRefInfo(
   returnSize = 1,
   returnTypeInfo = ObjectVti(loxObjectClassInfo, isArray = false)
 )
+
+internal val loxObjectVti = ObjectVti(loxObjectClassInfo)

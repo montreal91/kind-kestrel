@@ -1,0 +1,14 @@
+
+fun mutate() {
+  var cap = "unchanged";
+
+  fun inner() {
+    print cap;
+  }
+
+  cap = "changed";
+
+  return inner;
+}
+
+mutate()();
