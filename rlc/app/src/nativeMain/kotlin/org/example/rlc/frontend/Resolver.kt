@@ -1,7 +1,5 @@
 package org.example.rlc.frontend
 
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 import org.example.rlc.frontend.ast.Assignment
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
@@ -27,6 +25,8 @@ import org.example.rlc.frontend.scope.GlobalVariable
 import org.example.rlc.frontend.scope.LocalVariable
 import org.example.rlc.frontend.scope.VariableResolutionResult
 import org.example.rlc.frontend.scope.VariableResolutionTable
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 class Resolver {
@@ -191,26 +191,31 @@ class Resolver {
     expr.args.forEach(this::visitExpr)
   }
 
-  private fun resolveVariable(identifier: String): VariableResolutionResult =
-    if (frameStack.existInAllFrames(identifier)) {
+  private fun resolveVariable(identifier: String): VariableResolutionResult {
+    if (!frameStack.existInAllFrames(identifier)) {
+      return GlobalVariable(name = identifier)
+    }
+
+//    if (frameStack.existInAllFrames(identifier)) {
       println("Resolved to be local or enclosed variable: $identifier")
       val lookup = frameStack.lookup(identifier)
 
-      when (lookup.isClosure) {
-        // So, this is here, where we should decide if our enclosed variable
-        // actually from a local variable or another enclosed variable.
-        // How can we do that?
-        true -> EnclosedVariable(
+    if (lookup.isClosure) {
+      frameStack.markAsUpvalue(identifier)
+    }
+
+    return when (lookup.isClosure) {
+      // So, this is here, where we should decide if our enclosed variable
+      // actually from a local variable or another enclosed variable.
+      // How can we do that?
+      true -> EnclosedVariable(
           name = identifier,
           enclosedObject = EnclosedLocal(lookup.index),
           depth = lookup.depth
-        )
-        false -> LocalVariable(lookup.index)
-      }
-
-    } else {
-      GlobalVariable(name = identifier)
+      )
+      false -> LocalVariable(lookup.index)
     }
+  }
 
   private fun checkVariable(variableToken: Token) {
     if (!frameStack.existInCurrentFrame(variableToken.value)) {

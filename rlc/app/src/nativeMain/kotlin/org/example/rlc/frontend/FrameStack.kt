@@ -49,6 +49,14 @@ internal class FrameStack {
     return false
   }
 
+  internal fun markAsUpvalue(identifier: String) {
+    for (frame in frameStack.reversed()) {
+      if (frame.containsIdentifier(identifier)) {
+        frame.markAsUpvalue(identifier)
+      }
+    }
+  }
+
   internal fun lookup(identifier: String): LookupResult {
     var currentDepth = max(a = frameStack.size - 1, b = 0)
 

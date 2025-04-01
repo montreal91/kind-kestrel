@@ -5,7 +5,7 @@ class Frame(private val type: Type, private var index: Int) {
     GLOBAL, BLOCK, FUNCTION
   }
 
-  private val frameVariables = mutableMapOf<String, Int>()
+  private val frameVariables = mutableMapOf<String, FrameVariable>()
 
   internal fun containsIdentifier(identifier: String) = frameVariables.containsKey(identifier)
   internal fun getIndex() = index
@@ -14,15 +14,23 @@ class Frame(private val type: Type, private var index: Int) {
 
   internal fun declareVariable(identifier: String) {
     println("Declared variable: $identifier. Resolved index: $index")
-    frameVariables[identifier] = index
+    frameVariables[identifier] = FrameVariable(index, isUpvalue = false)
     index++
   }
 
-  internal fun getResolvedIndex(identifier: String): Int {
-    return frameVariables.getOrElse(identifier, this::unresolvedIndex)
+  internal fun markAsUpvalue(identifier: String) {
+    if (!frameVariables.containsKey(identifier)) {
+      return
+    }
+
+    frameVariables[identifier]!!.isUpvalue = true
   }
 
-  private fun unresolvedIndex(): Int {
-    return -1
+  internal fun getResolvedIndex(identifier: String): Int {
+    return frameVariables.getOrElse(identifier, this::unresolvedIndex).index
+  }
+
+  private fun unresolvedIndex(): FrameVariable {
+    return FrameVariable(index = -1, isUpvalue = false)
   }
 }
