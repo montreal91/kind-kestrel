@@ -20,4 +20,6 @@ class VariableResolutionTable {
 
     table[id] = resolution
   }
+
+  fun _test_getKeys() = table.keys
 }

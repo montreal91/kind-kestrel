@@ -3,6 +3,7 @@ package org.example.rlc.frontend
 import org.example.rlc.application.readFile
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.uuid.ExperimentalUuidApi
 
 
 internal data class PositiveTestCase(
@@ -25,6 +26,7 @@ private fun Parser.getErrorMessages(): List<String> {
 }
 
 
+@OptIn(ExperimentalUuidApi::class)
 class ParserTest {
   private val positive = listOf(
     PositiveTestCase(

@@ -21,6 +21,7 @@ import platform.posix.fclose
 import platform.posix.fprintf
 import platform.posix.stderr
 import platform.posix.exit
+import kotlin.uuid.ExperimentalUuidApi
 
 
 internal class Cli : CliktCommand() {
@@ -74,7 +75,7 @@ internal fun readFile(pathName: String): String {
   throw RuntimeException("This should never happen.")
 }
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, ExperimentalUuidApi::class)
 private fun compile(pathName: String, debugMode: Boolean) {
   val programText = readFile(pathName)
   val scanner = Scanner(programText)

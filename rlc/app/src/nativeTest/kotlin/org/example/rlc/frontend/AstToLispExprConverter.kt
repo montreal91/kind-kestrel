@@ -21,7 +21,7 @@ import org.example.rlc.frontend.ast.Variable
 import org.example.rlc.frontend.ast.WhileStmt
 
 
-data class Frame(
+private data class LispFrame(
   val expr: Expr,
   var visitedLeft: Boolean = false,
   var visitedRight: Boolean = false,
@@ -86,8 +86,8 @@ private fun printStmt(stmt: Stmt, sb: StringBuilder) {
 }
 
 private fun printExpr(expr: Expr, sb: StringBuilder) {
-  val callStack = ArrayDeque<Frame>()
-  callStack.addFirst(Frame(expr = expr))
+  val callStack = ArrayDeque<LispFrame>()
+  callStack.addFirst(LispFrame(expr = expr))
 
   while (!callStack.isEmpty()) {
     val curr = callStack.first()
@@ -95,14 +95,14 @@ private fun printExpr(expr: Expr, sb: StringBuilder) {
     when (curr.expr) {
       is Binary -> {
         if (!curr.visitedLeft) {
-          callStack.addFirst(Frame(expr = curr.expr.left))
+          callStack.addFirst(LispFrame(expr = curr.expr.left))
           curr.visitedLeft = true
           sb.addSpaceIfNeeded()
           sb.append("(${curr.expr.operator.value} ")
           continue
         }
         if (!curr.visitedRight) {
-          callStack.addFirst(Frame(expr = curr.expr.right))
+          callStack.addFirst(LispFrame(expr = curr.expr.right))
           curr.visitedRight = true
           continue
         }
@@ -112,7 +112,7 @@ private fun printExpr(expr: Expr, sb: StringBuilder) {
 
       is Grouping -> {
         if (!curr.visitedLeft) {
-          callStack.addFirst(Frame(expr = curr.expr.expression))
+          callStack.addFirst(LispFrame(expr = curr.expr.expression))
           curr.visitedLeft = true
           curr.visitedRight = true
           sb.addSpaceIfNeeded()
@@ -129,14 +129,14 @@ private fun printExpr(expr: Expr, sb: StringBuilder) {
       }
       is Logical -> {
         if (!curr.visitedLeft) {
-          callStack.addFirst(Frame(expr = curr.expr.left))
+          callStack.addFirst(LispFrame(expr = curr.expr.left))
           curr.visitedLeft = true
           sb.addSpaceIfNeeded()
           sb.append("(${curr.expr.operator.value} ")
           continue
         }
         if (!curr.visitedRight) {
-          callStack.addFirst(Frame(expr = curr.expr.right))
+          callStack.addFirst(LispFrame(expr = curr.expr.right))
           curr.visitedRight = true
           continue
         }
@@ -147,7 +147,7 @@ private fun printExpr(expr: Expr, sb: StringBuilder) {
 
       is Unary -> {
         if (!curr.visitedLeft) {
-          callStack.addFirst(Frame(expr = curr.expr.right))
+          callStack.addFirst(LispFrame(expr = curr.expr.right))
           curr.visitedLeft = true
           curr.visitedRight = true
           sb.addSpaceIfNeeded()

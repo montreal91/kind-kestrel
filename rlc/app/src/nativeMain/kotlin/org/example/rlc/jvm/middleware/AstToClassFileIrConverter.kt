@@ -239,16 +239,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   }
 
   private fun visitVarDecl(stmt: VarDeclStmt) {
-    currentCode.add(ShortConstantOperation(Opcode.OP_NEW, ClassInfo("LoxPointer"), ObjectVti(ClassInfo("LoxPointer"))))
-    currentCode.add(SimpleOperation(Opcode.OP_DUP))
-    currentCode.add(SimpleOperation(Opcode.OP_DUP))
-    currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, generateLoxFunctionConstructorInfo("LoxPointer")))
-
     stmt.initializer?.let(this::visitExpr) ?: compileNil()
-
-    currentCode.add(
-      ShortConstantOperation(Opcode.OP_PUTFIELD, generateFieldRef(className = "LoxPointer", fieldName = "__value__"))
-    )
 
     // This actually stores LoxPointer inside global or local variable
     when (val resolution = resolutionTable.get(stmt.uid)) {
@@ -488,6 +479,10 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   }
 
   private fun storeLocalVariable(resolution: LocalVariable) {
+    if (resolution.isUpValue) {
+      // Do extra work
+    }
+
     val op = OperationWithIndex(
       Opcode.OP_ASTORE,
       getActualLocalVariableIndex(resolution).toByte(),

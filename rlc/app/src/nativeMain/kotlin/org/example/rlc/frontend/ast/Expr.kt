@@ -1,16 +1,16 @@
+@file:OptIn(ExperimentalUuidApi::class)
+
 package org.example.rlc.frontend.ast
 
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import org.example.rlc.frontend.Token
 
-@OptIn(ExperimentalUuidApi::class)
-sealed class Expr {
-  val uid = Uuid.random()
+sealed class Expr(val uid: Uuid) {
   open val canAssign = false
 }
 
-class Literal(val value: String, val type: Type) : Expr() {
+class Literal(uid: Uuid, val value: String, val type: Type) : Expr(uid) {
   enum class Type {
     NUMBER,
     BOOLEAN,
@@ -19,21 +19,12 @@ class Literal(val value: String, val type: Type) : Expr() {
   }
 }
 
-fun tokenTypeToLiteralType(tokenType: Token.Type) = when (tokenType) {
-  Token.Type.NUMBER -> Literal.Type.NUMBER
-  Token.Type.STRING -> Literal.Type.STRING
-  Token.Type.TRUE -> Literal.Type.BOOLEAN
-  Token.Type.FALSE -> Literal.Type.BOOLEAN
-  Token.Type.NIL -> Literal.Type.NIL_TYPE
-  else -> error("Token $tokenType does not represent a valid literal.")
-}
+class Binary(uid: Uuid, val left: Expr, val operator: Token, val right: Expr) : Expr(uid)
+class Logical(uid: Uuid, val left: Expr, val operator: Token, val right: Expr) : Expr(uid)
+class Unary(uid: Uuid, val operator: Token, val right: Expr) : Expr(uid)
+class Grouping(uid: Uuid, val expression: Expr) : Expr(uid)
 
-class Binary(val left: Expr, val operator: Token, val right: Expr) : Expr()
-class Logical(val left: Expr, val operator: Token, val right: Expr) : Expr()
-class Unary(val operator: Token, val right: Expr) : Expr()
-class Grouping(val expression: Expr) : Expr()
-
-class Variable(val variable: String) : Expr() {
+class Variable(uid: Uuid, val variable: String) : Expr(uid) {
   override val canAssign = true
 
   override fun toString(): String {
@@ -42,6 +33,6 @@ class Variable(val variable: String) : Expr() {
   }
 }
 
-class Assignment(val left: Expr, val right: Expr) : Expr()
+class Assignment(uid: Uuid, val left: Expr, val right: Expr) : Expr(uid)
 
-class CallExpr(val callee: Expr, val args: List<Expr>) : Expr()
+class CallExpr(uid: Uuid, val callee: Expr, val args: List<Expr>) : Expr(uid)
