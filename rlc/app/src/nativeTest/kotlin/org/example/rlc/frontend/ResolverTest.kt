@@ -124,10 +124,13 @@ class ResolverTest {
       Expectation(fakeUuids[13], GlobalVariable(name = "mutate")),
       Expectation(fakeUuids[1], LocalVariable(variableArrayIndex = 0, isUpValue = true)),
       Expectation(fakeUuids[5], LocalVariable(variableArrayIndex = 1, isUpValue = false)),
-      Expectation(fakeUuids[2], EnclosedVariable(name = "cap", enclosedObject = EnclosedLocal(localVariableIndex = 0), depth = 1)),
+      Expectation(
+        fakeUuids[2],
+        EnclosedVariable(name = "cap", enclosedObject = EnclosedLocal(localVariableIndex = 0), depth = 2)
+      ),
       Expectation(fakeUuids[6], LocalVariable(variableArrayIndex = 0, isUpValue = true)),
       Expectation(fakeUuids[10], LocalVariable(variableArrayIndex = 1, isUpValue = false)),
-      Expectation(fakeUuids[15], GlobalVariable(name = "mutate")),
+      Expectation(fakeUuids[14], GlobalVariable(name = "mutate")),
     )
 
     assertResolutions(resolutionTable, expectedResults)

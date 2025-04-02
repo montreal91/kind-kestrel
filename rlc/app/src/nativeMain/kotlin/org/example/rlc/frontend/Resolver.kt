@@ -106,7 +106,7 @@ class Resolver {
 
     for (param in stmt.parameters) {
       checkVariable(param)
-      frameStack.declareVariable(param.value)
+      frameStack.declareVariable(param.value, stmt.uid)
     }
 
     visitBlockStmt(stmt.body)
@@ -196,12 +196,12 @@ class Resolver {
       return GlobalVariable(name = identifier)
     }
 
-//    if (frameStack.existInAllFrames(identifier)) {
-      println("Resolved to be local or enclosed variable: $identifier")
-      val lookup = frameStack.lookup(identifier)
+    println("Resolved to be local or enclosed variable: $identifier")
+    val lookup = frameStack.lookup(identifier)
 
     if (lookup.isClosure) {
       frameStack.markAsUpvalue(identifier)
+      resolutionTable.updateAsUpvalue(lookup.declarationId)
     }
 
     return when (lookup.isClosure) {
@@ -213,7 +213,7 @@ class Resolver {
           enclosedObject = EnclosedLocal(lookup.index),
           depth = lookup.depth
       )
-      false -> LocalVariable(lookup.index)
+      false -> LocalVariable(lookup.index, lookup.isUpvalue)
     }
   }
 
@@ -229,7 +229,7 @@ class Resolver {
     if (frameStack.isGlobal()) {
       resolutionTable.set(uid, GlobalVariable(variable))
     } else {
-      frameStack.declareVariable(variable)
+      frameStack.declareVariable(variable, uid)
 
       // Defines, in which local variable array index
       // this variable should resolve to

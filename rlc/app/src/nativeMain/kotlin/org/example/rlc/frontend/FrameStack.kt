@@ -1,7 +1,10 @@
 package org.example.rlc.frontend
 
 import kotlin.math.max
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
+@OptIn(ExperimentalUuidApi::class)
 internal class FrameStack {
   private val frameStack = ArrayDeque<Frame>()
   private val currentFunctionDepth = ArrayDeque<Int>()
@@ -34,7 +37,9 @@ internal class FrameStack {
 
   internal fun existInCurrentFrame(identifier: String) = frameStack.last().containsIdentifier(identifier)
 
-  internal fun declareVariable(identifier: String) = frameStack.last().declareVariable(identifier)
+  internal fun declareVariable(
+    identifier: String, declarationId: Uuid
+  ) = frameStack.last().declareVariable(identifier, declarationId)
 
 
   internal fun isGlobal() = frameStack.last().isGlobal()
@@ -62,10 +67,13 @@ internal class FrameStack {
 
     for (frame in frameStack.reversed()) {
       if (frame.containsIdentifier(identifier)) {
+        val resolvedVariable = frame.getResolvedVariable(identifier)
         return LookupResult(
-          index = frame.getResolvedIndex(identifier),
+          index = resolvedVariable.index,
           isClosure = currentDepth < getCurrentFunctionDepth(),
           depth = currentDepth,
+          declarationId = resolvedVariable.declarationId,
+          isUpvalue = resolvedVariable.isUpvalue
         )
       }
 

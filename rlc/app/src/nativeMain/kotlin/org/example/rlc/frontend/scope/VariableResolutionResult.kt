@@ -23,7 +23,7 @@ class LocalVariable(
   }
 
   override fun toString(): String {
-    return "(LocalVariable (index: $variableArrayIndex; isUpValue: $isUpValue))"
+    return "(LocalVariable index=$variableArrayIndex isUpValue=$isUpValue))"
   }
 }
 
@@ -46,6 +46,22 @@ class EnclosedVariable(
   val name: String,
   val enclosedObject: EnclosedSomething,
   val depth: Int
-) : VariableResolutionResult()
+) : VariableResolutionResult() {
+  override fun equals(other: Any?): Boolean {
+    if (other is EnclosedVariable) {
+      return name == other.name && depth == other.depth
+    }
+    return super.equals(other)
+  }
+
+  override fun hashCode(): Int {
+    // Dummy hashcode, I don't use it anyway
+    return "$name$depth".hashCode()
+  }
+
+  override fun toString(): String {
+    return "(EnclosedVariable name=$name depth=$depth)"
+  }
+}
 
 data object UnresolvedVariable : VariableResolutionResult()

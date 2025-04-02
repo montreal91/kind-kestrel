@@ -225,6 +225,6 @@ private fun generateFieldsFromEnclosedVariableList(variables: List<EnclosedVaria
 
 private fun generateFieldFromEnclosedVariable(variable: EnclosedVariable) = FieldInfo(
   accessFlagList = listOf(),
-  fieldName = "__enclosed_value__${variable.name}".toUtf8Value(),
+  fieldName = "__enclosed_value__${variable.name}__".toUtf8Value(),
   fieldDescriptor = "LLoxObject;".toUtf8Value()
 )

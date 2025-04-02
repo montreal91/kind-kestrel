@@ -15,7 +15,7 @@ import org.example.rlc.jvm.ir.loxBoolean
 import org.example.rlc.jvm.ir.loxDouble
 import org.example.rlc.jvm.ir.loxMainClassName
 import org.example.rlc.jvm.ir.loxNil
-import org.example.rlc.jvm.ir.loxObject
+import org.example.rlc.jvm.ir.loxObjectClassName
 import org.example.rlc.jvm.ir.loxString
 import org.example.rlc.jvm.ir.toUtf8Value
 
@@ -25,7 +25,7 @@ internal val javaLangStringClassInfo = ClassInfo(className = "java/lang/String")
 internal val javaLangStringArrayClassInfo = ClassInfo(className = "[Ljava/lang/String;")
 internal val loxRuntimeErrorClassInfo = ClassInfo(className = "LoxRuntimeError")
 internal val loxDoubleClassInfo = ClassInfo(className = loxDouble)
-internal val loxObjectClassInfo = ClassInfo(className = loxObject)
+internal val loxObjectClassInfo = ClassInfo(className = loxObjectClassName)
 internal val loxNilClassInfo = ClassInfo(className = loxNil)
 internal val loxBooleanClassInfo = ClassInfo(className = loxBoolean)
 internal val loxClassInfo = ClassInfo(className = "LoxClass")
