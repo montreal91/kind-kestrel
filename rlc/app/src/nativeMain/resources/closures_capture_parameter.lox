@@ -1,0 +1,13 @@
+
+fun doSomething(x) {
+  fun inner() {
+    print x + " inner";
+    return x + " returned";
+  }
+
+  print x + " doSomething";
+
+  return inner;
+}
+
+print doSomething("funny")();

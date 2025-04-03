@@ -6,13 +6,16 @@ sealed class VariableResolutionResult
 
 class LocalVariable(
   val variableArrayIndex: Int,
-  val isUpValue: Boolean
+  val isUpValue: Boolean,
 ) : VariableResolutionResult() {
-  constructor(variableArrayIndex: Int) : this(variableArrayIndex = variableArrayIndex, isUpValue = false)
+  constructor(variableArrayIndex: Int) : this(
+    variableArrayIndex = variableArrayIndex, isUpValue = false
+  )
 
   override fun equals(other: Any?): Boolean {
     if (other is LocalVariable) {
-      return variableArrayIndex == other.variableArrayIndex && isUpValue == other.isUpValue
+      return variableArrayIndex == other.variableArrayIndex &&
+          isUpValue == other.isUpValue
     }
 
     return super.equals(other)
@@ -23,7 +26,7 @@ class LocalVariable(
   }
 
   override fun toString(): String {
-    return "(LocalVariable index=$variableArrayIndex isUpValue=$isUpValue))"
+    return "(LocalVariable index=$variableArrayIndex isUpValue=$isUpValue)"
   }
 }
 
@@ -39,6 +42,10 @@ class GlobalVariable(val name: String): VariableResolutionResult() {
   override fun hashCode(): Int {
     return name.hashCode()
   }
+
+  override fun toString(): String {
+    return "(GlobalVariable name=$name)"
+  }
 }
 
 // It actually can enclose over another enclosed variable
@@ -49,18 +56,18 @@ class EnclosedVariable(
 ) : VariableResolutionResult() {
   override fun equals(other: Any?): Boolean {
     if (other is EnclosedVariable) {
-      return name == other.name && depth == other.depth
+      return name == other.name && depth == other.depth && enclosedObject == other.enclosedObject
     }
+
     return super.equals(other)
   }
 
   override fun hashCode(): Int {
-    // Dummy hashcode, I don't use it anyway
-    return "$name$depth".hashCode()
+    return toString().hashCode()
   }
 
   override fun toString(): String {
-    return "(EnclosedVariable name=$name depth=$depth)"
+    return "(EnclosedVariable name=$name depth=$depth enclosedObject=$enclosedObject)"
   }
 }
 

@@ -288,8 +288,11 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     currentCode = outerCode
     currentFunction = outerFunction
 
-    val instantiationCode =
-      generateFunctionInstantiationCode(loxObjectClassInfo, stmt.identifier.value, enclosedVariables.values.toList())
+    val instantiationCode = generateFunctionInstantiationCode(
+      stmt.identifier.value,
+      enclosedVariables.values.toList(),
+      currentCode.size
+    )
 
     enclosedVariables = outerEnclosedVariables
     currentCode.addAll(instantiationCode)
@@ -927,20 +930,22 @@ private fun getActualLocalVariableIndex(resolution: VariableResolutionResult) = 
 }
 
 private fun generateFunctionInstantiationCode(
-  thisClassInfo: ClassInfo,
   functionName: String,
-  enclosedVariables: List<EnclosedVariable>
+  enclosedVariables: List<EnclosedVariable>,
+  currentCodeOffset: Int,
 ): List<Operation> {
   val functionClassName = "LoxFunction${functionName}"
   val thisClassInfo = ClassInfo(functionClassName)
-  val res = mutableListOf(
-    ShortConstantOperation(Opcode.OP_NEW, thisClassInfo, ObjectVti(thisClassInfo)),
-    SimpleOperation(Opcode.OP_DUP),
-    ShortConstantOperation(
+  val res = wrapLocalsIfNeeded(enclosedVariables, currentCodeOffset)
+
+  val invokeFunctionObjectConstructorOp = ShortConstantOperation(
       Opcode.OP_INVOKE_SPECIAL,
       generateLoxFunctionConstructorInfo(className = "LoxFunction${functionName}")
     )
-  )
+
+  res.add(ShortConstantOperation(Opcode.OP_NEW, thisClassInfo, ObjectVti(thisClassInfo)))
+  res.add(SimpleOperation(Opcode.OP_DUP))
+  res.add(invokeFunctionObjectConstructorOp)
 
   for (v in enclosedVariables) {
     res.addAll(
@@ -960,4 +965,48 @@ private fun generateFunctionInstantiationCode(
   }
 
   return res.toList()
+}
+
+private fun wrapLocalsIfNeeded(
+  enclosedVariables: List<EnclosedVariable>,
+  currentCodeOffset: Int
+): MutableList<Operation> {
+  val res = mutableListOf<Operation>()
+
+  for (v in enclosedVariables) {
+    val loadVariableOp = OperationWithIndex(Opcode.OP_ALOAD, getActualLocalVariableIndex(v).toByte(), loxObjectVti)
+    val checkIfPointerOp = ShortConstantOperation(Opcode.OP_INSTANCEOF, ClassInfo(className = "LoxPointer"))
+    val jumpIfPointerOp = ControlFlowOperation(Opcode.OP_IFNE, jumpTo = -1)
+    val newPointerOp = ShortConstantOperation(
+      Opcode.OP_NEW,
+      ClassInfo(className = "LoxPointer"),
+      ObjectVti(ClassInfo(className = "LoxPointer"))
+    )
+    val invokePointerConstructorOp = ShortConstantOperation(
+      Opcode.OP_INVOKE_SPECIAL,
+      generateLoxFunctionConstructorInfo(className = "LoxPointer"),
+    )
+
+    val putIntoVariableField = ShortConstantOperation(
+      Opcode.OP_PUTFIELD,
+      generateFieldRef(className = "LoxPointer", fieldName = "__value__")
+    )
+
+    val storeVariableOp = OperationWithIndex(Opcode.OP_ASTORE, getActualLocalVariableIndex(v).toByte(), loxObjectVti)
+
+    res.add(loadVariableOp)
+    res.add(checkIfPointerOp)
+    res.add(jumpIfPointerOp)
+    res.add(newPointerOp)
+    res.add(SimpleOperation(Opcode.OP_DUP))
+    res.add(SimpleOperation(Opcode.OP_DUP))
+    res.add(invokePointerConstructorOp)
+    res.add(loadVariableOp)
+    res.add(putIntoVariableField)
+    res.add(storeVariableOp)
+
+    jumpIfPointerOp.setJumpTo(currentCodeOffset + res.size)
+  }
+
+  return res
 }

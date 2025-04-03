@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalUuidApi::class, ExperimentalUuidApi::class)
+@file:OptIn(ExperimentalUuidApi::class)
 
 package org.example.rlc.frontend
 
@@ -56,7 +56,6 @@ private class MockUuidGenerator {
 class ResolverTest {
   @Test
   fun testGlobalAssignAndAccess() {
-//    index = 0
     val resolutionTable = getResolutionTable(filename = "resolver_01_global.lox")
 
     val expectedResults = listOf(
@@ -141,7 +140,7 @@ private data class Expectation(val variableId: Uuid, val expectedResult: Variabl
 
 private fun assertResolutions(resolutionTable: VariableResolutionTable, expectedResults: List<Expectation>) {
   for (expected in expectedResults) {
-    assertEquals(expected = expected.expectedResult, actual = resolutionTable.get(expected.variableId))
+    assertEquals(expected = expected.expectedResult, actual = resolutionTable.get(expected.variableId), message = "For node id ${expected.variableId}")
   }
 }
 

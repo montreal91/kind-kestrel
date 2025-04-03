@@ -31,7 +31,10 @@ class VariableResolutionTable {
     table[id] = when (resolution) {
       is EnclosedVariable -> resolution
       is GlobalVariable -> resolution
-      is LocalVariable -> LocalVariable(resolution.variableArrayIndex, isUpValue = true)
+      is LocalVariable -> LocalVariable(
+        resolution.variableArrayIndex,
+        isUpValue = true,
+      )
       UnresolvedVariable -> resolution
     }
   }
