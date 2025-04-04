@@ -261,7 +261,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     val outerFunction = currentFunction
     val outerEnclosedVariables = enclosedVariables
 
-    enclosedVariables = mutableMapOf()
+    enclosedVariables = mutableMapOf() // Looks like part of resolver's job here
     currentCode = mutableListOf()
     currentFunction = stmt.identifier.value
 
@@ -662,7 +662,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
 
     currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, ClassInfo(className = "LoxPointer")))
     currentCode.add(ShortConstantOperation(Opcode.OP_GETFIELD, pointerValueFri, loxObjectVti))
-    enclosedVariables[variable.name] = variable
+    enclosedVariables[variable.name] = variable // Feels like resolver's job here.
   }
 
   private fun compileLogical(expr: Logical) {

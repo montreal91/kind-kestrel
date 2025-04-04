@@ -34,7 +34,7 @@ class Resolver {
   private val frameStack = FrameStack()
   private val errors = mutableListOf<LoxCompileError>()
 
-  private var functionContexts = ArrayDeque<FunctionContext>()
+  private val functionContexts = ArrayDeque<FunctionContext>()
 
   val hasErrors = errors.isNotEmpty()
 
@@ -114,7 +114,8 @@ class Resolver {
     }
 
     visitBlockStmt(stmt.body)
-    frameStack.popFrame()
+
+    val frame = frameStack.popFrame()
 
     val innerFunction = functionContexts.removeLast()
 
@@ -122,7 +123,7 @@ class Resolver {
 
     println("------------------------------------------------")
     println("Enclosed values for function: ${stmt.identifier}")
-    for (v in innerFunction.enclosedVariables) {
+    for (v in innerFunction.enclosedVariables.values) {
       println("${v.name}, ${v.enclosedObject}, ${v.depth}")
     }
     println("------------------------------------------------")
@@ -172,9 +173,9 @@ class Resolver {
     val resolvedVariable = resolveVariable(expr.variable)
     resolutionTable.set(expr.uid, resolvedVariable)
 
-    if (resolvedVariable is EnclosedVariable) {
-      functionContexts.last().enclosedVariables.add(resolvedVariable)
-    }
+//    if (resolvedVariable is EnclosedVariable) {
+//      functionContexts.last().enclosedVariables[resolvedVariable.name] = resolvedVariable
+//    }
   }
 
   private fun visitLogical(expr: Logical) {
@@ -207,7 +208,7 @@ class Resolver {
     val lookup = frameStack.lookup(identifier)
     println(lookup)
 
-    if (lookup.variableType != LookupResult.Type.LOCAL) {
+    if (lookup.variableType != VariableType.LOCAL) {
       frameStack.markAsUpvalue(identifier)
       resolutionTable.updateAsUpvalue(lookup.declarationId)
     }
@@ -218,17 +219,17 @@ class Resolver {
       // So, this is here, where we should decide if our enclosed variable
       // actually from a local variable or another enclosed variable.
       // How can we do that?
-      LookupResult.Type.CAPTURED_LOCAL -> EnclosedVariable(
+      VariableType.CAPTURED_LOCAL -> EnclosedVariable(
           name = identifier,
           enclosedObject = EnclosedLocal(lookup.index),
           depth = lookup.depth
       )
-      LookupResult.Type.CAPTURED_UPVALUE -> EnclosedVariable(
+      VariableType.CAPTURED_UPVALUE -> EnclosedVariable(
         name = identifier,
         enclosedObject = EnclosedUpvalue(variableName = identifier),
         depth = lookup.depth,
       )
-      LookupResult.Type.LOCAL -> LocalVariable(identifier, lookup.index, lookup.isUpvalue)
+      VariableType.LOCAL -> LocalVariable(identifier, lookup.index, lookup.isUpvalue)
     }
   }
 

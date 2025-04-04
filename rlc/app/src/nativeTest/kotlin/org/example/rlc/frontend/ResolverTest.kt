@@ -50,6 +50,20 @@ private val fakeUuids = listOf(
   Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000034"),
   Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000035"),
   Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000036"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000037"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000038"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000039"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000040"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000041"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000042"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000043"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000044"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000045"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000046"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000047"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000048"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000049"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000050"),
 )
 
 private class MockUuidGenerator {
@@ -165,6 +179,41 @@ class ResolverTest {
       Expectation(fakeUuids[19], LocalVariable(name = "inner", variableArrayIndex = 2, isUpValue = false)),
       Expectation(fakeUuids[23], LocalVariable(name = "middle", variableArrayIndex = 1, isUpValue = false)),
       Expectation(fakeUuids[26], GlobalVariable(name = "outer")),
+    )
+
+    assertResolutions(resolutionTable, expectedResults)
+  }
+
+  @Test
+  fun testUpvalue03() {
+    val resolutionTable = getResolutionTable(filename = "resolver_04_upvalue_03.lox")
+
+    for (k in resolutionTable._test_getKeys()) {
+      println("$k => ${resolutionTable.get(k)}")
+    }
+
+    val expectedResults = listOf(
+      //00000000-0000-0000-0000-000000000019 => (GlobalVariable name=outer)
+      Expectation(fakeUuids[26], GlobalVariable(name = "outer")),
+      //00000000-0000-0000-0000-000000000001 => (LocalVariable name=x index=0 isUpValue=true)
+      //00000000-0000-0000-0000-000000000015 => (LocalVariable name=middle index=1 isUpValue=false)
+      //00000000-0000-0000-0000-000000000002 => (LocalVariable name=y index=0 isUpValue=true)
+      //00000000-0000-0000-0000-000000000011 => (LocalVariable name=inner index=1 isUpValue=false)
+      //00000000-0000-0000-0000-000000000003 => (LocalVariable name=z index=0 isUpValue=false)
+      //00000000-0000-0000-0000-000000000004 => (EnclosedVariable name=x depth=3 enclosedObject=(EnclosedUpvalue variableName=x))
+      //00000000-0000-0000-0000-000000000005 => (EnclosedVariable name=y depth=3 enclosedObject=(EnclosedLocal (localVariableIndex=0)))
+      //00000000-0000-0000-0000-000000000007 => (LocalVariable name=z index=0 isUpValue=false)
+      //00000000-0000-0000-0000-000000000012 => (LocalVariable name=inner index=1 isUpValue=false)
+      //00000000-0000-0000-0000-000000000016 => (LocalVariable name=middle index=1 isUpValue=false)
+      //00000000-0000-0000-0000-000000000025 => (GlobalVariable name=closure)
+      //00000000-0000-0000-0000-000000000020 => (GlobalVariable name=outer)
+      //00000000-0000-0000-0000-000000000026 => (GlobalVariable name=closure)
+      //00000000-0000-0000-0000-000000000033 => (GlobalVariable name=c1)
+      //00000000-0000-0000-0000-000000000030 => (GlobalVariable name=outer)
+      //00000000-0000-0000-0000-000000000037 => (GlobalVariable name=c2)
+      //00000000-0000-0000-0000-000000000034 => (GlobalVariable name=c1)
+      //00000000-0000-0000-0000-000000000038 => (GlobalVariable name=c2)
+      //00000000-0000-0000-0000-000000000042 => (GlobalVariable name=outer)
     )
 
     assertResolutions(resolutionTable, expectedResults)

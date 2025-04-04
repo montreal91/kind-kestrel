@@ -41,12 +41,12 @@ internal class FrameStack {
     frameStack.addLast(Frame(type, newIndex, frameName, newDepth))
   }
 
-  internal fun popFrame() {
+  internal fun popFrame(): Frame {
     if (frameStack.last().isFunction()) {
       currentFunctionDepth.removeLast()
     }
 
-    frameStack.removeLast()
+    return frameStack.removeLast()
   }
 
   internal fun existInCurrentFrame(identifier: String) = frameStack.last().containsIdentifier(identifier)
@@ -92,8 +92,8 @@ internal class FrameStack {
       return LookupResult(
         index = frameVariable.index,
         variableType = when (frame.functionDepth < frameStack.last().functionDepth) {
-          false -> LookupResult.Type.LOCAL
-          true -> LookupResult.Type.CAPTURED_LOCAL
+          false -> VariableType.LOCAL
+          true -> VariableType.CAPTURED_LOCAL
         },
         isUpvalue = frameVariable.isUpvalue,
         depth = frameIndex,
@@ -112,11 +112,12 @@ internal class FrameStack {
 
     if (frame.type == Frame.Type.FUNCTION && frame.functionDepth < frameStack.last().functionDepth) {
       println("Why are we here? >>> ($identifier $lookup)")
+
       frame.declareVariable(identifier, declarationId = lookup.declarationId)
 
       return LookupResult(
         index = lookup.index,
-        variableType = LookupResult.Type.CAPTURED_UPVALUE,
+        variableType = VariableType.CAPTURED_UPVALUE,
         isUpvalue = lookup.isUpvalue,
         depth = frameIndex,
         declarationId = lookup.declarationId,
@@ -126,8 +127,8 @@ internal class FrameStack {
     return lookup
   }
 
-  private fun getCurrentFunctionDepth() = when (currentFunctionDepth.isNotEmpty()) {
-    true -> currentFunctionDepth.last()
-    false -> 0
-  }
+//  private fun getCurrentFunctionDepth() = when (currentFunctionDepth.isNotEmpty()) {
+//    true -> currentFunctionDepth.last()
+//    false -> 0
+//  }
 }
