@@ -45,6 +45,11 @@ private val fakeUuids = listOf(
   Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000029"),
   Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000030"),
   Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000031"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000032"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000033"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000034"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000035"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000036"),
 )
 
 private class MockUuidGenerator {
@@ -71,8 +76,8 @@ class ResolverTest {
     val resolutionTable = getResolutionTable(filename = "resolver_02_local.lox")
 
     val expectedResults = listOf(
-      Expectation(fakeUuids[1], LocalVariable(variableArrayIndex = 0)),
-      Expectation(fakeUuids[2], LocalVariable(variableArrayIndex = 0)),
+      Expectation(fakeUuids[1], LocalVariable(name = "a", variableArrayIndex = 0)),
+      Expectation(fakeUuids[2], LocalVariable(name = "a", variableArrayIndex = 0)),
     )
 
     assertResolutions(resolutionTable, expectedResults)
@@ -84,13 +89,13 @@ class ResolverTest {
 
     val expectedResults = listOf(
       Expectation(fakeUuids[1], GlobalVariable(name = "a")),
-      Expectation(fakeUuids[3], LocalVariable(variableArrayIndex = 0)),
-      Expectation(fakeUuids[5], LocalVariable(variableArrayIndex = 1)),
-      Expectation(fakeUuids[6], LocalVariable(variableArrayIndex = 1)),
-      Expectation(fakeUuids[9], LocalVariable(variableArrayIndex = 0)),
-      Expectation(fakeUuids[12], LocalVariable(variableArrayIndex = 1)), // Check later if this case can break
-      Expectation(fakeUuids[13], LocalVariable(variableArrayIndex = 1)), // Check later if this case can break
-      Expectation(fakeUuids[16], LocalVariable(variableArrayIndex = 0)),
+      Expectation(fakeUuids[3], LocalVariable(name = "a", variableArrayIndex = 0)),
+      Expectation(fakeUuids[5], LocalVariable(name = "a",variableArrayIndex = 1)),
+      Expectation(fakeUuids[6], LocalVariable(name = "a", variableArrayIndex = 1)),
+      Expectation(fakeUuids[9], LocalVariable(name = "a", variableArrayIndex = 0)),
+      Expectation(fakeUuids[12], LocalVariable(name = "a", variableArrayIndex = 1)), // Check later if this case can break
+      Expectation(fakeUuids[13], LocalVariable(name = "a", variableArrayIndex = 1)), // Check later if this case can break
+      Expectation(fakeUuids[16], LocalVariable(name = "a",variableArrayIndex = 0)),
       Expectation(fakeUuids[19], GlobalVariable(name = "a")),
     )
 
@@ -121,15 +126,45 @@ class ResolverTest {
 
     val expectedResults = listOf(
       Expectation(fakeUuids[13], GlobalVariable(name = "mutate")),
-      Expectation(fakeUuids[1], LocalVariable(variableArrayIndex = 0, isUpValue = true)),
-      Expectation(fakeUuids[5], LocalVariable(variableArrayIndex = 1, isUpValue = false)),
+      Expectation(fakeUuids[1], LocalVariable(name = "cap",variableArrayIndex = 0, isUpValue = true)),
+      Expectation(fakeUuids[5], LocalVariable(name = "inner", variableArrayIndex = 1, isUpValue = false)),
       Expectation(
         fakeUuids[2],
         EnclosedVariable(name = "cap", enclosedObject = EnclosedLocal(localVariableIndex = 0), depth = 2)
       ),
-      Expectation(fakeUuids[6], LocalVariable(variableArrayIndex = 0, isUpValue = true)),
-      Expectation(fakeUuids[10], LocalVariable(variableArrayIndex = 1, isUpValue = false)),
+      Expectation(fakeUuids[6], LocalVariable(name = "cap", variableArrayIndex = 0, isUpValue = true)),
+      Expectation(fakeUuids[10], LocalVariable(name = "inner", variableArrayIndex = 1, isUpValue = false)),
       Expectation(fakeUuids[14], GlobalVariable(name = "mutate")),
+    )
+
+    assertResolutions(resolutionTable, expectedResults)
+  }
+
+  @Test
+  fun testUpvalue02() {
+    val resolutionTable = getResolutionTable(filename = "resolver_04_upvalue_02.lox")
+
+    for (k in resolutionTable._test_getKeys()) {
+      println("$k => ${resolutionTable.get(k)}")
+    }
+
+    val expectedResults = listOf(
+      Expectation(fakeUuids[26], GlobalVariable(name = "outer")),
+      Expectation(fakeUuids[0], LocalVariable(name = "x", variableArrayIndex = 0, isUpValue = true)),
+      Expectation(fakeUuids[22], LocalVariable(name = "middle", variableArrayIndex = 1, isUpValue = false)),
+      Expectation(fakeUuids[1], LocalVariable(name = "y", variableArrayIndex = 0, isUpValue = true)),
+      Expectation(fakeUuids[5], LocalVariable(name = "t", variableArrayIndex = 1, isUpValue = false)),
+      Expectation(fakeUuids[2], EnclosedVariable(name = "x", depth = 1, enclosedObject = EnclosedLocal(localVariableIndex = 0))),
+      Expectation(fakeUuids[3], LocalVariable(name = "y", variableArrayIndex = 0, isUpValue = false)),
+      Expectation(fakeUuids[14], LocalVariable(name = "inner", variableArrayIndex = 2, isUpValue = false)),
+      Expectation(fakeUuids[6], LocalVariable(name = "z", variableArrayIndex = 0, isUpValue = false)),
+      Expectation(fakeUuids[7], EnclosedVariable(name = "x", depth = 3, enclosedObject = EnclosedUpvalue(variableName = "x"))),
+      Expectation(fakeUuids[8], EnclosedVariable(name = "y", depth = 3, enclosedObject = EnclosedLocal(localVariableIndex = 0))),
+      Expectation(fakeUuids[10], LocalVariable(name="z", variableArrayIndex = 0, isUpValue = false)),
+      Expectation(fakeUuids[17], LocalVariable(name = "t", variableArrayIndex = 1, isUpValue = false)),
+      Expectation(fakeUuids[19], LocalVariable(name = "inner", variableArrayIndex = 2, isUpValue = false)),
+      Expectation(fakeUuids[23], LocalVariable(name = "middle", variableArrayIndex = 1, isUpValue = false)),
+      Expectation(fakeUuids[26], GlobalVariable(name = "outer")),
     )
 
     assertResolutions(resolutionTable, expectedResults)

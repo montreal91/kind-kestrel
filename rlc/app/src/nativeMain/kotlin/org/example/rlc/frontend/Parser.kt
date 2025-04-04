@@ -9,6 +9,7 @@ import org.example.rlc.frontend.ast.CallExpr
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.ForStmt
+import org.example.rlc.frontend.ast.FormalParameter
 import org.example.rlc.frontend.ast.FunDeclStmt
 import org.example.rlc.frontend.ast.Grouping
 import org.example.rlc.frontend.ast.IfStmt
@@ -73,7 +74,7 @@ private fun Token.isTerminal() = when {
 private class ParserException(msg: String) : Exception(msg)
 
 @OptIn(ExperimentalUuidApi::class)
-fun defaultUidGen() = Uuid.random()
+private fun defaultUidGen() = Uuid.random()
 
 @OptIn(ExperimentalUuidApi::class)
 class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = ::defaultUidGen) {
@@ -172,17 +173,17 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
     statements.last().add(functionDecl)
   }
 
-  private fun parameters(): Array<Token> {
-    val res = mutableListOf<Token>()
+  private fun parameters(): Array<FormalParameter> {
+    val res = mutableListOf<FormalParameter>()
     if (currentToken.type == Token.Type.IDENTIFIER) {
-      res.add(currentToken)
+      res.add(FormalParameter(uidGen(), currentToken))
       consume(Token.Type.IDENTIFIER, "Expect identifier.")
     }
 
     while (currentToken.type == Token.Type.COMMA && !isLastToken) {
       consume(Token.Type.COMMA, message = "Expect ','.")
       consume(Token.Type.IDENTIFIER, message = "Expect identifier after ','.")
-      res.add(previous)
+      res.add(FormalParameter(uidGen(), previous))
     }
 
     return res.toTypedArray()

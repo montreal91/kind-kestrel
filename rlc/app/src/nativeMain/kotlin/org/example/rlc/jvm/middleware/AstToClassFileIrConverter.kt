@@ -1,6 +1,6 @@
 package org.example.rlc.jvm.middleware
 
-import org.example.rlc.frontend.EnclosedField
+import org.example.rlc.frontend.EnclosedUpvalue
 import org.example.rlc.frontend.EnclosedLocal
 import org.example.rlc.frontend.Token
 import org.example.rlc.frontend.ast.Assignment
@@ -921,7 +921,7 @@ private fun generateFieldRef(className: String, fieldName: String): FieldRefInfo
 private fun getActualLocalVariableIndex(resolution: VariableResolutionResult) = when (resolution) {
   is EnclosedVariable -> when (resolution.enclosedObject) {
     is EnclosedLocal -> resolution.enclosedObject.localVariableIndex + 1
-    is EnclosedField -> -1
+    is EnclosedUpvalue -> -1
   }
 
   is GlobalVariable -> 0 - 1

@@ -7,7 +7,6 @@ import kotlin.uuid.Uuid
 import org.example.rlc.frontend.Token
 import org.example.rlc.frontend.scope.VariableResolutionResult
 
-//@OptIn(ExperimentalUuidApi::class)
 sealed class Stmt(val uid: Uuid)
 
 class ExprStmt(uid: Uuid, val expr: Expr): Stmt(uid)
@@ -28,7 +27,7 @@ class ForStmt(
 class FunDeclStmt(
   uid: Uuid,
   val identifier: Token,
-  val parameters: Array<Token>,
+  val parameters: Array<FormalParameter>,
   val body: BlockStmt
 ): Stmt(uid) {
   val arity: Int get() = parameters.size
@@ -44,6 +43,11 @@ class FunDeclStmt(
     return isClosure
   }
 }
+
+class FormalParameter(
+  val uid: Uuid,
+  val identifier: Token
+)
 
 class ReturnStmt(uid: Uuid, val expr: Expr?): Stmt(uid)
 

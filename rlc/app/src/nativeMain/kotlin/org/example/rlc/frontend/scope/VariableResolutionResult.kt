@@ -1,32 +1,34 @@
 package org.example.rlc.frontend.scope
 
-import org.example.rlc.frontend.EnclosedSomething
+import org.example.rlc.frontend.EnclosedObject
 
 sealed class VariableResolutionResult
 
 class LocalVariable(
+  val name: String,
   val variableArrayIndex: Int,
   val isUpValue: Boolean,
 ) : VariableResolutionResult() {
-  constructor(variableArrayIndex: Int) : this(
-    variableArrayIndex = variableArrayIndex, isUpValue = false
+  constructor(name: String, variableArrayIndex: Int) : this(
+    name = name, variableArrayIndex = variableArrayIndex, isUpValue = false
   )
 
   override fun equals(other: Any?): Boolean {
     if (other is LocalVariable) {
       return variableArrayIndex == other.variableArrayIndex &&
-          isUpValue == other.isUpValue
+          isUpValue == other.isUpValue &&
+          name == other.name
     }
 
     return super.equals(other)
   }
 
   override fun hashCode(): Int {
-    return "$variableArrayIndex$isUpValue".hashCode()
+    return toString().hashCode()
   }
 
   override fun toString(): String {
-    return "(LocalVariable index=$variableArrayIndex isUpValue=$isUpValue)"
+    return "(LocalVariable name=$name index=$variableArrayIndex isUpValue=$isUpValue)"
   }
 }
 
@@ -51,7 +53,7 @@ class GlobalVariable(val name: String): VariableResolutionResult() {
 // It actually can enclose over another enclosed variable
 class EnclosedVariable(
   val name: String,
-  val enclosedObject: EnclosedSomething,
+  val enclosedObject: EnclosedObject,
   val depth: Int
 ) : VariableResolutionResult() {
   override fun equals(other: Any?): Boolean {

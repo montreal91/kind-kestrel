@@ -4,9 +4,23 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
-class Frame(private val type: Type, private var index: Int) {
+class Frame(
+  val type: Type,
+  private var index: Int,
+  private val name: String,
+  val functionDepth: Int
+) {
   enum class Type {
     GLOBAL, BLOCK, FUNCTION
+  }
+
+  override fun toString(): String {
+    val sb = StringBuilder()
+    for (variable in frameVariables.keys) {
+      sb.append("$variable ")
+    }
+
+    return "(Frame type=$type name=$name variables=($sb))"
   }
 
   private val frameVariables = mutableMapOf<String, FrameVariable>()

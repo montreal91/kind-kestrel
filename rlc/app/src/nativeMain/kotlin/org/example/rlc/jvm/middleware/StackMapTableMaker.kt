@@ -30,8 +30,9 @@ class StackMapTableMaker {
   }
 
   private fun processClass(classFile: ClassFile) {
-    println("\nAdding attributes if required for class ${classFile.filename}")
-    println("------------------------------------------------------------------")
+    println("\n")
+    println("=============================================================")
+    println("Adding attributes if required for class ${classFile.filename}")
     for (method in classFile.methodList) {
       addAttributeIfRequired(method, classFile.thisClassInfo)
     }
@@ -98,7 +99,11 @@ class StackMapTableMaker {
     val offsets = calculateOffsets(operations)
     println("Offsets")
     for ((i, offset) in offsets.withIndex()) {
-      println("$i, $offset, ${operations[i].opcode}")
+      val suffix = when (val op = operations[i]) {
+        is OperationWithIndex -> "(index=${op.index})"
+        else -> ""
+      }
+      println("$i, $offset, ${operations[i].opcode}$suffix")
     }
 
     val frames = List(operations.size) { FullFrameBuilder() }

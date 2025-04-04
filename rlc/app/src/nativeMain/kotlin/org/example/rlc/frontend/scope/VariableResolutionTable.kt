@@ -22,6 +22,7 @@ class VariableResolutionTable {
   }
 
   fun updateAsUpvalue(id: Uuid) {
+    println("Marking as upvalue (id=$id)")
     if (!table.containsKey(id)) {
       throw IllegalStateException("This identifier is not declared yet: $id")
     }
@@ -32,7 +33,8 @@ class VariableResolutionTable {
       is EnclosedVariable -> resolution
       is GlobalVariable -> resolution
       is LocalVariable -> LocalVariable(
-        resolution.variableArrayIndex,
+        name = resolution.name,
+        variableArrayIndex = resolution.variableArrayIndex,
         isUpValue = true,
       )
       UnresolvedVariable -> resolution

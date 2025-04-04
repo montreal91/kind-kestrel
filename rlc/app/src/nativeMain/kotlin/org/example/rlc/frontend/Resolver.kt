@@ -39,7 +39,7 @@ class Resolver {
   val hasErrors = errors.isNotEmpty()
 
   fun resolve(program: Ast): VariableResolutionTable {
-    println("__________________________________")
+    println("==================================")
     println("Variable resolution stage started.\n")
     program.forEach(this::visitStmt)
 
@@ -73,7 +73,7 @@ class Resolver {
 
   private fun visitBlockStmt(stmt: BlockStmt) {
     println("Resolver visiting a block statement.")
-    frameStack.addNewFrame(Frame.Type.BLOCK)
+    frameStack.addNewFrame(Frame.Type.BLOCK, frameName = "Block")
     stmt.statements.forEach(this::visitStmt)
     frameStack.popFrame()
   }
@@ -98,15 +98,19 @@ class Resolver {
   }
 
   private fun visitFunDeclStmt(stmt: FunDeclStmt) {
+    println("--------------------------------------------------------")
     println("Resolving Function Declaration: ${stmt.identifier.value}")
     checkVariable(stmt.identifier)
     resolveVariableDeclaration(stmt.uid, stmt.identifier.value)
-    frameStack.addNewFrame(Frame.Type.FUNCTION)
+    frameStack.addNewFrame(
+      type = Frame.Type.FUNCTION,
+      frameName = stmt.identifier.value
+    )
     functionContexts.addLast(FunctionContext())
 
     for (param in stmt.parameters) {
-      checkVariable(param)
-      frameStack.declareVariable(param.value, stmt.uid)
+      checkVariable(param.identifier)
+      resolveVariableDeclaration(uid = param.uid, variable = param.identifier.value)
     }
 
     visitBlockStmt(stmt.body)
@@ -124,6 +128,7 @@ class Resolver {
     println("------------------------------------------------")
 
     println("Finished Resolving Function Declaration: ${stmt.identifier.value}")
+    println("-----------------------------------------------------------------")
   }
 
   private fun visitIfStmt(stmt: IfStmt) {
@@ -192,28 +197,38 @@ class Resolver {
   }
 
   private fun resolveVariable(identifier: String): VariableResolutionResult {
+    println("Resolving variable $identifier")
+    println(frameStack)
     if (!frameStack.existInAllFrames(identifier)) {
       return GlobalVariable(name = identifier)
     }
 
     println("Resolved to be local or enclosed variable: $identifier")
     val lookup = frameStack.lookup(identifier)
+    println(lookup)
 
-    if (lookup.isClosure) {
+    if (lookup.variableType != LookupResult.Type.LOCAL) {
       frameStack.markAsUpvalue(identifier)
       resolutionTable.updateAsUpvalue(lookup.declarationId)
     }
 
-    return when (lookup.isClosure) {
+    println("Identifier=$identifier isClosure=${lookup.variableType} isUpvalue=${lookup.isUpvalue}")
+
+    return when (lookup.variableType) {
       // So, this is here, where we should decide if our enclosed variable
       // actually from a local variable or another enclosed variable.
       // How can we do that?
-      true -> EnclosedVariable(
+      LookupResult.Type.CAPTURED_LOCAL -> EnclosedVariable(
           name = identifier,
           enclosedObject = EnclosedLocal(lookup.index),
           depth = lookup.depth
       )
-      false -> LocalVariable(lookup.index, lookup.isUpvalue)
+      LookupResult.Type.CAPTURED_UPVALUE -> EnclosedVariable(
+        name = identifier,
+        enclosedObject = EnclosedUpvalue(variableName = identifier),
+        depth = lookup.depth,
+      )
+      LookupResult.Type.LOCAL -> LocalVariable(identifier, lookup.index, lookup.isUpvalue)
     }
   }
 
@@ -226,6 +241,7 @@ class Resolver {
   }
 
   private fun resolveVariableDeclaration(uid: Uuid, variable: String) {
+    println("Resolving variable declaration (uid=$uid variable=$variable)")
     if (frameStack.isGlobal()) {
       resolutionTable.set(uid, GlobalVariable(variable))
     } else {
@@ -233,7 +249,9 @@ class Resolver {
 
       // Defines, in which local variable array index
       // this variable should resolve to
-      resolutionTable.set(uid, LocalVariable(frameStack.lookup(variable).index))
+      val lookup = frameStack.lookup(variable)
+      println("  $lookup")
+      resolutionTable.set(uid, LocalVariable(name = variable, variableArrayIndex = lookup.index, isUpValue = lookup.isUpvalue))
     }
   }
 }
