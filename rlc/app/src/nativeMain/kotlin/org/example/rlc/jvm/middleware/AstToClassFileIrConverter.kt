@@ -256,6 +256,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   }
 
   private fun visitFunDeclStmt(stmt: FunDeclStmt) {
+    println("Compiling function. (function=${stmt.identifier.value})")
     val outerCode = currentCode
     val outerFunction = currentFunction
     val outerEnclosedVariables = enclosedVariables
@@ -290,8 +291,9 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
 
     val instantiationCode = generateFunctionInstantiationCode(
       stmt.identifier.value,
+      outerFunction,
       enclosedVariables.values.toList(),
-      currentCode.size
+      currentCode.size,
     )
 
     enclosedVariables = outerEnclosedVariables
@@ -308,6 +310,8 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
         "Variable ${stmt.identifier} is unresolved, but expected to be resolved"
       )
     }
+
+    println("Finished compiling function. (function=${stmt.identifier.value})")
   }
 
   private fun visitIfStatement(stmt: IfStmt) {
@@ -618,6 +622,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   }
 
   private fun getLocalVariable(variable: LocalVariable) {
+    println("Compiling access to local variable (variable=$variable function=$currentFunction)")
     currentCode.add(
       OperationWithIndex(Opcode.OP_ALOAD, getActualLocalVariableIndex(variable).toByte(), ObjectVti(loxObjectClassInfo))
     )
@@ -931,6 +936,7 @@ private fun getActualLocalVariableIndex(resolution: VariableResolutionResult) = 
 
 private fun generateFunctionInstantiationCode(
   functionName: String,
+  outerFunctionName: String,
   enclosedVariables: List<EnclosedVariable>,
   currentCodeOffset: Int,
 ): List<Operation> {
@@ -947,22 +953,64 @@ private fun generateFunctionInstantiationCode(
   res.add(SimpleOperation(Opcode.OP_DUP))
   res.add(invokeFunctionObjectConstructorOp)
 
+  println("Compiling enclosed variables.")
   for (v in enclosedVariables) {
-    res.addAll(
-      listOf(
-        SimpleOperation(Opcode.OP_DUP),
-        OperationWithIndex(
-          Opcode.OP_ALOAD,
-          getActualLocalVariableIndex(v).toByte(),
-          ObjectVti(loxObjectClassInfo)
-        ),
-        ShortConstantOperation(
-          Opcode.OP_PUTFIELD,
-          generateFieldRef(className = "LoxFunction${functionName}", fieldName = "__enclosed_value__${v.name}__")
-        )
-      )
+    res.add(SimpleOperation(Opcode.OP_DUP))
+    println("Enclosed Variable: $v")
+
+    val putFieldOp = ShortConstantOperation(
+      Opcode.OP_PUTFIELD,
+      generateFieldRef(className = "LoxFunction${functionName}", fieldName = "__enclosed_value__${v.name}__")
     )
+
+    val accessOps = when (v.enclosedObject) {
+      is EnclosedLocal -> compileEnclosedLocal(v)
+      is EnclosedUpvalue -> compileEnclosedUpvalue(v, outerFunctionName)
+    }
+
+    res.addAll(accessOps)
+    res.add(putFieldOp)
   }
+
+  println("Finished compiling enclosed variables.")
+
+  return res.toList()
+}
+
+private fun compileEnclosedLocal(variable: EnclosedVariable): List<Operation> {
+  if (variable.enclosedObject !is EnclosedLocal) {
+    throw IllegalStateException("Trying to compile local, but it is not local.\nVariable=($variable)")
+  }
+
+  val res = mutableListOf<Operation>()
+  val loadFromLocalArrayOp = OperationWithIndex(
+    Opcode.OP_ALOAD,
+    getActualLocalVariableIndex(variable).toByte(),
+    ObjectVti(loxObjectClassInfo)
+  )
+
+  res.add(loadFromLocalArrayOp)
+
+  return res.toList()
+}
+
+private fun compileEnclosedUpvalue(variable: EnclosedVariable, functionName: String): List<Operation> {
+  if (variable.enclosedObject !is EnclosedUpvalue) {
+    throw IllegalStateException("Trying to compile upvalue, but it is not upvalue.\nVariable=($variable)")
+  }
+
+  val res = mutableListOf<Operation>()
+  val getFieldOp = ShortConstantOperation(
+    Opcode.OP_GETFIELD,
+    generateFieldRef(
+      className = "LoxFunction$functionName",
+      fieldName = "__enclosed_value__${variable.name}__", // this should be from outer function
+    ),
+    loxObjectVti,
+  )
+
+  res.add(SimpleOperation(Opcode.OP_ALOAD_0))
+  res.add(getFieldOp)
 
   return res.toList()
 }
@@ -974,6 +1022,10 @@ private fun wrapLocalsIfNeeded(
   val res = mutableListOf<Operation>()
 
   for (v in enclosedVariables) {
+    if (v.enclosedObject !is EnclosedLocal) {
+      continue
+    }
+
     val loadVariableOp = OperationWithIndex(Opcode.OP_ALOAD, getActualLocalVariableIndex(v).toByte(), loxObjectVti)
     val checkIfPointerOp = ShortConstantOperation(Opcode.OP_INSTANCEOF, ClassInfo(className = "LoxPointer"))
     val jumpIfPointerOp = ControlFlowOperation(Opcode.OP_IFNE, jumpTo = -1)

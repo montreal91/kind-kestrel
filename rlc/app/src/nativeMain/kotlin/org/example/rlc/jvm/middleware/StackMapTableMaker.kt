@@ -101,6 +101,11 @@ class StackMapTableMaker {
     for ((i, offset) in offsets.withIndex()) {
       val suffix = when (val op = operations[i]) {
         is OperationWithIndex -> "(index=${op.index})"
+        is ShortConstantOperation -> when (op.opcode) {
+          Opcode.OP_GETFIELD, Opcode.OP_PUTFIELD -> "(field=${op.constant})"
+          Opcode.OP_INSTANCEOF -> "(class=${op.constant})"
+          else -> ""
+        }
         else -> ""
       }
       println("$i, $offset, ${operations[i].opcode}$suffix")
@@ -279,6 +284,8 @@ class StackMapTableMaker {
           stack.addLast(top)
           stack.addLast(prev)
         }
+
+        Opcode.OP_NOP -> {}
       }
 
       print("    Stack: ")

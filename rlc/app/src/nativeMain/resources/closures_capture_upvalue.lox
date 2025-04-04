@@ -2,9 +2,11 @@
 fun outer(x) {
   fun middle(y) {
     var t = x + y;
+
     fun inner(z) {
       return x + y + z;
     }
+
     print "Middle: ";
     print t;
 

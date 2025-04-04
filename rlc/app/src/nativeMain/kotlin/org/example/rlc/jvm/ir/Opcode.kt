@@ -152,6 +152,10 @@ enum class Opcode(val value: Byte) {
   // Takes two bytes as an operand
   OP_NEW(0xBB.toByte()),
 
+  // Do Nothing
+  // Use for some bytecode debugging
+  OP_NOP(0x00.toByte()),
+
   // Pop the top operand stack value
   OP_POP(0x57.toByte()),
 
