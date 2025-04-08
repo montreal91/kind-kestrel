@@ -4,7 +4,7 @@ sealed class EnclosedObject
 
 class EnclosedLocal(val localVariableIndex: Int): EnclosedObject() {
   override fun toString(): String {
-    return "(EnclosedLocal (localVariableIndex=$localVariableIndex))"
+    return "(EnclosedLocal localVariableIndex=$localVariableIndex)"
   }
 
   override fun equals(other: Any?): Boolean {

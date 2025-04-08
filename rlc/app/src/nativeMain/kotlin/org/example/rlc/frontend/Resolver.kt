@@ -117,6 +117,24 @@ class Resolver {
 
     val frame = frameStack.popFrame()
 
+    val enclosedVariables = frame.getVariables()
+      .filter { frameVariable ->
+        frameVariable.value.type == VariableType.CAPTURED_LOCAL || frameVariable.value.type == VariableType.CAPTURED_UPVALUE
+      }.toMap()
+
+    for (ev in enclosedVariables) {
+      val enclosedObject = when (ev.value.type) {
+        VariableType.CAPTURED_LOCAL -> EnclosedLocal(ev.value.index)
+        VariableType.CAPTURED_UPVALUE -> EnclosedUpvalue(variableName = ev.key)
+        VariableType.LOCAL -> EnclosedLocal(-1)
+      }
+
+//      tukka.add(EnclosedVariable(name = ev.key, depth = -1, enclosedObject = enclosedObject))
+      stmt.enclosedVariables.add(EnclosedVariable(name = ev.key, depth = -1, enclosedObject = enclosedObject))
+    }
+
+//    stmt.enclosedVariables.add
+
     val innerFunction = functionContexts.removeLast()
 
     // Here we can do some inner function analysis

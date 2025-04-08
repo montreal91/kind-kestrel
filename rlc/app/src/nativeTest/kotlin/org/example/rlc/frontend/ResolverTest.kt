@@ -3,6 +3,9 @@
 package org.example.rlc.frontend
 
 import org.example.rlc.application.readFile
+import org.example.rlc.frontend.ast.Ast
+import org.example.rlc.frontend.ast.FunDeclStmt
+import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.scope.EnclosedVariable
 import org.example.rlc.frontend.scope.GlobalVariable
 import org.example.rlc.frontend.scope.LocalVariable
@@ -10,6 +13,7 @@ import org.example.rlc.frontend.scope.VariableResolutionResult
 import org.example.rlc.frontend.scope.VariableResolutionTable
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -186,37 +190,87 @@ class ResolverTest {
 
   @Test
   fun testUpvalue03() {
-    val resolutionTable = getResolutionTable(filename = "resolver_04_upvalue_03.lox")
+    val resolutionContext = getResolutionContext(filename = "resolver_04_upvalue_03.lox")
+//    val resolutionTable = getResolutionTable(filename = "resolver_04_upvalue_03.lox")
 
-    for (k in resolutionTable._test_getKeys()) {
-      println("$k => ${resolutionTable.get(k)}")
+    for (k in resolutionContext.table._test_getKeys()) {
+      println("$k => ${resolutionContext.table.get(k)}")
     }
 
+    println("=============================")
+    val astNodeCollector = AstNodeCollector()
+    astNodeCollector.collect(resolutionContext.ast)
+
+    val statementMap = astNodeCollector.getStatements()
+
+    val outerFunDeclStmt = statementMap[fakeUuids[18]] as FunDeclStmt
+
+    println("outer enclosed variables")
+    for (ev in outerFunDeclStmt.enclosedVariables) {
+      println(ev)
+    }
+
+    println()
+    println("middle enclosed variables")
+
+    val middleFunDeclStmt = statementMap[fakeUuids[14]] as FunDeclStmt
+
+    for (ev in middleFunDeclStmt.enclosedVariables) {
+      println(ev)
+    }
+
+    println()
+    println("inner enclosed variables")
+
+    val innerFunDeclStmt = statementMap[fakeUuids[10]] as FunDeclStmt
+
+    for (ev in innerFunDeclStmt.enclosedVariables) {
+      println(ev)
+    }
+
+    println("Doin' actual test.")
+
     val expectedResults = listOf(
-      //00000000-0000-0000-0000-000000000019 => (GlobalVariable name=outer)
-      Expectation(fakeUuids[26], GlobalVariable(name = "outer")),
-      //00000000-0000-0000-0000-000000000001 => (LocalVariable name=x index=0 isUpValue=true)
-      //00000000-0000-0000-0000-000000000015 => (LocalVariable name=middle index=1 isUpValue=false)
-      //00000000-0000-0000-0000-000000000002 => (LocalVariable name=y index=0 isUpValue=true)
-      //00000000-0000-0000-0000-000000000011 => (LocalVariable name=inner index=1 isUpValue=false)
-      //00000000-0000-0000-0000-000000000003 => (LocalVariable name=z index=0 isUpValue=false)
-      //00000000-0000-0000-0000-000000000004 => (EnclosedVariable name=x depth=3 enclosedObject=(EnclosedUpvalue variableName=x))
-      //00000000-0000-0000-0000-000000000005 => (EnclosedVariable name=y depth=3 enclosedObject=(EnclosedLocal (localVariableIndex=0)))
-      //00000000-0000-0000-0000-000000000007 => (LocalVariable name=z index=0 isUpValue=false)
-      //00000000-0000-0000-0000-000000000012 => (LocalVariable name=inner index=1 isUpValue=false)
-      //00000000-0000-0000-0000-000000000016 => (LocalVariable name=middle index=1 isUpValue=false)
-      //00000000-0000-0000-0000-000000000025 => (GlobalVariable name=closure)
-      //00000000-0000-0000-0000-000000000020 => (GlobalVariable name=outer)
-      //00000000-0000-0000-0000-000000000026 => (GlobalVariable name=closure)
-      //00000000-0000-0000-0000-000000000033 => (GlobalVariable name=c1)
-      //00000000-0000-0000-0000-000000000030 => (GlobalVariable name=outer)
-      //00000000-0000-0000-0000-000000000037 => (GlobalVariable name=c2)
-      //00000000-0000-0000-0000-000000000034 => (GlobalVariable name=c1)
-      //00000000-0000-0000-0000-000000000038 => (GlobalVariable name=c2)
-      //00000000-0000-0000-0000-000000000042 => (GlobalVariable name=outer)
+      Expectation(fakeUuids[18], GlobalVariable(name = "outer")),
+      Expectation(fakeUuids[0], LocalVariable(name = "x", variableArrayIndex = 0, isUpValue = true)),
+      Expectation(fakeUuids[14], LocalVariable(name = "middle", variableArrayIndex = 1, isUpValue = false)),
+      Expectation(fakeUuids[1], LocalVariable(name = "y", variableArrayIndex = 0, isUpValue = true)),
+      Expectation(fakeUuids[10], LocalVariable(name = "inner", variableArrayIndex = 1, isUpValue = false)),
+      Expectation(fakeUuids[2], LocalVariable(name = "z", variableArrayIndex = 0, isUpValue = false)),
+      Expectation(fakeUuids[3], EnclosedVariable(name = "x", depth = 3, enclosedObject = EnclosedUpvalue(variableName = "x"))),
+      Expectation(fakeUuids[4], EnclosedVariable(name = "y", depth = 3, enclosedObject = EnclosedLocal(localVariableIndex = 0))),
+      Expectation(fakeUuids[6], LocalVariable(name = "z", variableArrayIndex = 0, isUpValue = false)),
+      Expectation(fakeUuids[11], LocalVariable(name = "inner", variableArrayIndex = 1, isUpValue = false)),
+      Expectation(fakeUuids[15], LocalVariable(name = "middle", variableArrayIndex = 1, isUpValue = false)),
+      Expectation(fakeUuids[24], GlobalVariable(name = "closure")),
+      Expectation(fakeUuids[19], GlobalVariable(name = "outer")),
+      Expectation(fakeUuids[25], GlobalVariable(name = "closure")),
+      Expectation(fakeUuids[32], GlobalVariable(name = "c1")),
+      Expectation(fakeUuids[29], GlobalVariable(name = "outer")),
+      Expectation(fakeUuids[36], GlobalVariable(name = "c2")),
+      Expectation(fakeUuids[33], GlobalVariable(name = "c1")),
+      Expectation(fakeUuids[37], GlobalVariable(name = "c2")),
+      Expectation(fakeUuids[41], GlobalVariable(name = "outer")),
     )
 
-    assertResolutions(resolutionTable, expectedResults)
+    assertResolutions(resolutionContext.table, expectedResults)
+
+    val expectedEnclosedMiddle = listOf<VariableResolutionResult>(
+      EnclosedVariable(name = "x", depth = -1, enclosedObject = EnclosedLocal(localVariableIndex = 0)),
+    )
+
+    val expectedEnclosedInner = listOf<VariableResolutionResult>(
+      EnclosedVariable(name = "x", depth = -1, enclosedObject = EnclosedUpvalue(variableName = "x")),
+      EnclosedVariable(name = "y", depth = -1, enclosedObject = EnclosedLocal(localVariableIndex = 0)),
+    )
+
+    val expectedEnclosedVariables = listOf(
+      ExpectedEnclosedVariables(functionDeclarationId = fakeUuids[18], enclosedVariables = emptyList()),
+      ExpectedEnclosedVariables(functionDeclarationId = fakeUuids[14], enclosedVariables = expectedEnclosedMiddle),
+      ExpectedEnclosedVariables(functionDeclarationId = fakeUuids[10], enclosedVariables = expectedEnclosedInner),
+    )
+
+    assertEnclosedVariables(functions = statementMap, expectedEnclosedVariables)
   }
 }
 
@@ -224,16 +278,43 @@ private data class Expectation(val variableId: Uuid, val expectedResult: Variabl
 
 private fun assertResolutions(resolutionTable: VariableResolutionTable, expectedResults: List<Expectation>) {
   for (expected in expectedResults) {
-    assertEquals(expected = expected.expectedResult, actual = resolutionTable.get(expected.variableId), message = "For node id ${expected.variableId}")
+    assertEquals(
+      expected = expected.expectedResult,
+      actual = resolutionTable.get(expected.variableId),
+      message = "For node id ${expected.variableId}"
+    )
   }
 }
 
-private fun getResolutionTable(filename: String): VariableResolutionTable {
+private data class ResolutionContext(val table: VariableResolutionTable, val ast: Ast)
+
+private data class ExpectedEnclosedVariables(
+  val functionDeclarationId: Uuid,
+  val enclosedVariables: List<VariableResolutionResult>,
+)
+
+private fun assertEnclosedVariables(functions: Map<Uuid, Stmt>, expectedResult: List<ExpectedEnclosedVariables>) {
+  for (expectation in expectedResult) {
+    assertTrue(functions.containsKey(expectation.functionDeclarationId))
+    assertTrue(functions[expectation.functionDeclarationId] is FunDeclStmt)
+    val function = functions[expectation.functionDeclarationId] as FunDeclStmt
+    assertEquals(
+      actual = function.enclosedVariables,
+      expected = expectation.enclosedVariables,
+    )
+  }
+}
+
+private fun getResolutionContext(filename: String): ResolutionContext {
   val text = readFile(pathName = "${PATH_PREFIX}\\$filename")
   val scanner = Scanner(text)
   val parser = Parser(tokens = scanner.scan(), uidGen = MockUuidGenerator().mockGen)
   val ast = parser.parse()
 
   val resolver = Resolver()
-  return resolver.resolve(ast)
+  return ResolutionContext(table = resolver.resolve(ast), ast = ast)
+}
+
+private fun getResolutionTable(filename: String): VariableResolutionTable {
+  return getResolutionContext(filename).table
 }

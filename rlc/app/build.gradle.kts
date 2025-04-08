@@ -25,6 +25,7 @@ kotlin {
       dependencies {
         implementation(kotlin(simpleModuleName = "stdlib-common"))
         implementation("com.github.ajalt.clikt:clikt:5.0.2")
+        implementation("co.touchlab:kermit:2.0.0")
       }
     }
     val nativeMain by getting {
