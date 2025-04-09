@@ -57,7 +57,7 @@ internal class FrameStack {
   internal fun declareVariable(
     identifier: String, declarationId: Uuid
   ) {
-    println("Declaring a variable (identifier=$identifier declarationId=$declarationId)")
+//    log?.d(messageString = "Declaring a variable (identifier=$identifier declarationId=$declarationId)")
     frameStack.last().declareLocalVariable(identifier, declarationId)
   }
 
@@ -74,7 +74,6 @@ internal class FrameStack {
   }
 
   internal fun markAsUpvalue(identifier: String) {
-    println("Mark variable (identifier=$identifier) as upvalue.")
     for (frame in frameStack.reversed()) {
       if (frame.containsIdentifier(identifier)) {
         frame.markAsUpvalue(identifier)
@@ -87,18 +86,15 @@ internal class FrameStack {
   }
 
   private fun recursiveLookup(identifier: String, frameIndex: Int): LookupResult {
-    println("recursiveLookup($identifier, $frameIndex)")
     val frame = frameStack[frameIndex]
+    log?.d(messageString = "recursiveLookup($identifier, $frameIndex, $frame)")
 
     if (frame.containsIdentifier(identifier)) {
       val frameVariable = frame.getResolvedVariable(identifier)
 
       return LookupResult(
         index = frameVariable.index,
-        variableType = when (frame.functionDepth < frameStack.last().functionDepth) {
-          false -> VariableType.LOCAL
-          true -> VariableType.CAPTURED_LOCAL
-        },
+        variableType = frameVariable.type,
         isUpvalue = frameVariable.isUpvalue,
         depth = frameIndex,
         declarationId = frameVariable.declarationId,
@@ -111,11 +107,9 @@ internal class FrameStack {
       )
     }
 
-    // We actually need to do something here
     val lookup = recursiveLookup(identifier = identifier, frameIndex = frameIndex - 1)
 
     if (frame.type == Frame.Type.FUNCTION && frame.functionDepth < frameStack.last().functionDepth) {
-      println("Why are we here? >>> ($identifier $lookup)")
 
       val capturedType = when (lookup.variableType) {
         VariableType.CAPTURED_LOCAL -> VariableType.CAPTURED_UPVALUE
@@ -140,13 +134,25 @@ internal class FrameStack {
     }
 
     if (frame.type == Frame.Type.FUNCTION && frame.functionDepth == frameStack.last().functionDepth) {
-      println("Probably, need to add enclosed variable to a function here.")
-      println("(Lookup = $lookup, identifier = $identifier, index = $frameIndex)")
+      val varType = when (lookup.variableType) {
+        VariableType.LOCAL -> VariableType.CAPTURED_LOCAL
+        VariableType.CAPTURED_LOCAL -> VariableType.CAPTURED_UPVALUE
+        VariableType.CAPTURED_UPVALUE -> VariableType.CAPTURED_UPVALUE
+      }
+
       frame.declareVariable(
         identifier = identifier,
         declarationId = lookup.declarationId,
-        variableType = lookup.variableType,
+        variableType = varType,
         index = lookup.index
+      )
+
+      return LookupResult(
+        index = lookup.index,
+        depth = lookup.depth,
+        declarationId = lookup.declarationId,
+        variableType = varType,
+        isUpvalue = true
       )
     }
 

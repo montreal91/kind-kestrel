@@ -23,7 +23,7 @@ class Frame(
       sb.append("$variable ")
     }
 
-    return "(Frame type=$type name=$name variables=($sb))"
+    return "(Frame type=$type name=$name functionDepth=$functionDepth variables=($sb))"
   }
 
   private val frameVariables = mutableMapOf<String, FrameVariable>()
@@ -33,11 +33,19 @@ class Frame(
   internal fun isGlobal() = type == Type.GLOBAL
   internal fun isFunction() = type == Type.FUNCTION
 
-  internal fun declareVariable(identifier: String, declarationId: Uuid, variableType: VariableType, index: Int) {
-    log?.d {"Declared variable: $identifier. Resolved index: $index. Variable type: $variableType" }
+  internal fun declareVariable(
+    identifier: String,
+    declarationId: Uuid,
+    variableType: VariableType,
+    index: Int
+  ) {
+    log?.d(messageString = "Declared variable: $identifier. Resolved index: $index. Variable type: $variableType")
+
     if (frameVariables.containsKey(identifier)) {
       log?.d(messageString = "Frame ($name) already contains identifier ($identifier)")
+      return
     }
+
     frameVariables[identifier] = FrameVariable(
       index = index,
       isUpvalue = false,
@@ -47,7 +55,7 @@ class Frame(
   }
 
   internal fun declareLocalVariable(identifier: String, declarationId: Uuid) {
-    println("Declared local variable: $identifier. Resolved index: $index")
+    log?.d(messageString = "Declared local variable: $identifier. Resolved index: $index")
     frameVariables[identifier] = FrameVariable(
       index = index,
       isUpvalue = false,

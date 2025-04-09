@@ -1,5 +1,6 @@
 package org.example.rlc.frontend
 
+import co.touchlab.kermit.Logger
 import org.example.rlc.frontend.ast.Assignment
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
@@ -36,11 +37,11 @@ class Resolver {
 
   private val functionContexts = ArrayDeque<FunctionContext>()
 
+  private val log = Resolver::class.qualifiedName?.let { Logger.withTag(it) }
+
   val hasErrors = errors.isNotEmpty()
 
   fun resolve(program: Ast): VariableResolutionTable {
-    println("==================================")
-    println("Variable resolution stage started.\n")
     program.forEach(this::visitStmt)
 
     return resolutionTable
@@ -98,8 +99,6 @@ class Resolver {
   }
 
   private fun visitFunDeclStmt(stmt: FunDeclStmt) {
-    println("--------------------------------------------------------")
-    println("Resolving Function Declaration: ${stmt.identifier.value}")
     checkVariable(stmt.identifier)
     resolveVariableDeclaration(stmt.uid, stmt.identifier.value)
     frameStack.addNewFrame(
@@ -129,25 +128,10 @@ class Resolver {
         VariableType.LOCAL -> EnclosedLocal(-1)
       }
 
-//      tukka.add(EnclosedVariable(name = ev.key, depth = -1, enclosedObject = enclosedObject))
       stmt.enclosedVariables.add(EnclosedVariable(name = ev.key, depth = -1, enclosedObject = enclosedObject))
     }
 
-//    stmt.enclosedVariables.add
-
-    val innerFunction = functionContexts.removeLast()
-
-    // Here we can do some inner function analysis
-
-    println("------------------------------------------------")
-    println("Enclosed values for function: ${stmt.identifier}")
-    for (v in innerFunction.enclosedVariables.values) {
-      println("${v.name}, ${v.enclosedObject}, ${v.depth}")
-    }
-    println("------------------------------------------------")
-
-    println("Finished Resolving Function Declaration: ${stmt.identifier.value}")
-    println("-----------------------------------------------------------------")
+    functionContexts.removeLast()
   }
 
   private fun visitIfStmt(stmt: IfStmt) {
@@ -177,7 +161,6 @@ class Resolver {
   private fun visitLiteral() {}
 
   private fun visitBinary(expr: Binary) {
-    println("Resolver visiting binary op: ${expr.operator}")
     visitExpr(expr.left)
     visitExpr(expr.right)
   }
@@ -187,13 +170,8 @@ class Resolver {
   }
 
   private fun visitIdentifier(expr: Variable) {
-    println("Resolver visiting identifier: ${expr.variable}")
     val resolvedVariable = resolveVariable(expr.variable)
     resolutionTable.set(expr.uid, resolvedVariable)
-
-//    if (resolvedVariable is EnclosedVariable) {
-//      functionContexts.last().enclosedVariables[resolvedVariable.name] = resolvedVariable
-//    }
   }
 
   private fun visitLogical(expr: Logical) {
@@ -222,16 +200,14 @@ class Resolver {
       return GlobalVariable(name = identifier)
     }
 
-    println("Resolved to be local or enclosed variable: $identifier")
+    log?.d(messageString = "Resolved to be local or enclosed variable: $identifier")
     val lookup = frameStack.lookup(identifier)
-    println(lookup)
+    log?.d(lookup.toString())
 
     if (lookup.variableType != VariableType.LOCAL) {
       frameStack.markAsUpvalue(identifier)
       resolutionTable.updateAsUpvalue(lookup.declarationId)
     }
-
-    println("Identifier=$identifier isClosure=${lookup.variableType} isUpvalue=${lookup.isUpvalue}")
 
     return when (lookup.variableType) {
       // So, this is here, where we should decide if our enclosed variable
@@ -260,7 +236,6 @@ class Resolver {
   }
 
   private fun resolveVariableDeclaration(uid: Uuid, variable: String) {
-    println("Resolving variable declaration (uid=$uid variable=$variable)")
     if (frameStack.isGlobal()) {
       resolutionTable.set(uid, GlobalVariable(variable))
     } else {
@@ -269,8 +244,14 @@ class Resolver {
       // Defines, in which local variable array index
       // this variable should resolve to
       val lookup = frameStack.lookup(variable)
-      println("  $lookup")
-      resolutionTable.set(uid, LocalVariable(name = variable, variableArrayIndex = lookup.index, isUpValue = lookup.isUpvalue))
+      resolutionTable.set(
+        uid,
+        LocalVariable(
+          name = variable,
+          variableArrayIndex = lookup.index,
+          isUpValue = lookup.isUpvalue
+        )
+      )
     }
   }
 }
