@@ -117,9 +117,8 @@ class Resolver {
     val frame = frameStack.popFrame()
 
     val enclosedVariables = frame.getVariables()
-      .filter { frameVariable ->
-        frameVariable.value.type == VariableType.CAPTURED_LOCAL || frameVariable.value.type == VariableType.CAPTURED_UPVALUE
-      }.toMap()
+      .filter(::captureFilter)
+      .toMap()
 
     for (ev in enclosedVariables) {
       val enclosedObject = when (ev.value.type) {
@@ -128,7 +127,9 @@ class Resolver {
         VariableType.LOCAL -> EnclosedLocal(-1)
       }
 
-      stmt.enclosedVariables.add(EnclosedVariable(name = ev.key, depth = -1, enclosedObject = enclosedObject))
+      stmt.enclosedVariables.add(EnclosedVariable(
+        name = ev.key, depth = -1, enclosedObject = enclosedObject
+      ))
     }
 
     functionContexts.removeLast()
@@ -210,9 +211,6 @@ class Resolver {
     }
 
     return when (lookup.variableType) {
-      // So, this is here, where we should decide if our enclosed variable
-      // actually from a local variable or another enclosed variable.
-      // How can we do that?
       VariableType.CAPTURED_LOCAL -> EnclosedVariable(
           name = identifier,
           enclosedObject = EnclosedLocal(lookup.index),
@@ -253,5 +251,13 @@ class Resolver {
         )
       )
     }
+  }
+}
+
+private fun captureFilter(entry: Map.Entry<String, FrameVariable>): Boolean {
+  return when (entry.value.type) {
+    VariableType.CAPTURED_LOCAL -> true
+    VariableType.CAPTURED_UPVALUE -> true
+    VariableType.LOCAL -> false
   }
 }

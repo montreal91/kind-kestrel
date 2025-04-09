@@ -57,7 +57,6 @@ internal class FrameStack {
   internal fun declareVariable(
     identifier: String, declarationId: Uuid
   ) {
-//    log?.d(messageString = "Declaring a variable (identifier=$identifier declarationId=$declarationId)")
     frameStack.last().declareLocalVariable(identifier, declarationId)
   }
 
@@ -130,7 +129,7 @@ internal class FrameStack {
         isUpvalue = lookup.isUpvalue,
         depth = frameIndex,
         declarationId = lookup.declarationId,
-      ) // This should be another lookup, based on which we will create a different enclosed object
+      )
     }
 
     if (frame.type == Frame.Type.FUNCTION && frame.functionDepth == frameStack.last().functionDepth) {

@@ -18,7 +18,6 @@ import kotlin.uuid.Uuid
 
 class AstNodeCollector {
   private val statements = mutableMapOf<Uuid, Stmt>()
-//  private val expressions = mutableMapOf<Uuid, Expr>()
 
   fun collect(roots: Ast) {
     roots.forEach(this::visitStmt)
@@ -27,10 +26,6 @@ class AstNodeCollector {
   fun getStatements(): Map<Uuid, Stmt> {
     return statements.toMap()
   }
-
-//  fun getExpressions(): Map<Uuid, Expr> {
-//    return mapOf()
-//  }
 
   private fun visitStmt(stmt: Stmt) {
     statements[stmt.uid] = stmt
@@ -52,14 +47,8 @@ class AstNodeCollector {
     block.statements.forEach(this::visitStmt)
   }
 
-//  private fun visitExprStmt() {
-//    visitExpr()
-//  }
-
   private fun visitForStmt(forStmt: ForStmt) {
     forStmt.initStmt?.let(this::visitStmt)
-//    forStmt.conditionExpr?.let(this::visitExpr)
-//    forStmt.updateExpr?.let(this::visitExpr)
     visitStmt(forStmt.body)
   }
 
@@ -75,21 +64,4 @@ class AstNodeCollector {
   private fun visitWhileStmt(whileStmt: WhileStmt) {
     visitStmt(whileStmt.body)
   }
-
-//  private fun
-
-//  private fun visitExpr() {
-////    expressions[expr.uid] = expr
-////
-////    when (expr) {
-////      is Assignment -> {}
-////      is Binary -> {}
-////      is CallExpr -> {}
-////      is Grouping -> {}
-////      is Literal -> {}
-////      is Logical -> {}
-////      is Unary -> {}
-////      is Variable -> {}
-////    }
-//  }
 }
