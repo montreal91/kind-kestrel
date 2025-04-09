@@ -1,7 +1,7 @@
 fun outer(x) {
   fun middle(y) {
     fun inner(z) {
-      print x + y + z;
+      return x + y + z;
     }
     return inner;
   }

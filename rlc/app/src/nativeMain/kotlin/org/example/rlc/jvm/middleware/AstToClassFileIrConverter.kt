@@ -78,7 +78,6 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   )
   private var currentCode = mutableListOf<Operation>()
   private var currentFunction = "Script"
-  private var enclosedVariables = mutableMapOf<String, EnclosedVariable>()
 
   private val methodRefs = mutableMapOf<Token.Type, MethodRefInfo>()
   private val localVariables = mutableListOf<VerificationTypeInfo>()
@@ -259,27 +258,24 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     println("Compiling function. (function=${stmt.identifier.value})")
     val outerCode = currentCode
     val outerFunction = currentFunction
-    val outerEnclosedVariables = enclosedVariables
 
-    enclosedVariables = mutableMapOf() // Looks like part of resolver's job here
     currentCode = mutableListOf()
     currentFunction = stmt.identifier.value
 
     visitBlockStmt(stmt.body)
-
-    // Well, problem is that fun middle(y) doesn't explicitly reference the variable x.
-    // It references the variable x implicitly.
-    // Why?
-    // Because inner(z) function during its declaration has access to scopes of functions middle and outer
-    // X from inner(z) does not reference a local variable, it actually references another enclosed variable
 
     if (currentCode.isEmpty() || currentCode.last().opcode != Opcode.OP_ARETURN) {
       compileNil()
       currentCode.add(SimpleOperation(Opcode.OP_ARETURN))
     }
 
-    val function =
-      generateLoxFunction(stmt.identifier.value, stmt.arity, currentCode, enclosedVariables.values.toList())
+    val function = generateLoxFunction(
+      stmt.identifier.value,
+      stmt.arity,
+      currentCode,
+      stmt.enclosedVariables.map { it as EnclosedVariable }
+    )
+
     classes.add(function)
 
     if (!generatedCallables.containsKey(stmt.arity)) {
@@ -292,11 +288,10 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     val instantiationCode = generateFunctionInstantiationCode(
       stmt.identifier.value,
       outerFunction,
-      enclosedVariables.values.toList(),
+      stmt.enclosedVariables.map { it as EnclosedVariable },
       currentCode.size,
     )
 
-    enclosedVariables = outerEnclosedVariables
     currentCode.addAll(instantiationCode)
 
     when (val resolution = resolutionTable.get(stmt.uid)) {
@@ -538,7 +533,6 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
         FieldRefInfo(className = "LoxPointer", fieldName = "__value__", fieldType = "LoxObject")
       )
     )
-    enclosedVariables[variable.name] = variable
   }
 
   private fun declGlobalVariable(variable: GlobalVariable) {
@@ -662,7 +656,6 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
 
     currentCode.add(ShortConstantOperation(Opcode.OP_CHECKCAST, ClassInfo(className = "LoxPointer")))
     currentCode.add(ShortConstantOperation(Opcode.OP_GETFIELD, pointerValueFri, loxObjectVti))
-    enclosedVariables[variable.name] = variable // Feels like resolver's job here.
   }
 
   private fun compileLogical(expr: Logical) {
