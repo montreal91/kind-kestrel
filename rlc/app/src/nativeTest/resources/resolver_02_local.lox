@@ -1,0 +1,4 @@
+{
+  var a = "local";
+  print a; // should resolve to global scope
+}

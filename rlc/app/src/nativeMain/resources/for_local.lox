@@ -1,0 +1,9 @@
+
+{
+  // This is a bug, fix it when Closures are done
+  for (var a = 0; a < 2; a = a + 1) {
+    var b = 0;
+    b = b + a;
+    print b;
+  }
+}

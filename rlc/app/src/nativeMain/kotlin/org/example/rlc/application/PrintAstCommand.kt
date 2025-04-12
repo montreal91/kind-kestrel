@@ -7,8 +7,9 @@ import org.example.rlc.jvm.middleware.AstPrettyPrinter
 import platform.posix.exit
 import platform.posix.fprintf
 import platform.posix.stderr
+import kotlin.uuid.ExperimentalUuidApi
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, ExperimentalUuidApi::class)
 internal fun prettyPrintAst(pathName: String) {
   val programText = readFile(pathName)
   val scanner = Scanner(programText)

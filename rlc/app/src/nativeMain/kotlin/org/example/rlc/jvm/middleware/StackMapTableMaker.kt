@@ -30,8 +30,9 @@ class StackMapTableMaker {
   }
 
   private fun processClass(classFile: ClassFile) {
-    println("\nAdding attributes if required for class ${classFile.filename}")
-    println("------------------------------------------------------------------")
+    println("\n")
+    println("=============================================================")
+    println("Adding attributes if required for class ${classFile.filename}")
     for (method in classFile.methodList) {
       addAttributeIfRequired(method, classFile.thisClassInfo)
     }
@@ -98,7 +99,16 @@ class StackMapTableMaker {
     val offsets = calculateOffsets(operations)
     println("Offsets")
     for ((i, offset) in offsets.withIndex()) {
-      println("$i, $offset, ${operations[i].opcode}")
+      val suffix = when (val op = operations[i]) {
+        is OperationWithIndex -> "(index=${op.index})"
+        is ShortConstantOperation -> when (op.opcode) {
+          Opcode.OP_GETFIELD, Opcode.OP_PUTFIELD -> "(field=${op.constant})"
+          Opcode.OP_INSTANCEOF -> "(class=${op.constant})"
+          else -> ""
+        }
+        else -> ""
+      }
+      println("$i, $offset, ${operations[i].opcode}$suffix")
     }
 
     val frames = List(operations.size) { FullFrameBuilder() }
@@ -267,6 +277,15 @@ class StackMapTableMaker {
           stack.removeLast()
           stack.addLast(DoubleVti())
         }
+
+        Opcode.OP_SWAP -> {
+          val top = stack.removeLast()
+          val prev = stack.removeLast()
+          stack.addLast(top)
+          stack.addLast(prev)
+        }
+
+        Opcode.OP_NOP -> {}
       }
 
       print("    Stack: ")

@@ -1,0 +1,18 @@
+fun outer(x) {
+  fun middle(y) {
+    fun inner(z) {
+      print x + y + z;
+    }
+    return inner;
+  }
+  return middle;
+}
+
+var closure = outer(1)(2);
+print closure(3); // Should print 6
+
+var c1 = outer(1);
+var c2 = c1(2);
+print c2(3); // Should also print 6
+
+print outer(1)(2)(3); // Should also print 6

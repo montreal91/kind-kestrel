@@ -91,7 +91,7 @@ class AstPrettyPrinter {
   private fun visitFunDeclStmt(stmt: FunDeclStmt) {
     addIndent()
     sb.append("FUNCTION: ${stmt.identifier.value} (")
-    sb.append(stmt.parameters.joinToString(separator = ", ") { it.value })
+    sb.append(stmt.parameters.joinToString(separator = ", ") { it.identifier.value })
     sb.append(")\n")
     depth++
     visitBlockStmt(stmt.body)

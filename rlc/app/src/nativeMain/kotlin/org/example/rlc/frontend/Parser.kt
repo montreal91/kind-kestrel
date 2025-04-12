@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalUuidApi::class)
+
 package org.example.rlc.frontend
 
 import org.example.rlc.frontend.ast.Assignment
@@ -7,6 +9,7 @@ import org.example.rlc.frontend.ast.CallExpr
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.ForStmt
+import org.example.rlc.frontend.ast.FormalParameter
 import org.example.rlc.frontend.ast.FunDeclStmt
 import org.example.rlc.frontend.ast.Grouping
 import org.example.rlc.frontend.ast.IfStmt
@@ -19,7 +22,8 @@ import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
 import org.example.rlc.frontend.ast.Variable
 import org.example.rlc.frontend.ast.WhileStmt
-import org.example.rlc.frontend.ast.tokenTypeToLiteralType
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 private val equalityTokens = setOf(
   Token.Type.EQUAL_EQUAL,
@@ -69,7 +73,11 @@ private fun Token.isTerminal() = when {
 
 private class ParserException(msg: String) : Exception(msg)
 
-class Parser(private val tokens: List<Token>) {
+@OptIn(ExperimentalUuidApi::class)
+private fun defaultUidGen() = Uuid.random()
+
+@OptIn(ExperimentalUuidApi::class)
+class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = ::defaultUidGen) {
   val hasErrors: Boolean get() = errors.isNotEmpty()
 
   private val statements = mutableListOf<MutableList<Stmt>>()
@@ -124,6 +132,7 @@ class Parser(private val tokens: List<Token>) {
     }
 
     val decl = VarDeclStmt(
+      uid = uidGen(),
       variable = identifier.value,
       token = identifier,
       initializer = expression
@@ -159,22 +168,22 @@ class Parser(private val tokens: List<Token>) {
     block()
 
     val body = statements.last().removeLast()
-    val functionDecl = FunDeclStmt(identifier, formalArgs, body as BlockStmt)
+    val functionDecl = FunDeclStmt(uidGen(), identifier, formalArgs, body as BlockStmt)
 
     statements.last().add(functionDecl)
   }
 
-  private fun parameters(): Array<Token> {
-    val res = mutableListOf<Token>()
+  private fun parameters(): Array<FormalParameter> {
+    val res = mutableListOf<FormalParameter>()
     if (currentToken.type == Token.Type.IDENTIFIER) {
-      res.add(currentToken)
+      res.add(FormalParameter(uidGen(), currentToken))
       consume(Token.Type.IDENTIFIER, "Expect identifier.")
     }
 
     while (currentToken.type == Token.Type.COMMA && !isLastToken) {
       consume(Token.Type.COMMA, message = "Expect ','.")
       consume(Token.Type.IDENTIFIER, message = "Expect identifier after ','.")
-      res.add(previous)
+      res.add(FormalParameter(uidGen(), previous))
     }
 
     return res.toTypedArray()
@@ -188,7 +197,7 @@ class Parser(private val tokens: List<Token>) {
       declaration()
     }
 
-    val block = BlockStmt(statements = statements.removeLast())
+    val block = BlockStmt(uid = uidGen(), statements = statements.removeLast())
     statements.last().add(block)
 
     consume(Token.Type.RIGHT_BRACE, message = "Expect '}' at the end of the block.")
@@ -210,7 +219,7 @@ class Parser(private val tokens: List<Token>) {
       else -> null
     }
 
-    val ifStmt = IfStmt(expr = expr, ifBranch = ifBranch, elseBranch = elseBranch)
+    val ifStmt = IfStmt(uid = uidGen(), expr = expr, ifBranch = ifBranch, elseBranch = elseBranch)
 
     statements.last().add(ifStmt)
   }
@@ -226,7 +235,7 @@ class Parser(private val tokens: List<Token>) {
 
     val body = statements.last().removeLast()
 
-    statements.last().add(WhileStmt(expr, body))
+    statements.last().add(WhileStmt(uidGen(), expr, body))
   }
 
   private fun forStmt() {
@@ -264,7 +273,7 @@ class Parser(private val tokens: List<Token>) {
     statement()
 
     val body = statements.last().removeLast()
-    val forStmt = ForStmt(initStmt, conditionExpr, updateExpr, body)
+    val forStmt = ForStmt(uidGen(), initStmt, conditionExpr, updateExpr, body)
 
     statements.last().add(forStmt)
   }
@@ -279,13 +288,13 @@ class Parser(private val tokens: List<Token>) {
     consume(Token.Type.PRINT, message = "Expect print statement")
     val expr = expression()
     consume(Token.Type.SEMICOLON, message = "Expect ';' after value.")
-    statements.last().add(PrintStmt(expr))
+    statements.last().add(PrintStmt(uidGen(), expr))
   }
 
   private fun exprStatement() {
     val expr = expression()
     consume(Token.Type.SEMICOLON, message = "Expect ';' after value.")
-    statements.last().add(ExprStmt(expr))
+    statements.last().add(ExprStmt(uidGen(), expr))
   }
 
   private fun returnStatement() {
@@ -297,7 +306,7 @@ class Parser(private val tokens: List<Token>) {
     }
 
     consume(Token.Type.SEMICOLON, message = "Expect ';' after value.")
-    statements.last().add(ReturnStmt(expr = expr))
+    statements.last().add(ReturnStmt(uid = uidGen(), expr = expr))
   }
 
   private fun expression(): Expr {
@@ -307,7 +316,9 @@ class Parser(private val tokens: List<Token>) {
   private fun assignment(): Expr {
     val left = logicOr()
     println(
-      "Prev: [${previous.type}, ${previous.value}] " + "Curr: [${currentToken.type}, ${currentToken.value}], " + "Left Type: [${left::class}]"
+      "Prev: [${previous.type}, ${previous.value}] " +
+          "Curr: [${currentToken.type}, ${currentToken.value}], " +
+          "Left Type: [${left::class}]"
     )
 
     if (currentToken.type != Token.Type.EQUAL) {
@@ -320,7 +331,7 @@ class Parser(private val tokens: List<Token>) {
     val right = assignment()
 
     if (left is Variable) {
-      return Assignment(left, right)
+      return Assignment(uidGen(), left, right)
     }
 
     throw error(message = "Invalid assignment target.", token = equalToken)
@@ -332,7 +343,7 @@ class Parser(private val tokens: List<Token>) {
       val token = currentToken
       consume(Token.Type.OR, message = "Expect 'or' after value.")
       val rightOperand: Expr = logicAnd()
-      leftOperand = Logical(leftOperand, token, rightOperand)
+      leftOperand = Logical(uidGen(), leftOperand, token, rightOperand)
     }
 
     return leftOperand
@@ -344,7 +355,7 @@ class Parser(private val tokens: List<Token>) {
       val token = currentToken
       consume(Token.Type.AND, message = "Expect 'and' after value.")
       val rightOperand = equality()
-      leftOperand = Logical(leftOperand, token, rightOperand)
+      leftOperand = Logical(uidGen(), leftOperand, token, rightOperand)
     }
 
     return leftOperand
@@ -356,7 +367,7 @@ class Parser(private val tokens: List<Token>) {
       val token = currentToken
       matchAny(equalityTokens.toList())
       val rightOperand = comparison()
-      leftOperand = Binary(leftOperand, token, rightOperand)
+      leftOperand = Binary(uidGen(), leftOperand, token, rightOperand)
     }
 
     return leftOperand
@@ -368,7 +379,7 @@ class Parser(private val tokens: List<Token>) {
       val token = currentToken
       matchAny(comparisonTokens.toList())
       val rightOperand = term()
-      leftOperand = Binary(leftOperand, token, rightOperand)
+      leftOperand = Binary(uidGen(), leftOperand, token, rightOperand)
     }
 
     return leftOperand
@@ -381,7 +392,7 @@ class Parser(private val tokens: List<Token>) {
       val token = currentToken
       matchAny(listOf(Token.Type.PLUS, Token.Type.MINUS))
       val rightOperand = factor()
-      leftOperand = Binary(leftOperand, token, rightOperand)
+      leftOperand = Binary(uidGen(), leftOperand, token, rightOperand)
     }
 
     return leftOperand
@@ -394,7 +405,7 @@ class Parser(private val tokens: List<Token>) {
       val token = currentToken
       matchAny(listOf(Token.Type.STAR, Token.Type.SLASH))
       val rightOperand = unary()
-      leftOperand = Binary(leftOperand, token, rightOperand)
+      leftOperand = Binary(uidGen(), leftOperand, token, rightOperand)
     }
 
     return leftOperand
@@ -404,7 +415,7 @@ class Parser(private val tokens: List<Token>) {
     if (currentToken.isUnaryOperator()) {
       val token = currentToken
       matchAny(listOf(Token.Type.BANG, Token.Type.MINUS))
-      return Unary(operator = token, right = unary())
+      return Unary(uid = uidGen(), operator = token, right = unary())
     }
 
     return call()
@@ -418,7 +429,7 @@ class Parser(private val tokens: List<Token>) {
       consume(Token.Type.LEFT_PAREN, message = "Expected '('.")
       val args = arguments()
       consume(Token.Type.RIGHT_PAREN, message = "Expected ')' after call arguments.")
-      callee = CallExpr(callee, args)
+      callee = CallExpr(uidGen(), callee, args)
     }
 
     return callee
@@ -445,14 +456,14 @@ class Parser(private val tokens: List<Token>) {
       matchAny(terminals.toList())
 
       if (token.type == Token.Type.IDENTIFIER) {
-        return Variable(token.value)
+        return Variable(uidGen(), token.value)
       }
 
-      return Literal(token.value, tokenTypeToLiteralType(token.type))
+      return Literal(uidGen(), token.value, tokenTypeToLiteralType(token.type))
     }
 
     if (matchAny(listOf(Token.Type.LEFT_PAREN))) {
-      val grouping = Grouping(expression())
+      val grouping = Grouping(uidGen(), expression())
       matchAny(listOf(Token.Type.RIGHT_PAREN))
       return grouping
     }
@@ -496,4 +507,13 @@ class Parser(private val tokens: List<Token>) {
     errors.add(LoxCompileError(message = message, token))
     return ParserException("")
   }
+}
+
+private fun tokenTypeToLiteralType(tokenType: Token.Type) = when (tokenType) {
+  Token.Type.NUMBER -> Literal.Type.NUMBER
+  Token.Type.STRING -> Literal.Type.STRING
+  Token.Type.TRUE -> Literal.Type.BOOLEAN
+  Token.Type.FALSE -> Literal.Type.BOOLEAN
+  Token.Type.NIL -> Literal.Type.NIL_TYPE
+  else -> error("Token $tokenType does not represent a valid literal.")
 }

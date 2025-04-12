@@ -1,7 +1,6 @@
 package org.example.rlc.frontend
 
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
+import co.touchlab.kermit.Logger
 import org.example.rlc.frontend.ast.Assignment
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
@@ -22,10 +21,13 @@ import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
 import org.example.rlc.frontend.ast.Variable
 import org.example.rlc.frontend.ast.WhileStmt
+import org.example.rlc.frontend.scope.EnclosedVariable
 import org.example.rlc.frontend.scope.GlobalVariable
 import org.example.rlc.frontend.scope.LocalVariable
 import org.example.rlc.frontend.scope.VariableResolutionResult
 import org.example.rlc.frontend.scope.VariableResolutionTable
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 class Resolver {
@@ -33,11 +35,13 @@ class Resolver {
   private val frameStack = FrameStack()
   private val errors = mutableListOf<LoxCompileError>()
 
+  private val functionContexts = ArrayDeque<FunctionContext>()
+
+  private val log = Resolver::class.qualifiedName?.let { Logger.withTag(it) }
+
   val hasErrors = errors.isNotEmpty()
 
   fun resolve(program: Ast): VariableResolutionTable {
-    println("__________________________________")
-    println("Variable resolution stage started.\n")
     program.forEach(this::visitStmt)
 
     return resolutionTable
@@ -70,7 +74,7 @@ class Resolver {
 
   private fun visitBlockStmt(stmt: BlockStmt) {
     println("Resolver visiting a block statement.")
-    frameStack.addNewFrame(Frame.Type.BLOCK)
+    frameStack.addNewFrame(Frame.Type.BLOCK, frameName = "Block")
     stmt.statements.forEach(this::visitStmt)
     frameStack.popFrame()
   }
@@ -97,15 +101,38 @@ class Resolver {
   private fun visitFunDeclStmt(stmt: FunDeclStmt) {
     checkVariable(stmt.identifier)
     resolveVariableDeclaration(stmt.uid, stmt.identifier.value)
-    frameStack.addNewFrame(Frame.Type.FUNCTION)
+    frameStack.addNewFrame(
+      type = Frame.Type.FUNCTION,
+      frameName = stmt.identifier.value
+    )
+    functionContexts.addLast(FunctionContext())
 
     for (param in stmt.parameters) {
-      checkVariable(param)
-      frameStack.declareVariable(param.value)
+      checkVariable(param.identifier)
+      resolveVariableDeclaration(uid = param.uid, variable = param.identifier.value)
     }
 
     visitBlockStmt(stmt.body)
-    frameStack.popFrame()
+
+    val frame = frameStack.popFrame()
+
+    val enclosedVariables = frame.getVariables()
+      .filter(::captureFilter)
+      .toMap()
+
+    for (ev in enclosedVariables) {
+      val enclosedObject = when (ev.value.type) {
+        VariableType.CAPTURED_LOCAL -> EnclosedLocal(ev.value.index)
+        VariableType.CAPTURED_UPVALUE -> EnclosedUpvalue(variableName = ev.key)
+        VariableType.LOCAL -> EnclosedLocal(-1)
+      }
+
+      stmt.enclosedVariables.add(EnclosedVariable(
+        name = ev.key, depth = -1, enclosedObject = enclosedObject
+      ))
+    }
+
+    functionContexts.removeLast()
   }
 
   private fun visitIfStmt(stmt: IfStmt) {
@@ -135,7 +162,6 @@ class Resolver {
   private fun visitLiteral() {}
 
   private fun visitBinary(expr: Binary) {
-    println("Resolver visiting binary op: ${expr.operator}")
     visitExpr(expr.left)
     visitExpr(expr.right)
   }
@@ -145,8 +171,8 @@ class Resolver {
   }
 
   private fun visitIdentifier(expr: Variable) {
-    println("Resolver visiting identifier: ${expr.variable}")
-    resolutionTable.set(expr.uid, resolveVariable(expr.variable))
+    val resolvedVariable = resolveVariable(expr.variable)
+    resolutionTable.set(expr.uid, resolvedVariable)
   }
 
   private fun visitLogical(expr: Logical) {
@@ -168,13 +194,36 @@ class Resolver {
     expr.args.forEach(this::visitExpr)
   }
 
-  private fun resolveVariable(identifier: String): VariableResolutionResult =
-    if (frameStack.existInAllFrames(identifier)) {
-      println("Resolved to be local: $identifier")
-      LocalVariable(frameStack.lookup(identifier))
-    } else {
-      GlobalVariable(name = identifier)
+  private fun resolveVariable(identifier: String): VariableResolutionResult {
+    println("Resolving variable $identifier")
+    println(frameStack)
+    if (!frameStack.existInAllFrames(identifier)) {
+      return GlobalVariable(name = identifier)
     }
+
+    log?.d(messageString = "Resolved to be local or enclosed variable: $identifier")
+    val lookup = frameStack.lookup(identifier)
+    log?.d(lookup.toString())
+
+    if (lookup.variableType != VariableType.LOCAL) {
+      frameStack.markAsUpvalue(identifier)
+      resolutionTable.updateAsUpvalue(lookup.declarationId)
+    }
+
+    return when (lookup.variableType) {
+      VariableType.CAPTURED_LOCAL -> EnclosedVariable(
+          name = identifier,
+          enclosedObject = EnclosedLocal(lookup.index),
+          depth = lookup.depth
+      )
+      VariableType.CAPTURED_UPVALUE -> EnclosedVariable(
+        name = identifier,
+        enclosedObject = EnclosedUpvalue(variableName = identifier),
+        depth = lookup.depth,
+      )
+      VariableType.LOCAL -> LocalVariable(identifier, lookup.index, lookup.isUpvalue)
+    }
+  }
 
   private fun checkVariable(variableToken: Token) {
     if (!frameStack.existInCurrentFrame(variableToken.value)) {
@@ -187,10 +236,28 @@ class Resolver {
   private fun resolveVariableDeclaration(uid: Uuid, variable: String) {
     if (frameStack.isGlobal()) {
       resolutionTable.set(uid, GlobalVariable(variable))
+    } else {
+      frameStack.declareVariable(variable, uid)
+
+      // Defines, in which local variable array index
+      // this variable should resolve to
+      val lookup = frameStack.lookup(variable)
+      resolutionTable.set(
+        uid,
+        LocalVariable(
+          name = variable,
+          variableArrayIndex = lookup.index,
+          isUpValue = lookup.isUpvalue
+        )
+      )
     }
-    else {
-      frameStack.declareVariable(variable)
-      resolutionTable.set(uid, LocalVariable(frameStack.lookup(variable)))
-    }
+  }
+}
+
+private fun captureFilter(entry: Map.Entry<String, FrameVariable>): Boolean {
+  return when (entry.value.type) {
+    VariableType.CAPTURED_LOCAL -> true
+    VariableType.CAPTURED_UPVALUE -> true
+    VariableType.LOCAL -> false
   }
 }

@@ -1,0 +1,16 @@
+
+var a = "Outer";
+{
+  var a = "Inner";
+  {
+    var a = "Nested1";
+    print a; // Expect: Nested1
+  }
+  print a; // Expect: Inner
+  {
+    var a = "Nested2";
+    print a; // Expect: Nested2
+  }
+  print a; // Expect Inner
+}
+print a; // Expect: Outer

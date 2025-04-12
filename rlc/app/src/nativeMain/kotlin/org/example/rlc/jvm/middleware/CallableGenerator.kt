@@ -1,5 +1,6 @@
 package org.example.rlc.jvm.middleware
 
+import org.example.rlc.frontend.scope.EnclosedVariable
 import org.example.rlc.jvm.ir.ByteConstantOperation
 import org.example.rlc.jvm.ir.ClassAccessFlags
 import org.example.rlc.jvm.ir.ClassFile
@@ -7,6 +8,7 @@ import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.CodeAttribute
 import org.example.rlc.jvm.ir.ControlFlowOperation
 import org.example.rlc.jvm.ir.EmptyVti
+import org.example.rlc.jvm.ir.FieldInfo
 import org.example.rlc.jvm.ir.IntegerValue
 import org.example.rlc.jvm.ir.IntegerVti
 import org.example.rlc.jvm.ir.MethodAccessFlags
@@ -24,9 +26,12 @@ import org.example.rlc.jvm.ir.VerificationTypeInfo
 import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.toUtf8Value
 
-private val loxObjectVti = ObjectVti(loxObjectClassInfo)
-
-internal fun generateLoxFunction(name: String, arity: Int, code: List<Operation>): ClassFile {
+internal fun generateLoxFunction(
+  name: String,
+  arity: Int,
+  code: List<Operation>,
+  enclosedVariables: List<EnclosedVariable>
+): ClassFile {
   val codeAttribute = CodeAttribute(
     argsSize = arity + 1,
     code = code
@@ -55,7 +60,7 @@ internal fun generateLoxFunction(name: String, arity: Int, code: List<Operation>
     ),
     attributeList = listOf(),
     accessFlagList = listOf(),
-    fieldList = listOf()
+    fieldList = generateFieldsFromEnclosedVariableList(variables = enclosedVariables)
   )
 }
 
@@ -157,33 +162,6 @@ private fun generateArity(arity: Int): MethodInfo {
   )
 }
 
-private fun generateConstructor(className: String): MethodInfo {
-  val code = listOf(
-    SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, generateConstructorMethodRef(className)),
-    SimpleOperation(Opcode.OP_RETURN)
-  )
-
-  return MethodInfo(
-    methodName = "<init>",
-    accessFlagList = listOf(),
-    attributeList = listOf(CodeAttribute(code = code, argsSize = 1)),
-    isStatic = false,
-    signature = MethodSignature(listOf(), EmptyVti())
-  )
-}
-
-private fun generateConstructorMethodRef(className: String): MethodRefInfo {
-  return MethodRefInfo(
-    label = "$className.\"<init>\":()V",
-    classInfo = ClassInfo(className),
-    nameAndType = initializerNameAndType, // Maybe this also will require some parametrization
-    argsSize = 1,
-    returnSize = 0,
-    returnTypeInfo = EmptyVti(),
-  )
-}
-
 private fun checkCallFunction(): MethodInfo {
   val code = mutableListOf<Operation>()
 
@@ -234,3 +212,19 @@ private fun generateArityMethodRef(className: String): MethodRefInfo {
     returnTypeInfo = IntegerVti(),
   )
 }
+
+private fun generateFieldsFromEnclosedVariableList(variables: List<EnclosedVariable>): List<FieldInfo> {
+  val res = mutableListOf<FieldInfo>()
+
+  for (variable in variables) {
+    res.add(generateFieldFromEnclosedVariable(variable))
+  }
+
+  return res.toList()
+}
+
+private fun generateFieldFromEnclosedVariable(variable: EnclosedVariable) = FieldInfo(
+  accessFlagList = listOf(),
+  fieldName = "__enclosed_value__${variable.name}__".toUtf8Value(),
+  fieldDescriptor = "LLoxObject;".toUtf8Value()
+)

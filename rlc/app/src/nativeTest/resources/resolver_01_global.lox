@@ -1,0 +1,3 @@
+
+var a = "global";
+print a; // should resolve to global scope

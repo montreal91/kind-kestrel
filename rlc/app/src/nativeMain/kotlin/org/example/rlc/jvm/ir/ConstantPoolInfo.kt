@@ -32,6 +32,15 @@ class FieldRefInfo(
   val classInfo: ClassInfo,
   val nameAndType: NameAndTypeInfo
 ) : ConstantPoolInfo() {
+  constructor(className: String, fieldName: String, fieldType: String) : this(
+    label = "$className.$fieldName:L$fieldType;",
+    classInfo = ClassInfo(className),
+    nameAndType = NameAndTypeInfo(
+      label = "$fieldName:L$fieldType",
+      name = fieldName.toUtf8Value(),
+      descriptor = "L$fieldType;".toUtf8Value()
+    )
+  )
   override val type: ConstantType
     get() = ConstantType.FIELD_REF
 
