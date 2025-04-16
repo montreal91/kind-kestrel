@@ -2,10 +2,11 @@
 
 package org.example.rlc.frontend
 
-import org.example.rlc.frontend.ast.Assignment
+import org.example.rlc.frontend.ast.Assign
 import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
-import org.example.rlc.frontend.ast.CallExpr
+import org.example.rlc.frontend.ast.Call
+import org.example.rlc.frontend.ast.ClassDeclStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.ForStmt
@@ -112,6 +113,7 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
       when (currentToken.type) {
         Token.Type.VAR -> varDecl()
         Token.Type.FUN -> funDecl()
+        Token.Type.CLASS -> classDecl()
         else -> statement()
       }
     } catch (e: ParserException) {
@@ -145,6 +147,24 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
   private fun funDecl() {
     consume(Token.Type.FUN, message = "Expect 'fun'.")
     function()
+  }
+
+  private fun classDecl() {
+    consume(Token.Type.CLASS, message = "Expect 'class'.")
+    val methods = mutableListOf<FunDeclStmt>()
+
+    consume(Token.Type.IDENTIFIER, message = "Expect identifier after 'class'.")
+    val identifier = previous.value
+
+    consume(Token.Type.LEFT_BRACE, message = "Expect '{' after class name.")
+
+    while (!isLastToken && currentToken.type == Token.Type.IDENTIFIER) {
+      function()
+      methods.add(statements.last().removeLast() as FunDeclStmt)
+    }
+
+    consume(Token.Type.RIGHT_BRACE, message = "Expect '}' at the end of the class declaration.")
+    statements.last().add(ClassDeclStmt(uidGen(), identifier, methods))
   }
 
   private fun statement() = when (currentToken.type) {
@@ -331,7 +351,7 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
     val right = assignment()
 
     if (left is Variable) {
-      return Assignment(uidGen(), left, right)
+      return Assign(uidGen(), left, right)
     }
 
     throw error(message = "Invalid assignment target.", token = equalToken)
@@ -429,7 +449,7 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
       consume(Token.Type.LEFT_PAREN, message = "Expected '('.")
       val args = arguments()
       consume(Token.Type.RIGHT_PAREN, message = "Expected ')' after call arguments.")
-      callee = CallExpr(uidGen(), callee, args)
+      callee = Call(uidGen(), callee, args)
     }
 
     return callee

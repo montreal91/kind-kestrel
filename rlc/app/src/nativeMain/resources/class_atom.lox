@@ -1,0 +1,46 @@
+
+class Atom {
+  init(protons, neutrons, electrons) {
+    this.protons = protons;
+    this.neutrons = neutrons;
+    this.electrons = electrons;
+  }
+
+  getMass() {
+    return this.protons + this.neutrons;
+  }
+
+  getCharge() {
+    return this.protons - this.electrons;
+  }
+
+  captureElectrons(electrons) {
+    this.electrons = this.electrons + electrons;
+  }
+
+  fuse(other) {
+    return Atom(
+      this.protons + other.protons,
+      this.neutrons + other.neutrons + 1,
+      this.electrons + other.electrons
+  }
+}
+
+var atomMaker = Atom;
+
+var hydrogen = atomMaker(1, 0, 1);
+
+print "Hydrogen mass:";
+print hydrogen.getMass();
+
+var deuterium = Atom(1, 1, 1);
+print "";
+print "Deuterium mass:";
+print deuterium.getMass();
+
+var someHelium = hydrogen.fuse(deuterium);
+print "";
+print "Helium mass:";
+print someHelium.getMass();
+print "Helium charge:"
+print someHelium.getCharge();

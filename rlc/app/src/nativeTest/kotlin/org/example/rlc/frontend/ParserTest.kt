@@ -7,7 +7,7 @@ import kotlin.uuid.ExperimentalUuidApi
 
 
 internal data class PositiveTestCase(
-  val caseName: String,
+  val name: String,
   val fileName: String,
   val expected: String
 )
@@ -26,35 +26,50 @@ private fun Parser.getErrorMessages(): List<String> {
   return messages
 }
 
+//const val expectedClassVoid =
+
+
 
 @OptIn(ExperimentalUuidApi::class)
 class ParserTest {
   private val positive = listOf(
     PositiveTestCase(
-      caseName = "Simple Addition",
+      name = "Simple Addition",
       fileName = "parser_one.lox",
       expected = "(script\n  (expr (+ 1 2))\n)",
     ),
     PositiveTestCase(
-      caseName = "Print Complex Expression",
+      name = "Print Complex Expression",
       fileName = "parser_two.lox",
       expected = "(script\n  (print (- (+ (- 1)(* 2 3))(/ 4 5)))\n)",
     ),
     PositiveTestCase(
-      caseName = "Or Expression",
+      name = "Or Expression",
       fileName = "parser_or.lox",
       expected = "(script\n  (expr (or true false))\n)",
     ),
     PositiveTestCase(
-      caseName = "And Expression",
+      name = "And Expression",
       fileName = "parser_and.lox",
       expected = "(script\n  (expr (and false true))\n)",
     ),
     PositiveTestCase(
-      caseName = "Grouping",
+      name = "Grouping",
       fileName = "parser_grouping.lox",
       expected = "(script\n  (expr (* (group (+ 1 2))(group (- (- 3) 4))))\n)",
     ),
+    PositiveTestCase(
+      name = "Var",
+      fileName = "parser_var.lox",
+      expected = "(script\n  (var x nil)\n  (var y (+ 1 5))\n)",
+    ),
+    PositiveTestCase(
+      name = "Empty Class Declaration",
+      fileName = "parser_class_void.lox",
+      expected = "(script\n" +
+          "  (class Void)\n" + "" +
+          ")",
+    )
   )
 
   private val negative = listOf(
@@ -82,11 +97,17 @@ class ParserTest {
       val scanner = Scanner(text)
       val parser = Parser(tokens = scanner.scan())
       val ast = parser.parse()
-      assertEquals(expected = false, actual = parser.hasErrors)
+
+      assertEquals(
+        expected = false,
+        actual = parser.hasErrors,
+        message = "Case '${case.name}' has unexpected parse errors.\n${parser.getErrorMessages()}"
+      )
+
       assertEquals(
         expected = case.expected,
         actual = AstToLispExprConverter(ast).convertToLisp(),
-        message = "Case '${case.caseName}' failed.\n",
+        message = "Case '${case.name}' failed.\n",
       )
     }
   }

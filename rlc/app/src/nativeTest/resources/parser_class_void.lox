@@ -1,0 +1,22 @@
+
+class Void {}
+
+// var v = Void();
+
+// v.ether = "Ether";
+
+// print v.ether; // Should print 'Ether'
+
+// var voidMaker = Void;
+
+// var vacuum = voidMaker();
+
+// vacuum.ether = "Light";
+
+// print vacuum.ether; // Prints Light
+// print v.ether; // Prints 'Ether
+
+// Total expected:
+// Ether
+// Light
+// Ether

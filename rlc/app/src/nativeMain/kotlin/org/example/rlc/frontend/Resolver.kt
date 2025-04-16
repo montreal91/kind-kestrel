@@ -1,11 +1,12 @@
 package org.example.rlc.frontend
 
 import co.touchlab.kermit.Logger
-import org.example.rlc.frontend.ast.Assignment
+import org.example.rlc.frontend.ast.Assign
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
-import org.example.rlc.frontend.ast.CallExpr
+import org.example.rlc.frontend.ast.Call
+import org.example.rlc.frontend.ast.ClassDeclStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.ForStmt
@@ -59,6 +60,7 @@ class Resolver {
     is ForStmt -> visitForStmt(stmt)
     is FunDeclStmt -> visitFunDeclStmt(stmt)
     is ReturnStmt -> visitReturnStmt(stmt)
+    is ClassDeclStmt -> TODO()
   }
 
   private fun visitExpr(expr: Expr) = when (expr) {
@@ -68,8 +70,8 @@ class Resolver {
     is Variable -> visitIdentifier(expr)
     is Logical -> visitLogical(expr)
     is Unary -> visitUnary(expr)
-    is Assignment -> visitAssignment(expr)
-    is CallExpr -> visitCallExpr(expr)
+    is Assign -> visitAssignment(expr)
+    is Call -> visitCallExpr(expr)
   }
 
   private fun visitBlockStmt(stmt: BlockStmt) {
@@ -184,12 +186,12 @@ class Resolver {
     visitExpr(expr.right)
   }
 
-  private fun visitAssignment(expr: Assignment) {
+  private fun visitAssignment(expr: Assign) {
     visitExpr(expr.left)
     visitExpr(expr.right)
   }
 
-  private fun visitCallExpr(expr: CallExpr) {
+  private fun visitCallExpr(expr: Call) {
     visitExpr(expr.callee)
     expr.args.forEach(this::visitExpr)
   }

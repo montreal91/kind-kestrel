@@ -1,9 +1,10 @@
 package org.example.rlc.frontend
 
-import org.example.rlc.frontend.ast.Assignment
+import org.example.rlc.frontend.ast.Assign
 import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
-import org.example.rlc.frontend.ast.CallExpr
+import org.example.rlc.frontend.ast.Call
+import org.example.rlc.frontend.ast.ClassDeclStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.ForStmt
@@ -54,16 +55,17 @@ class AstToLispExprConverter(
       is IfStmt -> TODO()
       is PrintStmt -> visitPrintStmt(stmt)
       is ReturnStmt -> TODO()
-      is VarDeclStmt -> TODO()
+      is VarDeclStmt -> visitVarDeclStmt(stmt)
       is WhileStmt -> TODO()
+      is ClassDeclStmt -> visitClassDeclStmt(stmt)
     }
   }
 
   private fun visitExpr(expr: Expr) {
     when (expr) {
-      is Assignment -> TODO()
+      is Assign -> TODO()
       is Binary -> visitBinary(expr)
-      is CallExpr -> TODO()
+      is Call -> TODO()
       is Grouping -> visitGrouping(expr)
       is Literal -> visitLiteral(expr)
       is Logical -> visitLogical(expr)
@@ -83,6 +85,34 @@ class AstToLispExprConverter(
     addIndent()
     sb.append("(print ")
     visitExpr(stmt.expr)
+    sb.append(")\n")
+  }
+
+  private fun visitVarDeclStmt(stmt: VarDeclStmt) {
+    addIndent()
+    sb.append("(var ${stmt.variable} ")
+
+    when (val initializer = stmt.initializer) {
+      null -> sb.append("nil")
+      else -> visitExpr(initializer)
+    }
+
+    sb.append(")\n")
+  }
+
+  private fun visitClassDeclStmt(stmt: ClassDeclStmt) {
+    addIndent()
+    sb.append("(class ${stmt.identifier}")
+
+    if (stmt.methods.isEmpty()) {
+      sb.append(")\n")
+      return
+    }
+
+    depth++
+    for (meth in stmt.methods) {
+      visitStmt(meth)
+    }
     sb.append(")\n")
   }
 

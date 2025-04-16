@@ -3,11 +3,12 @@ package org.example.rlc.jvm.middleware
 import org.example.rlc.frontend.EnclosedUpvalue
 import org.example.rlc.frontend.EnclosedLocal
 import org.example.rlc.frontend.Token
-import org.example.rlc.frontend.ast.Assignment
+import org.example.rlc.frontend.ast.Assign
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
-import org.example.rlc.frontend.ast.CallExpr
+import org.example.rlc.frontend.ast.Call
+import org.example.rlc.frontend.ast.ClassDeclStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.ForStmt
@@ -203,6 +204,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     is ForStmt -> visitForStmt(stmt)
     is FunDeclStmt -> visitFunDeclStmt(stmt)
     is ReturnStmt -> visitReturnStmt(stmt)
+    is ClassDeclStmt -> TODO()
   }
 
   private fun visitExpr(expr: Expr) = when (expr) {
@@ -212,8 +214,8 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     is Logical -> visitLogical(expr)
     is Unary -> visitUnary(expr)
     is Variable -> visitVariable(expr)
-    is Assignment -> visitAssignment(expr)
-    is CallExpr -> visitCallExpr(expr)
+    is Assign -> visitAssignment(expr)
+    is Call -> visitCallExpr(expr)
   }
 
   private fun visitExprStmt(exprStmt: ExprStmt) {
@@ -393,7 +395,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     exitLoop.setJumpTo(currentCode.size)
   }
 
-  private fun visitCallExpr(expr: CallExpr) {
+  private fun visitCallExpr(expr: Call) {
     println("Visiting Call Expression. ${expr.args.size}")
     visitExpr(expr.callee)
 
@@ -702,7 +704,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     visitExpr(expr.expression)
   }
 
-  private fun visitAssignment(expr: Assignment) {
+  private fun visitAssignment(expr: Assign) {
     visitExpr(expr.right)
     currentCode.add(SimpleOperation(Opcode.OP_DUP))
 
