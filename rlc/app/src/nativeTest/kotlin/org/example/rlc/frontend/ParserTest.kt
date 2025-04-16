@@ -7,6 +7,7 @@ import kotlin.uuid.ExperimentalUuidApi
 
 
 internal data class PositiveTestCase(
+  val caseName: String,
   val fileName: String,
   val expected: String
 )
@@ -30,24 +31,29 @@ private fun Parser.getErrorMessages(): List<String> {
 class ParserTest {
   private val positive = listOf(
     PositiveTestCase(
+      caseName = "Simple Addition",
       fileName = "parser_one.lox",
-      expected = "(expr (+ 1 2))",
+      expected = "(script\n  (expr (+ 1 2))\n)",
     ),
     PositiveTestCase(
+      caseName = "Print Complex Expression",
       fileName = "parser_two.lox",
-      expected = "(print (- (+ (- 1) (* 2 3)) (/ 4 5)))",
+      expected = "(script\n  (print (- (+ (- 1)(* 2 3))(/ 4 5)))\n)",
     ),
     PositiveTestCase(
+      caseName = "Or Expression",
       fileName = "parser_or.lox",
-      expected = "(expr (or true false))",
+      expected = "(script\n  (expr (or true false))\n)",
     ),
     PositiveTestCase(
+      caseName = "And Expression",
       fileName = "parser_and.lox",
-      expected = "(expr (and false true))",
+      expected = "(script\n  (expr (and false true))\n)",
     ),
     PositiveTestCase(
+      caseName = "Grouping",
       fileName = "parser_grouping.lox",
-      expected = "(expr (* (group (+ 1 2)) (group (- (- 3) 4))))",
+      expected = "(script\n  (expr (* (group (+ 1 2))(group (- (- 3) 4))))\n)",
     ),
   )
 
@@ -77,7 +83,11 @@ class ParserTest {
       val parser = Parser(tokens = scanner.scan())
       val ast = parser.parse()
       assertEquals(expected = false, actual = parser.hasErrors)
-      assertEquals(case.expected, AstToLispExprConverter(ast).convertToLisp())
+      assertEquals(
+        expected = case.expected,
+        actual = AstToLispExprConverter(ast).convertToLisp(),
+        message = "Case '${case.caseName}' failed.\n",
+      )
     }
   }
 

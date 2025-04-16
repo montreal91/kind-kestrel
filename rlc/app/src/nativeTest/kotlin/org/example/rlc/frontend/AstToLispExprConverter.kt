@@ -21,147 +21,104 @@ import org.example.rlc.frontend.ast.Variable
 import org.example.rlc.frontend.ast.WhileStmt
 
 
-private data class LispFrame(
-  val expr: Expr,
-  var visitedLeft: Boolean = false,
-  var visitedRight: Boolean = false,
-)
-
 private fun StringBuilder.addSpaceIfNeeded(): StringBuilder {
   if (this.isNotEmpty() && !this.last().isWhitespace()) {
     this.append(' ')
   }
-  return this
-}
 
-private fun StringBuilder.trimTrailingWhitespace(): StringBuilder {
-  var i = this.length - 1
-  while (i >= 0 && this[i].isWhitespace()) {
-    i--
-  }
-  if (i < this.length - 1) {
-    this.setLength(i + 1)
-  }
   return this
 }
 
 class AstToLispExprConverter(
   private val ast: List<Stmt>
 ) {
-  fun convertToLisp(): String {
-    val sb = StringBuilder()
-    for (expr in ast) {
-      printStmt(expr, sb)
-    }
+  private var depth = 0
+  private val sb = StringBuilder()
 
-    sb.trimTrailingWhitespace()
+  fun convertToLisp(): String {
+    sb.append("(script\n")
+    depth++
+
+    ast.forEach(this::visitStmt)
+
+    sb.append(")")
     return sb.toString()
   }
-}
 
-private fun printStmt(stmt: Stmt, sb: StringBuilder) {
-  when (stmt) {
-    is ExprStmt -> {
-      sb.append('(').append("expr ")
-      printExpr(stmt.expr, sb)
-      sb.append(')')
-      sb.append('\n')
+  private fun visitStmt(stmt: Stmt) {
+    when (stmt) {
+      is BlockStmt -> TODO()
+      is ExprStmt -> visitExprStmt(stmt)
+      is ForStmt -> TODO()
+      is FunDeclStmt -> TODO()
+      is IfStmt -> TODO()
+      is PrintStmt -> visitPrintStmt(stmt)
+      is ReturnStmt -> TODO()
+      is VarDeclStmt -> TODO()
+      is WhileStmt -> TODO()
     }
-    is PrintStmt -> {
-      sb.append('(')
-      sb.append("print")
-      printExpr(stmt.expr, sb)
-      sb.append(')')
-      sb.append('\n')
-    }
-
-    is BlockStmt -> TODO()
-    is ForStmt -> TODO()
-    is FunDeclStmt -> TODO()
-    is IfStmt -> TODO()
-    is ReturnStmt -> TODO()
-    is VarDeclStmt -> TODO()
-    is WhileStmt -> TODO()
   }
-}
 
-private fun printExpr(expr: Expr, sb: StringBuilder) {
-  val callStack = ArrayDeque<LispFrame>()
-  callStack.addFirst(LispFrame(expr = expr))
-
-  while (!callStack.isEmpty()) {
-    val curr = callStack.first()
-
-    when (curr.expr) {
-      is Binary -> {
-        if (!curr.visitedLeft) {
-          callStack.addFirst(LispFrame(expr = curr.expr.left))
-          curr.visitedLeft = true
-          sb.addSpaceIfNeeded()
-          sb.append("(${curr.expr.operator.value} ")
-          continue
-        }
-        if (!curr.visitedRight) {
-          callStack.addFirst(LispFrame(expr = curr.expr.right))
-          curr.visitedRight = true
-          continue
-        }
-        sb.append(")")
-        callStack.removeFirst()
-      }
-
-      is Grouping -> {
-        if (!curr.visitedLeft) {
-          callStack.addFirst(LispFrame(expr = curr.expr.expression))
-          curr.visitedLeft = true
-          curr.visitedRight = true
-          sb.addSpaceIfNeeded()
-          sb.append("(group ")
-          continue
-        }
-        sb.append(")")
-        callStack.removeFirst()
-      }
-      is Literal -> {
-        sb.addSpaceIfNeeded()
-        sb.append(curr.expr.value)
-        callStack.removeFirst()
-      }
-      is Logical -> {
-        if (!curr.visitedLeft) {
-          callStack.addFirst(LispFrame(expr = curr.expr.left))
-          curr.visitedLeft = true
-          sb.addSpaceIfNeeded()
-          sb.append("(${curr.expr.operator.value} ")
-          continue
-        }
-        if (!curr.visitedRight) {
-          callStack.addFirst(LispFrame(expr = curr.expr.right))
-          curr.visitedRight = true
-          continue
-        }
-
-        sb.append(")")
-        callStack.removeFirst()
-      }
-
-      is Unary -> {
-        if (!curr.visitedLeft) {
-          callStack.addFirst(LispFrame(expr = curr.expr.right))
-          curr.visitedLeft = true
-          curr.visitedRight = true
-          sb.addSpaceIfNeeded()
-          sb.append("(${curr.expr.operator.value} ")
-          continue
-        }
-
-        sb.append(")")
-        callStack.removeFirst()
-      }
-
+  private fun visitExpr(expr: Expr) {
+    when (expr) {
       is Assignment -> TODO()
+      is Binary -> visitBinary(expr)
       is CallExpr -> TODO()
+      is Grouping -> visitGrouping(expr)
+      is Literal -> visitLiteral(expr)
+      is Logical -> visitLogical(expr)
+      is Unary -> visitUnary(expr)
       is Variable -> TODO()
     }
+  }
+
+  private fun visitExprStmt(stmt: ExprStmt) {
+    addIndent()
+    sb.append("(expr ")
+    visitExpr(stmt.expr)
+    sb.append(")\n")
+  }
+
+  private fun visitPrintStmt(stmt: PrintStmt) {
+    addIndent()
+    sb.append("(print ")
+    visitExpr(stmt.expr)
+    sb.append(")\n")
+  }
+
+  private fun visitBinary(expr: Binary) {
+    sb.append("(${expr.operator.value} ")
+    visitExpr(expr.left)
+    visitExpr(expr.right)
+    sb.append(")")
+  }
+
+  private fun visitGrouping(expr: Grouping) {
+    sb.append("(group ")
+    visitExpr(expr.expression)
+    sb.append(")")
+  }
+
+  private fun visitLiteral(expr: Literal) {
+    sb.addSpaceIfNeeded()
+    sb.append(expr.value)
+  }
+
+  private fun visitLogical(expr: Logical) {
+    sb.append("(${expr.operator.value} ")
+    visitExpr(expr.left)
+    visitExpr(expr.right)
+    sb.append(")")
+  }
+
+  private fun visitUnary(expr: Unary) {
+    sb.append("(${expr.operator.value}")
+    visitExpr(expr.right)
+    sb.append(")")
+  }
+
+
+  private fun addIndent() {
+    sb.append(" ".repeat(n = depth * 2))
   }
 }
