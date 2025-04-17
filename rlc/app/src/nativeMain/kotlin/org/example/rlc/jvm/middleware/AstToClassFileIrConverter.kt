@@ -13,12 +13,14 @@ import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.ForStmt
 import org.example.rlc.frontend.ast.FunDeclStmt
+import org.example.rlc.frontend.ast.Get
 import org.example.rlc.frontend.ast.Grouping
 import org.example.rlc.frontend.ast.IfStmt
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.ReturnStmt
+import org.example.rlc.frontend.ast.Set
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
@@ -195,8 +197,8 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   }
 
   private fun visitStmt(stmt: Stmt) = when (stmt) {
-    is ExprStmt -> visitExprStmt(stmt)
-    is PrintStmt -> visitPrintStmt(stmt)
+    is ExprStmt -> visitExprStmt(exprStmt = stmt)
+    is PrintStmt -> visitPrintStmt(printStmt = stmt)
     is BlockStmt -> visitBlockStmt(stmt)
     is VarDeclStmt -> visitVarDecl(stmt)
     is IfStmt -> visitIfStatement(stmt)
@@ -216,6 +218,8 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     is Variable -> visitVariable(expr)
     is Assign -> visitAssignment(expr)
     is Call -> visitCallExpr(expr)
+    is Get -> TODO()
+    is Set -> TODO()
   }
 
   private fun visitExprStmt(exprStmt: ExprStmt) {

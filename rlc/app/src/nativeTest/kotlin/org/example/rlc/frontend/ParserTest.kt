@@ -26,10 +26,6 @@ private fun Parser.getErrorMessages(): List<String> {
   return messages
 }
 
-//const val expectedClassVoid =
-
-
-
 @OptIn(ExperimentalUuidApi::class)
 class ParserTest {
   private val positive = listOf(
@@ -67,9 +63,61 @@ class ParserTest {
       name = "Empty Class Declaration",
       fileName = "parser_class_void.lox",
       expected = "(script\n" +
-          "  (class Void)\n" + "" +
+          "  (class Void)\n" +
+          "  (var v (call (variable Void) ()))\n" +
+          "  (expr (set (get (variable v) ether) \"Ether\"))\n" +
+          "  (print (get (variable v) ether))\n" +
+          "  (var voidMaker (variable Void))\n" +
+          "  (var vacuum (call (variable voidMaker) ()))\n" +
+          "  (expr (set (get (variable vacuum) ether) \"Light\"))\n" +
+          "  (print (get (variable vacuum) ether))\n" +
+          "  (print (get (variable v) ether))\n" +
           ")",
-    )
+    ),
+    PositiveTestCase(
+      name = "Blocks",
+      fileName = "parser_blocks.lox",
+      expected = "(script\n" +
+          "  (var a 0)\n" +
+          "  (var b 0)\n" +
+          "  (block\n" +
+          "    (var b 1)\n" +
+          "    (print (+ (variable a)(variable b)))\n" +
+          "    (block\n" +
+          "      (var a 2)\n" +
+          "      (print (+ (variable a)(variable b)))\n" +
+          "    )\n" +
+          "  )\n" +
+          "  (print (+ (variable a)(variable b)))\n" +
+          ")"
+    ),
+
+    PositiveTestCase(
+      name = "Functions",
+      fileName = "parser_fun.lox",
+      expected = "(script\n" +
+          "  (fun doNothing (parameters) (body\n" +
+          "  ))\n" +
+          "  (fun doSomething (parameters) (body\n" +
+          "    (print \"Doing Something\")\n" +
+          "  ))\n" +
+          "  (fun add (parameters a b) (body\n" +
+          "    (return (+ (variable a)(variable b)))\n" +
+          "  ))\n" +
+          ")",
+    ),
+
+    PositiveTestCase(
+      name = "Class With Methods",
+      fileName = "parser_class_methods.lox",
+      expected = "(script\n" +
+          "  (class Quark\n" +
+          "    (method introduce (parameters) (body\n" +
+          "      (print \"I am a quark!\")\n" +
+          "    ))\n" +
+          "  )\n" +
+          ")",
+    ),
   )
 
   private val negative = listOf(

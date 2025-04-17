@@ -12,12 +12,14 @@ import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.ForStmt
 import org.example.rlc.frontend.ast.FormalParameter
 import org.example.rlc.frontend.ast.FunDeclStmt
+import org.example.rlc.frontend.ast.Get
 import org.example.rlc.frontend.ast.Grouping
 import org.example.rlc.frontend.ast.IfStmt
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.ReturnStmt
+import org.example.rlc.frontend.ast.Set
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
@@ -105,25 +107,23 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
       declaration()
     }
 
-    consume(Token.Type.EOF, message = "Expect end of input.")
+    consume(expectedType = Token.Type.EOF, message = "Expect end of input.")
   }
 
-  private fun declaration() {
-    try {
-      when (currentToken.type) {
-        Token.Type.VAR -> varDecl()
-        Token.Type.FUN -> funDecl()
-        Token.Type.CLASS -> classDecl()
-        else -> statement()
-      }
-    } catch (e: ParserException) {
-      synchronize()
+  private fun declaration() = try {
+    when (currentToken.type) {
+      Token.Type.VAR -> varDecl()
+      Token.Type.FUN -> funDecl()
+      Token.Type.CLASS -> classDecl()
+      else -> statement()
     }
+  } catch (_: ParserException) {
+    synchronize()
   }
 
   private fun varDecl() {
-    consume(Token.Type.VAR, message = "Expect 'var'")
-    consume(Token.Type.IDENTIFIER, message = "Expect identifier")
+    consume(expectedType = Token.Type.VAR, message = "Expect 'var'")
+    consume(expectedType = Token.Type.IDENTIFIER, message = "Expect identifier")
     val identifier = previous
 
     var expression: Expr? = null
@@ -140,31 +140,31 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
       initializer = expression
     )
 
-    consume(Token.Type.SEMICOLON, message = "Expect ';' after value.")
+    consume(expectedType = Token.Type.SEMICOLON, message = "Expect ';' after value.")
     statements.last().add(decl)
   }
 
   private fun funDecl() {
-    consume(Token.Type.FUN, message = "Expect 'fun'.")
+    consume(expectedType = Token.Type.FUN, message = "Expect 'fun'.")
     function()
   }
 
   private fun classDecl() {
-    consume(Token.Type.CLASS, message = "Expect 'class'.")
+    consume(expectedType = Token.Type.CLASS, message = "Expect 'class'.")
     val methods = mutableListOf<FunDeclStmt>()
 
-    consume(Token.Type.IDENTIFIER, message = "Expect identifier after 'class'.")
+    consume(expectedType = Token.Type.IDENTIFIER, message = "Expect identifier after 'class'.")
     val identifier = previous.value
 
-    consume(Token.Type.LEFT_BRACE, message = "Expect '{' after class name.")
+    consume(expectedType = Token.Type.LEFT_BRACE, message = "Expect '{' after class name.")
 
     while (!isLastToken && currentToken.type == Token.Type.IDENTIFIER) {
       function()
       methods.add(statements.last().removeLast() as FunDeclStmt)
     }
 
-    consume(Token.Type.RIGHT_BRACE, message = "Expect '}' at the end of the class declaration.")
-    statements.last().add(ClassDeclStmt(uidGen(), identifier, methods))
+    consume(expectedType = Token.Type.RIGHT_BRACE, message = "Expect '}' at the end of the class declaration.")
+    statements.last().add(ClassDeclStmt(uid = uidGen(), identifier, methods))
   }
 
   private fun statement() = when (currentToken.type) {
@@ -178,12 +178,12 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
   }
 
   private fun function() {
-    consume(Token.Type.IDENTIFIER, message = "Expect identifier after 'fun'.")
+    consume(expectedType = Token.Type.IDENTIFIER, message = "Expect identifier after 'fun'.")
     val identifier = previous
 
-    consume(Token.Type.LEFT_PAREN, message = "Expect '(' after function identifier.")
+    consume(expectedType = Token.Type.LEFT_PAREN, message = "Expect '(' after function identifier.")
     val formalArgs = parameters()
-    consume(Token.Type.RIGHT_PAREN, message = "Expect ')' after function parameters.")
+    consume(expectedType = Token.Type.RIGHT_PAREN, message = "Expect ')' after function parameters.")
 
     block()
 
@@ -354,6 +354,10 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
       return Assign(uidGen(), left, right)
     }
 
+    if (left.canAssign) {
+      return Set(uidGen(), obj = left, name = "?", value = right)
+    }
+
     throw error(message = "Invalid assignment target.", token = equalToken)
   }
 
@@ -445,11 +449,20 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
     println("Parsing a call")
     var callee = primary()
 
-    while (!isLastToken && currentToken.type == Token.Type.LEFT_PAREN) {
-      consume(Token.Type.LEFT_PAREN, message = "Expected '('.")
-      val args = arguments()
-      consume(Token.Type.RIGHT_PAREN, message = "Expected ')' after call arguments.")
-      callee = Call(uidGen(), callee, args)
+    while (!isLastToken && (currentToken.type == Token.Type.LEFT_PAREN || currentToken.type == Token.Type.DOT)) {
+      if (currentToken.type == Token.Type.LEFT_PAREN) {
+        consume(Token.Type.LEFT_PAREN, message = "Expected '('.")
+        val args = arguments()
+        consume(Token.Type.RIGHT_PAREN, message = "Expected ')' after call arguments.")
+        callee = Call(uidGen(), callee, args)
+        continue
+      }
+      if (currentToken.type == Token.Type.DOT) {
+        consume(Token.Type.DOT, message = "Expected '.'.")
+        consume(Token.Type.IDENTIFIER, message = "Expected identifier after '.'.")
+        val name = previous.value
+        callee = Get(uidGen(), callee, name)
+      }
     }
 
     return callee
@@ -525,7 +538,7 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
 
   private fun error(message: String, token: Token): ParserException {
     errors.add(LoxCompileError(message = message, token))
-    return ParserException("")
+    return ParserException(msg = "")
   }
 }
 

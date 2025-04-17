@@ -28,10 +28,16 @@ class Variable(uid: Uuid, val variable: String) : Expr(uid) {
   override val canAssign = true
 
   override fun toString(): String {
-    return "(Variable [${variable}]}"
+    return "(Variable [${variable}])"
 
   }
 }
+
+class Get(uid: Uuid, val obj: Expr, val name: String) : Expr(uid) {
+  override val canAssign = true
+}
+
+class Set(uid: Uuid, val obj: Expr, val name: String, val value: Expr) : Expr(uid)
 
 class Assign(uid: Uuid, val left: Expr, val right: Expr) : Expr(uid)
 
