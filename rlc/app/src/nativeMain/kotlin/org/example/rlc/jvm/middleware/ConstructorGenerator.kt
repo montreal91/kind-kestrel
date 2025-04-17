@@ -26,7 +26,7 @@ internal fun generateConstructor(className: String): MethodInfo {
   )
 }
 
-private fun generateConstructorMethodRef(className: String): MethodRefInfo {
+internal fun generateConstructorMethodRef(className: String): MethodRefInfo {
   return MethodRefInfo(
     label = "$className.\"<init>\":()V",
     classInfo = ClassInfo(className),

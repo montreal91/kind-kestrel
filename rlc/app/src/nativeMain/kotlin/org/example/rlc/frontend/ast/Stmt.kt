@@ -41,6 +41,6 @@ class FormalParameter(
 
 class ReturnStmt(uid: Uuid, val expr: Expr?): Stmt(uid)
 
-class ClassDeclStmt(uid: Uuid, val identifier: String, val methods: List<FunDeclStmt>): Stmt(uid)
+class ClassDeclStmt(uid: Uuid, val identifier: Token, val methods: List<FunDeclStmt>): Stmt(uid)
 
 typealias Ast = List<Stmt>

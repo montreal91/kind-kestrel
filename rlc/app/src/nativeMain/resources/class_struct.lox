@@ -1,0 +1,26 @@
+
+class Struct {}
+
+print Struct;
+
+var car = Struct();
+
+print car;
+
+var engine = Struct();
+
+engine.type = "V8";
+engine.fuel = "Gasoline";
+engine.powerHp = 300;
+
+// car.engine = engine;
+// car.brand = "Lancia";
+// car.model = "Stratos HF";
+// car.color = "Black";
+
+// print car;
+// print car.brand + " " + car.model;
+// print "Color: " + car.color;
+// print "Engine Type: " + car.engine.type;
+// print "Engine Fuel: " + car.engine.fuel;
+// print "Engine Power (HorsePower): " + car.engine.powerHP;

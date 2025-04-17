@@ -12,7 +12,10 @@ class Frame(
   val functionDepth: Int
 ) {
   enum class Type {
-    GLOBAL, BLOCK, FUNCTION
+    GLOBAL,
+    BLOCK,
+    FUNCTION,
+    CLASS,
   }
 
   private val log = Frame::class.qualifiedName?.let { Logger.withTag(it) }

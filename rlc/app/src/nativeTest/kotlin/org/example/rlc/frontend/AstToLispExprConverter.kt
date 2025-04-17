@@ -166,7 +166,7 @@ class AstToLispExprConverter(
 
   private fun visitClassDeclStmt(stmt: ClassDeclStmt) {
     addIndent()
-    sb.append("(class ${stmt.identifier}")
+    sb.append("(class ${stmt.identifier.value}")
 
     if (stmt.methods.isEmpty()) {
       sb.append(")\n")

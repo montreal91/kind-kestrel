@@ -66,7 +66,7 @@ import org.example.rlc.jvm.ir.toUtf8Value
 import kotlin.uuid.ExperimentalUuidApi
 
 
-@OptIn(ExperimentalUuidApi::class)
+@OptIn(markerClass = [ExperimentalUuidApi::class])
 class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionTable) {
   private val objectClass = javaLangObjectClassInfo
   private val classes = mutableListOf(
@@ -81,6 +81,8 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   )
   private var currentCode = mutableListOf<Operation>()
   private var currentFunction = "Script"
+
+  private val classStack = ArrayDeque<String>()
 
   private val methodRefs = mutableMapOf<Token.Type, MethodRefInfo>()
   private val localVariables = mutableListOf<VerificationTypeInfo>()
@@ -206,7 +208,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     is ForStmt -> visitForStmt(stmt)
     is FunDeclStmt -> visitFunDeclStmt(stmt)
     is ReturnStmt -> visitReturnStmt(stmt)
-    is ClassDeclStmt -> TODO()
+    is ClassDeclStmt -> visitClassDeclStmt(classDeclStmt = stmt)
   }
 
   private fun visitExpr(expr: Expr) = when (expr) {
@@ -292,10 +294,10 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     currentFunction = outerFunction
 
     val instantiationCode = generateFunctionInstantiationCode(
-      stmt.identifier.value,
-      outerFunction,
-      stmt.enclosedVariables.map { it as EnclosedVariable },
-      currentCode.size,
+      functionName = "LoxFunction${stmt.identifier.value}",
+      outerFunctionName = outerFunction,
+      enclosedVariables = stmt.enclosedVariables.map { it as EnclosedVariable },
+      currentCodeOffset = currentCode.size,
     )
 
     currentCode.addAll(instantiationCode)
@@ -313,6 +315,34 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     }
 
     println("Finished compiling function. (function=${stmt.identifier.value})")
+  }
+
+  private fun visitClassDeclStmt(classDeclStmt: ClassDeclStmt) {
+    classes.add(generateInstanceClass(name = classDeclStmt.identifier.value))
+
+    val constructor = generateConstructorClass(name = classDeclStmt.identifier.value)
+
+    classes.add(constructor)
+
+    /// Constructor method initialization code goes here
+    currentCode.addAll(generateFunctionInstantiationCode(
+      constructor.thisClassInfo.className.encodedString,
+      "",
+      listOf(),
+      currentCode.size,
+    ))
+
+    when (val resolution = resolutionTable.get(classDeclStmt.uid)) {
+      is GlobalVariable -> declGlobalVariable(variable = resolution)
+      is LocalVariable -> setLocalVariable(resolution)
+      is EnclosedVariable -> {
+        println("A function can't be declared as an enclosed value.")
+      }
+
+      UnresolvedVariable -> throw IllegalStateException(
+        "Variable ${classDeclStmt.identifier} is unresolved, but expected to be resolved"
+      )
+    }
   }
 
   private fun visitIfStatement(stmt: IfStmt) {
@@ -891,9 +921,11 @@ private fun generateCallMethodRef(arity: Int): MethodRefInfo {
 
   val sb = StringBuilder()
   sb.append("(")
-  for (i in 0..<arity) {
+
+  (0..<arity).forEach { i ->
     sb.append("L$loxObjectClassName;")
   }
+
   sb.append(")L$loxObjectClassName;")
   val signature = sb.toString()
   return MethodRefInfo(
@@ -939,13 +971,13 @@ private fun generateFunctionInstantiationCode(
   enclosedVariables: List<EnclosedVariable>,
   currentCodeOffset: Int,
 ): List<Operation> {
-  val functionClassName = "LoxFunction${functionName}"
-  val thisClassInfo = ClassInfo(functionClassName)
+//  val functionClassName = "LoxFunction${functionName}"
+  val thisClassInfo = ClassInfo(functionName)
   val res = wrapLocalsIfNeeded(enclosedVariables, currentCodeOffset)
 
   val invokeFunctionObjectConstructorOp = ShortConstantOperation(
       Opcode.OP_INVOKE_SPECIAL,
-      generateLoxFunctionConstructorInfo(className = "LoxFunction${functionName}")
+      generateLoxFunctionConstructorInfo(className = functionName)
     )
 
   res.add(ShortConstantOperation(Opcode.OP_NEW, thisClassInfo, ObjectVti(thisClassInfo)))
@@ -959,7 +991,7 @@ private fun generateFunctionInstantiationCode(
 
     val putFieldOp = ShortConstantOperation(
       Opcode.OP_PUTFIELD,
-      generateFieldRef(className = "LoxFunction${functionName}", fieldName = "__enclosed_value__${v.name}__")
+      generateFieldRef(className = functionName, fieldName = "__enclosed_value__${v.name}__")
     )
 
     val accessOps = when (v.enclosedObject) {

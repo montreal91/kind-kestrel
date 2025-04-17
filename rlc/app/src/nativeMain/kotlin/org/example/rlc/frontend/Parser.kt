@@ -97,6 +97,8 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
     println("Parsing stage started.\n")
     statements.add(mutableListOf())
     program()
+    println("Parsing stage ended.\n")
+    println("____________________")
     return statements.last().toList()
   }
 
@@ -154,7 +156,7 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
     val methods = mutableListOf<FunDeclStmt>()
 
     consume(expectedType = Token.Type.IDENTIFIER, message = "Expect identifier after 'class'.")
-    val identifier = previous.value
+    val identifier = previous
 
     consume(expectedType = Token.Type.LEFT_BRACE, message = "Expect '{' after class name.")
 

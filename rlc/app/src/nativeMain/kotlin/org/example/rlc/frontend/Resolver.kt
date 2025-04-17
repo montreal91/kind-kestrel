@@ -62,7 +62,7 @@ class Resolver {
     is ForStmt -> visitForStmt(stmt)
     is FunDeclStmt -> visitFunDeclStmt(stmt)
     is ReturnStmt -> visitReturnStmt(stmt)
-    is ClassDeclStmt -> TODO()
+    is ClassDeclStmt -> visitClassDeclStmt(classDecl = stmt)
   }
 
   private fun visitExpr(expr: Expr) = when (expr) {
@@ -74,27 +74,27 @@ class Resolver {
     is Unary -> visitUnary(expr)
     is Assign -> visitAssignment(expr)
     is Call -> visitCallExpr(expr)
-    is Get -> TODO()
-    is Set -> TODO()
+    is Get -> visitGetExpr(get = expr)
+    is Set -> visitSetExpr(set = expr)
   }
 
   private fun visitBlockStmt(stmt: BlockStmt) {
     println("Resolver visiting a block statement.")
-    frameStack.addNewFrame(Frame.Type.BLOCK, frameName = "Block")
-    stmt.statements.forEach(this::visitStmt)
+    frameStack.addNewFrame(type = Frame.Type.BLOCK, frameName = "Block")
+    stmt.statements.forEach(action = this::visitStmt)
     frameStack.popFrame()
   }
 
   private fun visitExprStmt(stmt: ExprStmt) {
-    visitExpr(stmt.expr)
+    visitExpr(expr = stmt.expr)
   }
 
   private fun visitPrintStmt(stmt: PrintStmt) {
-    visitExpr(stmt.expr)
+    visitExpr(expr = stmt.expr)
   }
 
   private fun visitReturnStmt(stmt: ReturnStmt) {
-    stmt.expr?.let(this::visitExpr)
+    stmt.expr?.let(block = this::visitExpr)
   }
 
   private fun visitVarDeclStmt(stmt: VarDeclStmt) {
@@ -139,6 +139,20 @@ class Resolver {
     }
 
     functionContexts.removeLast()
+  }
+
+  private fun visitClassDeclStmt(classDecl: ClassDeclStmt) {
+    checkVariable(variableToken = classDecl.identifier)
+    resolveVariableDeclaration(uid = classDecl.uid, variable = classDecl.identifier.value)
+
+    frameStack.addNewFrame(
+      type = Frame.Type.CLASS,
+      frameName = classDecl.identifier.value
+    )
+
+    classDecl.methods.forEach(action = this::visitFunDeclStmt)
+
+    frameStack.popFrame()
   }
 
   private fun visitIfStmt(stmt: IfStmt) {
@@ -200,6 +214,15 @@ class Resolver {
     expr.args.forEach(this::visitExpr)
   }
 
+  private fun visitGetExpr(get: Get) {
+    visitExpr(expr = get.obj)
+  }
+
+  private fun visitSetExpr(set: Set) {
+    visitExpr(expr = set.obj)
+    visitExpr(expr = set.value)
+  }
+
   private fun resolveVariable(identifier: String): VariableResolutionResult {
     println("Resolving variable $identifier")
     println(frameStack)
@@ -238,6 +261,14 @@ class Resolver {
 
     error(message = "This identifier already exists.", variableToken)
   }
+
+//  private fun checkVariable(name: String) {
+//    if (!frameStack.existInCurrentFrame(identifier = name)) {
+//      return
+//    }
+//
+//    error(message = "This identifier already exists.", name)
+//  }
 
   private fun resolveVariableDeclaration(uid: Uuid, variable: String) {
     if (frameStack.isGlobal()) {

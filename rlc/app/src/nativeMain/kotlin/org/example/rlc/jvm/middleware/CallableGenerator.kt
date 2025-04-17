@@ -88,6 +88,7 @@ internal fun generateAbstractCallable(arity: Int): ClassFile {
 }
 
 internal fun generateLoxBasicCallable(): ClassFile {
+
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(
@@ -98,7 +99,6 @@ internal fun generateLoxBasicCallable(): ClassFile {
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxObjectConstructor),
     SimpleOperation(Opcode.OP_RETURN)
   )
-
   val loxCallableConstructor = MethodInfo(
     methodName = "<init>",
     accessFlagList = listOf(),
@@ -126,7 +126,7 @@ internal fun generateLoxBasicCallable(): ClassFile {
   )
 }
 
-private fun generateMethodSignature(arity: Int): List<VerificationTypeInfo> =
+internal fun generateMethodSignature(arity: Int): List<VerificationTypeInfo> =
   List(arity) { loxObjectVti }
 
 private fun generateToString(name: String): MethodInfo {
@@ -147,7 +147,7 @@ private fun generateToString(name: String): MethodInfo {
   )
 }
 
-private fun generateArity(arity: Int): MethodInfo {
+internal fun generateArity(arity: Int): MethodInfo {
   val code = mutableListOf<Operation>()
 
   code.add(ByteConstantOperation(Opcode.OP_LDC, IntegerValue(arity), IntegerVti()))

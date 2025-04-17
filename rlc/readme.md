@@ -54,7 +54,7 @@ The brief list of features I want to implement
 
 ### Meta
 - [x] The compiler should be a single executable file
-- [x] The result of successful compilation should be a single executable jar file
+- [x] The result of a successful compilation should be a single executable jar file
 - [ ] Run Lox testsuite for RLC
 - [ ] Set up CI/CD pipeline to run tests and testsuite before merge
 

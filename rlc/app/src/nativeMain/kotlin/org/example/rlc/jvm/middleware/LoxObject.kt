@@ -61,8 +61,11 @@ internal fun loxObjectCf() = ClassFile(
     loxFunctionClass(),
   ),
   methodList = listOf(
+    loxObjectDefaultConstructor(),
     loxObjectConstructor(),
     loxObjectStaticInitializer(),
+    getFieldMethod(),
+    setFieldMethod(),
     abstractEqMethod(),
     abstractTruthyMethod(),
   ),
@@ -213,6 +216,24 @@ private fun loxObjectStaticInitializer(): MethodInfo {
   )
 }
 
+private fun loxObjectDefaultConstructor(): MethodInfo {
+  val code = listOf(
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, objectConstructor),
+//    SimpleOperation(Opcode.OP_ALOAD_0),
+//    SimpleOperation(Opcode.OP_ALOAD_1),
+//    ShortConstantOperation(Opcode.OP_PUTFIELD, clazzField),
+    SimpleOperation(Opcode.OP_RETURN),
+  )
+  return MethodInfo(
+    methodName = constructorMethodName,
+    accessFlagList = listOf(MethodAccessFlags.NONE),
+    attributeList = listOf(CodeAttribute(argsSize = 1, code = code)),
+    isStatic = false,
+    signature = MethodSignature(listOf(), EmptyVti())
+  )
+}
+
 private fun loxObjectConstructor(): MethodInfo {
   val clazzField = FieldRefInfo(
     label = "LoxObject.clazz:LLoxClass;",
@@ -265,6 +286,42 @@ private fun abstractTruthyMethod(): MethodInfo = MethodInfo(
   isStatic = true,
   signature = loxUnaryOpSignature
 )
+
+private fun getFieldMethod(): MethodInfo {
+  val code = listOf(
+    ShortConstantOperation(Opcode.OP_NEW, constant = loxRuntimeErrorClassInfo, value = ObjectVti(loxRuntimeErrorClassInfo)),
+    SimpleOperation(Opcode.OP_DUP),
+    ByteConstantOperation(Opcode.OP_LDC, constant = StringRefInfo(value = "only instances have fields"), value = ObjectVti(loxStringClassInfo)),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, constant = runtimeErrorConstructorRef()),
+    SimpleOperation(Opcode.OP_ATHROW)
+  )
+
+  return MethodInfo(
+    methodName = "__get__",
+    accessFlagList = listOf(MethodAccessFlags.NONE),
+    attributeList = listOf(CodeAttribute(argsSize = 1, code = code)),
+    isStatic = false,
+    signature = MethodSignature(arguments = listOf(), returnType = loxObjectVti)
+  )
+}
+
+private fun setFieldMethod(): MethodInfo {
+  val code = listOf(
+    ShortConstantOperation(Opcode.OP_NEW, constant = loxRuntimeErrorClassInfo, value = ObjectVti(loxRuntimeErrorClassInfo)),
+    SimpleOperation(Opcode.OP_DUP),
+    ByteConstantOperation(Opcode.OP_LDC, constant = StringRefInfo(value = "only instances have fields"), value = ObjectVti(loxStringClassInfo)),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, constant = runtimeErrorConstructorRef()),
+    SimpleOperation(Opcode.OP_ATHROW)
+  )
+
+  return MethodInfo(
+    methodName = "__set__",
+    accessFlagList = listOf(MethodAccessFlags.NONE),
+    attributeList = listOf(CodeAttribute(argsSize = 1, code = code)),
+    isStatic = false,
+    signature = MethodSignature(arguments = listOf(), returnType = loxObjectVti)
+  )
+}
 
 internal fun alwaysTruthy(): MethodInfo {
   val code = listOf(
