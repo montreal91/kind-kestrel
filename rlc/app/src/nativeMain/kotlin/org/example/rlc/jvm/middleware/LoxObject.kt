@@ -316,9 +316,12 @@ private fun setFieldMethod(): MethodInfo {
   return MethodInfo(
     methodName = "__set__",
     accessFlagList = listOf(MethodAccessFlags.NONE),
-    attributeList = listOf(CodeAttribute(argsSize = 1, code = code)),
+    attributeList = listOf(CodeAttribute(argsSize = 3, code = code)),
     isStatic = false,
-    signature = MethodSignature(arguments = listOf(), returnType = loxObjectVti)
+    signature = MethodSignature(
+      arguments = listOf(ObjectVti(loxObjectClassInfo), JavaString.VERIFICATION_TYPE),
+      returnType = loxObjectVti
+    )
   )
 }
 

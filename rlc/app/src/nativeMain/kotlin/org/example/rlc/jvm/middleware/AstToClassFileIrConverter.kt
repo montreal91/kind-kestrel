@@ -81,8 +81,6 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   private var currentCode = mutableListOf<Operation>()
   private var currentFunction = "Script"
 
-//  private val classStack = ArrayDeque<String>()
-
   private val methodRefs = mutableMapOf<Token.Type, MethodRefInfo>()
   private val localVariables = mutableListOf<VerificationTypeInfo>()
   private val generatedCallables = mutableMapOf<Int, ClassFile>()

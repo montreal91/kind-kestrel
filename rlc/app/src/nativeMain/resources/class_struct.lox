@@ -1,36 +1,25 @@
 
+print "Program output:";
+print "";
+
 class Struct {}
+print Struct;
+var structMaker = Struct;
 
 var car = Struct();
 
+print car;
 car.name = "Lamborghini";
-// print car.name;
 
-// print Struct;
+print structMaker;
+var engine = structMaker();
 
-// var car = Struct();
+car.engine = engine;
+car.engine.type = "V8";
 
-// print car;
-
-// var structMaker = Struct;
-
-// print structMaker;
-// var engine = structMaker();
-// print engine;
-
-// engine.type = "V8";
-// engine.fuel = "Gasoline";
-// engine.powerHp = 300;
-
-// car.engine = engine;
-// car.brand = "Lancia";
-// car.model = "Stratos HF";
-// car.color = "Black";
+car.model = "Diablo";
 
 print "";
-// print car;
-// print car.brand + " " + car.model;
-// print "Color: " + car.color;
-// print "Engine Type: " + car.engine.type;
-// print "Engine Fuel: " + car.engine.fuel;
-// print "Engine Power (HorsePower): " + car.engine.powerHP;
+print "";
+print car.name + " " + car.model;
+print "Engine Type: " + car.engine.type;

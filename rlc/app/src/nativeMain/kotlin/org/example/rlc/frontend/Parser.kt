@@ -352,15 +352,15 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
 
     val right = assignment()
 
-    if (left is Variable) {
-      return Assign(uidGen(), left, right)
-    }
+    return when (left) {
+      is Get -> Set(uid = uidGen(), obj = left.obj, value = right, name = left.name)
+      is Variable -> Assign(uid = uidGen(), left = left, right = right)
 
-    if (left.canAssign) {
-      return Set(uidGen(), obj = left, name = "?", value = right)
+      else -> {
+        println("Debug: Invalid assignment target. [$left]")
+        throw error(message = "Invalid assignment target.", token = equalToken)
+      }
     }
-
-    throw error(message = "Invalid assignment target.", token = equalToken)
   }
 
   private fun logicOr(): Expr {

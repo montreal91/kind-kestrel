@@ -1,0 +1,12 @@
+
+var a;
+var b;
+var c;
+
+print a;
+print b;
+print c;
+
+a = b = c = "Na";
+
+print a + b + c;

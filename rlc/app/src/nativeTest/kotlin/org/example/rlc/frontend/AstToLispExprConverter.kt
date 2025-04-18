@@ -240,6 +240,7 @@ class AstToLispExprConverter(
     sb.append("(set ")
     visitExpr(expr = set.obj)
     sb.addSpaceIfNeeded()
+    sb.append("${set.name} ")
     visitExpr(expr = set.value)
     sb.append(")")
   }

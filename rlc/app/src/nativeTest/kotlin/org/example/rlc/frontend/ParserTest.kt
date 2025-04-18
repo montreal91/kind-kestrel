@@ -65,11 +65,11 @@ class ParserTest {
       expected = "(script\n" +
           "  (class Void)\n" +
           "  (var v (call (variable Void) ()))\n" +
-          "  (expr (set (get (variable v) ether) \"Ether\"))\n" +
+          "  (expr (set (variable v) ether \"Ether\"))\n" +
           "  (print (get (variable v) ether))\n" +
           "  (var voidMaker (variable Void))\n" +
           "  (var vacuum (call (variable voidMaker) ()))\n" +
-          "  (expr (set (get (variable vacuum) ether) \"Light\"))\n" +
+          "  (expr (set (variable vacuum) ether \"Light\"))\n" +
           "  (print (get (variable vacuum) ether))\n" +
           "  (print (get (variable v) ether))\n" +
           ")",
