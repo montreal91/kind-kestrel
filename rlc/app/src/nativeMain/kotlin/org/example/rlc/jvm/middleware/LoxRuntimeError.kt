@@ -75,6 +75,6 @@ private fun constructor(): MethodInfo {
     accessFlagList = listOf(MethodAccessFlags.NONE),
     attributeList = listOf(codeAttribute),
     isStatic = true,
-    signature = MethodSignature(listOf(ObjectVti(javaLangStringClassInfo)), EmptyVti())
+    signature = MethodSignature(listOf(JavaString.VERIFICATION_TYPE), EmptyVti())
   )
 }

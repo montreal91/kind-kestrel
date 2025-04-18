@@ -1,8 +1,5 @@
 package org.example.rlc.jvm.ir
 
-import org.example.rlc.jvm.middleware.javaLangStringClassInfo
-
-
 sealed class VerificationTypeInfo(val type: Type) {
   enum class Type { TOP, BOOLEAN, INTEGER, OBJECT, DOUBLE, EMPTY, NULL, LONG }
 
@@ -47,5 +44,3 @@ class EmptyVti : VerificationTypeInfo(Type.EMPTY)
 class NullVariableVti : VerificationTypeInfo(Type.NULL)
 
 class LongVti : VerificationTypeInfo(Type.LONG)
-
-val javaLangStringObjectVti = ObjectVti(javaLangStringClassInfo, isArray = false)

@@ -19,7 +19,6 @@ import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
-import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.loxBoolean
 import org.example.rlc.jvm.ir.loxClassClassName
 import org.example.rlc.jvm.ir.loxDouble
@@ -168,31 +167,31 @@ private fun loxObjectStaticInitializer(): MethodInfo {
   val code = listOf(
     ShortConstantOperation(Opcode.OP_NEW, loxClassInfo, loxClassVti),
     SimpleOperation(Opcode.OP_DUP),
-    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(loxDouble), javaLangStringObjectVti),
+    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(loxDouble), JavaString.VERIFICATION_TYPE),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxClassConstructor),
     ShortConstantOperation(Opcode.OP_PUTSTATIC, loxDoubleClassField),
 
     ShortConstantOperation(Opcode.OP_NEW, loxClassInfo, loxClassVti),
     SimpleOperation(Opcode.OP_DUP),
-    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(loxNil), javaLangStringObjectVti),
+    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(loxNil), JavaString.VERIFICATION_TYPE),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxClassConstructor),
     ShortConstantOperation(Opcode.OP_PUTSTATIC, loxNilClassField),
 
     ShortConstantOperation(Opcode.OP_NEW, loxClassInfo, loxClassVti),
     SimpleOperation(Opcode.OP_DUP),
-    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(loxBoolean), javaLangStringObjectVti),
+    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(loxBoolean), JavaString.VERIFICATION_TYPE),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxClassConstructor),
     ShortConstantOperation(Opcode.OP_PUTSTATIC, loxBoolClassField),
 
     ShortConstantOperation(Opcode.OP_NEW, loxClassInfo, loxClassVti),
     SimpleOperation(Opcode.OP_DUP),
-    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(loxString), javaLangStringObjectVti),
+    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(loxString), JavaString.VERIFICATION_TYPE),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxClassConstructor),
     ShortConstantOperation(Opcode.OP_PUTSTATIC, loxStringClassField),
 
     ShortConstantOperation(Opcode.OP_NEW, loxClassInfo, loxClassVti),
     SimpleOperation(Opcode.OP_DUP),
-    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(loxFunction), javaLangStringObjectVti),
+    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(loxFunction), JavaString.VERIFICATION_TYPE),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxClassConstructor),
     ShortConstantOperation(Opcode.OP_PUTSTATIC, generateLoxClassFieldRef("LOX_FUNCTION_CLASS")),
 
@@ -219,10 +218,7 @@ private fun loxObjectStaticInitializer(): MethodInfo {
 private fun loxObjectDefaultConstructor(): MethodInfo {
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, objectConstructor),
-//    SimpleOperation(Opcode.OP_ALOAD_0),
-//    SimpleOperation(Opcode.OP_ALOAD_1),
-//    ShortConstantOperation(Opcode.OP_PUTFIELD, clazzField),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, constant = objectConstructor),
     SimpleOperation(Opcode.OP_RETURN),
   )
   return MethodInfo(
@@ -230,7 +226,7 @@ private fun loxObjectDefaultConstructor(): MethodInfo {
     accessFlagList = listOf(MethodAccessFlags.NONE),
     attributeList = listOf(CodeAttribute(argsSize = 1, code = code)),
     isStatic = false,
-    signature = MethodSignature(listOf(), EmptyVti())
+    signature = MethodSignature(arguments = listOf(), returnType = EmptyVti())
   )
 }
 
@@ -299,9 +295,12 @@ private fun getFieldMethod(): MethodInfo {
   return MethodInfo(
     methodName = "__get__",
     accessFlagList = listOf(MethodAccessFlags.NONE),
-    attributeList = listOf(CodeAttribute(argsSize = 1, code = code)),
+    attributeList = listOf(CodeAttribute(argsSize = 3, code = code)),
     isStatic = false,
-    signature = MethodSignature(arguments = listOf(), returnType = loxObjectVti)
+    signature = MethodSignature(
+      arguments = listOf(JavaString.VERIFICATION_TYPE, JavaString.VERIFICATION_TYPE),
+      returnType = loxObjectVti
+    )
   )
 }
 

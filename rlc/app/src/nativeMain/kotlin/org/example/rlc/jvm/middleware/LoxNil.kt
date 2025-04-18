@@ -15,18 +15,25 @@ import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
-import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.toUtf8Value
 
-internal fun loxNilCf() = ClassFile(
-  thisClassInfo = loxNilClassInfo,
-  superClassInfo = loxObjectClassInfo,
-  accessFlagList = listOf(ClassAccessFlags.SUPER),
-  attributeList = listOf(),
-  fieldList = listOf(),
-  methodList = listOf(loxNilConstructor(), toString(), truthy()),
-  interfaceList = listOf(),
-)
+internal object LoxNil {
+  internal fun loxNilCf() = ClassFile(
+    thisClassInfo = loxNilClassInfo,
+    superClassInfo = loxObjectClassInfo,
+    accessFlagList = listOf(ClassAccessFlags.SUPER),
+    attributeList = listOf(),
+    fieldList = listOf(),
+    methodList = listOf(loxNilConstructor(), nilToString(), truthy()),
+    interfaceList = listOf(),
+  )
+
+  internal fun generateNil() = listOf(
+    ShortConstantOperation(Opcode.OP_NEW, loxNilClassInfo, ObjectVti(loxObjectClassInfo)),
+    SimpleOperation(Opcode.OP_DUP),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxNilConstructorInfo),
+  )
+}
 
 private fun loxNilConstructor(): MethodInfo {
   val loxNilClass = FieldRefInfo(
@@ -91,10 +98,10 @@ private fun truthy(): MethodInfo {
 
 private val nilStr = StringRefInfo(value = "nil")
 
-private fun toString(): MethodInfo {
+private fun nilToString(): MethodInfo {
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ByteConstantOperation(Opcode.OP_LDC, nilStr, javaLangStringObjectVti),
+    ByteConstantOperation(Opcode.OP_LDC, nilStr, JavaString.VERIFICATION_TYPE),
     SimpleOperation(Opcode.OP_ARETURN)
   )
 
@@ -111,6 +118,6 @@ private fun toString(): MethodInfo {
     accessFlagList = listOf(MethodAccessFlags.PUBLIC),
     attributeList = listOf(codeAttribute),
     isStatic = true,
-    signature = MethodSignature(listOf(), ObjectVti(javaLangStringClassInfo))
+    signature = MethodSignature(listOf(), JavaString.VERIFICATION_TYPE),
   )
 }

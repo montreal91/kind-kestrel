@@ -23,7 +23,6 @@ import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
 import org.example.rlc.jvm.ir.VerificationTypeInfo
-import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.toUtf8Value
 
 internal fun generateLoxFunction(
@@ -53,7 +52,7 @@ internal fun generateLoxFunction(
     superClassInfo = ClassInfo(className = "LoxCallable${arity}"),
     interfaceList = listOf(),
     methodList = listOf(
-      generateConstructor(className = "LoxCallable${arity}"),
+      generateDefaultConstructor(className = "LoxCallable${arity}"),
       callMethod,
       generateArity(arity),
       generateToString(name)
@@ -80,7 +79,7 @@ internal fun generateAbstractCallable(arity: Int): ClassFile {
     thisClassInfo = ClassInfo(className = "LoxCallable${arity}"),
     superClassInfo = ClassInfo(className = "LoxBasicCallable"),
     interfaceList = listOf(),
-    methodList = listOf(generateConstructor(className = "LoxBasicCallable"), callMethod),
+    methodList = listOf(generateDefaultConstructor(className = "LoxBasicCallable"), callMethod),
     attributeList = listOf(),
     accessFlagList = listOf(ClassAccessFlags.ABSTRACT),
     fieldList = listOf()
@@ -132,7 +131,7 @@ internal fun generateMethodSignature(arity: Int): List<VerificationTypeInfo> =
 private fun generateToString(name: String): MethodInfo {
   val codeAttribute = CodeAttribute(
     code = listOf(
-      ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(value = "<fn $name>"), javaLangStringObjectVti),
+      ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(value = "<fn $name>"), JavaString.VERIFICATION_TYPE),
       SimpleOperation(Opcode.OP_ARETURN),
     ),
     argsSize = 1
@@ -143,7 +142,7 @@ private fun generateToString(name: String): MethodInfo {
     accessFlagList = listOf(MethodAccessFlags.PUBLIC),
     attributeList = listOf(codeAttribute),
     isStatic = false,
-    signature = MethodSignature(listOf(), ObjectVti(javaLangStringClassInfo))
+    signature = MethodSignature(listOf(), JavaString.VERIFICATION_TYPE)
   )
 }
 

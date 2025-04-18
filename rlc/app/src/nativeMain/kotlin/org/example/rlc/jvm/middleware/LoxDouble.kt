@@ -18,7 +18,6 @@ import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
-import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.toUtf8Value
 
 
@@ -210,7 +209,7 @@ private fun toString(): MethodInfo {
     ),
     argsSize = 3,
     returnSize = 1,
-    returnTypeInfo = javaLangStringObjectVti
+    returnTypeInfo = JavaString.VERIFICATION_TYPE
   )
 
   val code = listOf(
@@ -227,7 +226,7 @@ private fun toString(): MethodInfo {
     accessFlagList = listOf(MethodAccessFlags.PUBLIC),
     attributeList = listOf(codeAttribute),
     isStatic = true,
-    signature = MethodSignature(listOf(), ObjectVti(javaLangStringClassInfo))
+    signature = MethodSignature(listOf(), JavaString.VERIFICATION_TYPE)
   )
 }
 

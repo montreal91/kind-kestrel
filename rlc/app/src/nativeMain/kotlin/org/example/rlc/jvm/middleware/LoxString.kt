@@ -17,7 +17,6 @@ import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
-import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.toUtf8Value
 
 internal fun loxStringCf() = ClassFile(
@@ -76,14 +75,14 @@ private fun loxStringConstructor(): MethodInfo {
     accessFlagList = listOf(),
     attributeList = listOf(codeAttribute),
     isStatic = true,
-    signature = MethodSignature(listOf(ObjectVti(javaLangStringClassInfo)), EmptyVti())
+    signature = MethodSignature(listOf(JavaString.VERIFICATION_TYPE), EmptyVti())
   )
 }
 
 private fun toString(): MethodInfo {
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo, javaLangStringObjectVti),
+    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo, JavaString.VERIFICATION_TYPE),
     SimpleOperation(Opcode.OP_ARETURN)
   )
 
@@ -100,7 +99,7 @@ private fun toString(): MethodInfo {
     accessFlagList = listOf(MethodAccessFlags.PUBLIC),
     attributeList = listOf(codeAttribute),
     isStatic = true,
-    signature = MethodSignature(listOf(), ObjectVti(javaLangStringClassInfo))
+    signature = MethodSignature(listOf(), JavaString.VERIFICATION_TYPE)
   )
 }
 
@@ -109,10 +108,10 @@ private fun eq(): MethodInfo {
     ShortConstantOperation(Opcode.OP_NEW, loxBooleanClassInfo, ObjectVti(loxBooleanClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo, javaLangStringObjectVti),
+    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo, JavaString.VERIFICATION_TYPE),
     SimpleOperation(Opcode.OP_ALOAD_1),
     ShortConstantOperation(Opcode.OP_CHECKCAST, loxStringClassInfo),
-    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo, javaLangStringObjectVti),
+    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo, JavaString.VERIFICATION_TYPE),
     ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, stringEquals()),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxBooleanConstructorInfo),
     SimpleOperation(Opcode.OP_ARETURN),
@@ -167,7 +166,7 @@ private fun stringConcatenation(): MethodInfo {
     classInfo = sb,
     argsSize = 1,
     returnSize = 1,
-    returnTypeInfo = javaLangStringObjectVti,
+    returnTypeInfo = JavaString.VERIFICATION_TYPE,
     nameAndType = NameAndTypeInfo(
       label = "toString:()Ljava/lang/String;",
       name = "toString".toUtf8Value(),
@@ -178,12 +177,12 @@ private fun stringConcatenation(): MethodInfo {
     ShortConstantOperation(Opcode.OP_NEW, sb, ObjectVti(sb)),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo, javaLangStringObjectVti),
+    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo, JavaString.VERIFICATION_TYPE),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, sbConstructorMethodRef),
-    SimpleOperation(Opcode.OP_ASTORE_2, javaLangStringObjectVti),
+    SimpleOperation(Opcode.OP_ASTORE_2, JavaString.VERIFICATION_TYPE),
     SimpleOperation(Opcode.OP_ALOAD_2),
     SimpleOperation(Opcode.OP_ALOAD_1),
-    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo, javaLangStringObjectVti),
+    ShortConstantOperation(Opcode.OP_GETFIELD, stringValueFieldRefInfo, JavaString.VERIFICATION_TYPE),
     ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, sbAppendMethodRef),
     SimpleOperation(Opcode.OP_POP),
     ShortConstantOperation(Opcode.OP_NEW, loxStringClassInfo, ObjectVti(loxStringClassInfo)),

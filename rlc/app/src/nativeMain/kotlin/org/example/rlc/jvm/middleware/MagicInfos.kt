@@ -21,7 +21,7 @@ import org.example.rlc.jvm.ir.toUtf8Value
 
 
 internal val javaLangObjectClassInfo = ClassInfo(className = javaLangObject)
-internal val javaLangStringClassInfo = ClassInfo(className = "java/lang/String")
+//internal val javaLangStringClassInfo = ClassInfo(className = "java/lang/String")
 internal val javaLangStringArrayClassInfo = ClassInfo(className = "[Ljava/lang/String;")
 internal val loxRuntimeErrorClassInfo = ClassInfo(className = "LoxRuntimeError")
 internal val loxDoubleClassInfo = ClassInfo(className = loxDouble)
@@ -280,7 +280,7 @@ internal val loxObjectTruthyMri = MethodRefInfo(
 
 internal fun dynamicResolutionTableField() = FieldInfo(
   accessFlagList = listOf(FieldAccessFlags.STATIC, FieldAccessFlags.FINAL),
-  fieldName = "drt".toUtf8Value(),
+  fieldName = "drt".toUtf8Value(),  // rename it to __drt__ later, when I will have a test environment
   fieldDescriptor = "Ljava/util/HashMap;".toUtf8Value(),
 )
 
@@ -292,23 +292,6 @@ internal fun drtReference() = FieldRefInfo(
     name = "drt".toUtf8Value(),
     descriptor = "Ljava/util/HashMap;".toUtf8Value(),
   )
-)
-
-internal val hashMapInfo = ClassInfo(className = "java/util/HashMap")
-
-private const val putSignature = "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;"
-
-internal val putMethodRef = MethodRefInfo(
-  label = "java/lang/HashMap.put:$putSignature",
-  classInfo = hashMapInfo,
-  nameAndType = NameAndTypeInfo(
-    label = "put:$putSignature",
-    name = "put".toUtf8Value(),
-    descriptor = putSignature.toUtf8Value(),
-  ),
-  argsSize = 1,
-  returnSize = 1,
-  returnTypeInfo = ObjectVti(loxObjectClassInfo, isArray = false)
 )
 
 internal val loxObjectVti = ObjectVti(loxObjectClassInfo)

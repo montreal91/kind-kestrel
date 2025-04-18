@@ -1,6 +1,5 @@
 package org.example.rlc.jvm.middleware
 
-import org.example.rlc.jvm.ir.BooleanVti
 import org.example.rlc.jvm.ir.ByteConstantOperation
 import org.example.rlc.jvm.ir.ClassInfo
 import org.example.rlc.jvm.ir.CodeAttribute
@@ -18,7 +17,6 @@ import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
 import org.example.rlc.jvm.ir.VerificationTypeInfo
-import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.toUtf8Value
 
 
@@ -202,7 +200,7 @@ internal fun numberMagicMethod(methodName: String, returnType: String): MethodIn
     SimpleOperation(Opcode.OP_ARETURN),
     ShortConstantOperation(Opcode.OP_NEW, loxRuntimeErrorClassInfo, ObjectVti(loxRuntimeErrorClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
-    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(value = "Operands must be numbers."), javaLangStringObjectVti),
+    ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(value = "Operands must be numbers."), JavaString.VERIFICATION_TYPE),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, runtimeErrorConstructorRef()),
     SimpleOperation(Opcode.OP_ATHROW),
   )
@@ -354,35 +352,21 @@ internal fun notOperatorMagicMethod(): MethodInfo {
 internal fun generateRuntimeError(message: String) = listOf(
   ShortConstantOperation(Opcode.OP_NEW, loxRuntimeErrorClassInfo, ObjectVti(loxRuntimeErrorClassInfo)),
   SimpleOperation(Opcode.OP_DUP),
-  ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(message), javaLangStringObjectVti),
+  ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(message), JavaString.VERIFICATION_TYPE),
   ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, runtimeErrorConstructorRef()),
   SimpleOperation(Opcode.OP_ATHROW),
 )
 
 internal fun setGlobalVariableMethod(): MethodInfo {
-  val containsKeySignature = "(Ljava/lang/Object;)Z"
-  val containsKeyMethodRef = MethodRefInfo(
-    label = "java/lang/HashMap.containsKey:$containsKeySignature",
-    classInfo = hashMapInfo,
-    nameAndType = NameAndTypeInfo(
-      label = "containsKey:$containsKeySignature",
-      name = "containsKey".toUtf8Value(),
-      descriptor = containsKeySignature.toUtf8Value(),
-    ),
-    argsSize = 2,
-    returnSize = 1,
-    returnTypeInfo = BooleanVti()
-  )
-
   val code = listOf(
-    ShortConstantOperation(Opcode.OP_GETSTATIC, drtReference(), ObjectVti(hashMapInfo)),
+    ShortConstantOperation(Opcode.OP_GETSTATIC, drtReference(), JavaHashMap.VERIFICATION_TYPE),
     SimpleOperation(Opcode.OP_ALOAD_1),
-    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, containsKeyMethodRef),
+    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, JavaHashMap.CONTAINS_KEY),
     ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 9),
-    ShortConstantOperation(Opcode.OP_GETSTATIC, drtReference(), ObjectVti(hashMapInfo)),
+    ShortConstantOperation(Opcode.OP_GETSTATIC, drtReference(), JavaHashMap.VERIFICATION_TYPE),
     SimpleOperation(Opcode.OP_ALOAD_1),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, putMethodRef),
+    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, JavaHashMap.PUT),
     SimpleOperation(Opcode.OP_RETURN),
     ShortConstantOperation(Opcode.OP_NEW, loxRuntimeErrorClassInfo, ObjectVti(loxRuntimeErrorClassInfo)),
     SimpleOperation(Opcode.OP_DUP),
@@ -400,7 +384,7 @@ internal fun setGlobalVariableMethod(): MethodInfo {
   )
 
   val signature = MethodSignature(
-    listOf(ObjectVti(loxObjectClassInfo), ObjectVti(javaLangStringClassInfo), ObjectVti(javaLangStringClassInfo)),
+    listOf(ObjectVti(loxObjectClassInfo), JavaString.VERIFICATION_TYPE, JavaString.VERIFICATION_TYPE),
     EmptyVti(),
   )
 
@@ -414,23 +398,10 @@ internal fun setGlobalVariableMethod(): MethodInfo {
 }
 
 internal fun loxScriptStaticInitializer(): MethodInfo {
-  val hashMapConstructor = MethodRefInfo(
-    label = "java/util/HashMap.\"<init>\":()V",
-    classInfo = hashMapInfo,
-    nameAndType = NameAndTypeInfo(
-      label = "\"<init>\":()V",
-      name = "<init>".toUtf8Value(),
-      descriptor = "()V".toUtf8Value(),
-    ),
-    argsSize = 2,
-    returnSize = 0,
-    returnTypeInfo = EmptyVti()
-  )
-
   val code = listOf(
-    ShortConstantOperation(Opcode.OP_NEW, hashMapInfo, ObjectVti(hashMapInfo)),
+    ShortConstantOperation(Opcode.OP_NEW, JavaHashMap.CLASS_INFO, JavaHashMap.VERIFICATION_TYPE),
     SimpleOperation(Opcode.OP_DUP),
-    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, hashMapConstructor),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, JavaHashMap.CONSTRUCTOR),
     ShortConstantOperation(Opcode.OP_PUTSTATIC, drtReference()),
     SimpleOperation(Opcode.OP_RETURN),
   )
@@ -453,42 +424,14 @@ internal fun loxScriptStaticInitializer(): MethodInfo {
 }
 
 internal fun getGlobalVariableMethod(): MethodInfo {
-  val containsKeySignature = "(Ljava/lang/Object;)Z"
-  val containsKeyMethodRef = MethodRefInfo(
-    label = "java/lang/HashMap.containsKey:$containsKeySignature",
-    classInfo = hashMapInfo,
-    nameAndType = NameAndTypeInfo(
-      label = "containsKey:$containsKeySignature",
-      name = "containsKey".toUtf8Value(),
-      descriptor = containsKeySignature.toUtf8Value(),
-    ),
-    argsSize = 2,
-    returnSize = 1,
-    returnTypeInfo = BooleanVti()
-  )
-
-  val mapGetSignature = "(Ljava/lang/Object;)Ljava/lang/Object;"
-  val mapGetMethodRef = MethodRefInfo(
-    label = "java/lang/HashMap.get:$mapGetSignature",
-    classInfo = hashMapInfo,
-    nameAndType = NameAndTypeInfo(
-      label = "get:$mapGetSignature",
-      name = "get".toUtf8Value(),
-      descriptor = mapGetSignature.toUtf8Value(),
-    ),
-    argsSize = 2,
-    returnSize = 1,
-    returnTypeInfo = BooleanVti()
-  )
-
   val code = listOf(
-    ShortConstantOperation(Opcode.OP_GETSTATIC, drtReference(), ObjectVti(hashMapInfo)),
+    ShortConstantOperation(Opcode.OP_GETSTATIC, drtReference(), JavaHashMap.VERIFICATION_TYPE),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, containsKeyMethodRef),
+    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, JavaHashMap.CONTAINS_KEY),
     ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 9),
-    ShortConstantOperation(Opcode.OP_GETSTATIC, drtReference(), ObjectVti(hashMapInfo)),
+    ShortConstantOperation(Opcode.OP_GETSTATIC, drtReference(), JavaHashMap.VERIFICATION_TYPE),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, mapGetMethodRef),
+    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, JavaHashMap.GET),
     ShortConstantOperation(Opcode.OP_CHECKCAST, loxObjectClassInfo),
     SimpleOperation(Opcode.OP_ARETURN),
     ShortConstantOperation(Opcode.OP_NEW, loxRuntimeErrorClassInfo, ObjectVti(loxRuntimeErrorClassInfo)),
@@ -507,8 +450,8 @@ internal fun getGlobalVariableMethod(): MethodInfo {
   )
 
   val signature = MethodSignature(
-    listOf(ObjectVti(javaLangStringClassInfo), ObjectVti(javaLangStringClassInfo)),
-    ObjectVti(loxObjectClassInfo)
+    listOf(JavaString.VERIFICATION_TYPE, JavaString.VERIFICATION_TYPE),
+    loxObjectVti
   )
 
   return MethodInfo(
@@ -522,10 +465,10 @@ internal fun getGlobalVariableMethod(): MethodInfo {
 
 internal fun declGlobalVariableMethod(): MethodInfo {
   val code = listOf(
-    ShortConstantOperation(Opcode.OP_GETSTATIC, drtReference(), ObjectVti(hashMapInfo)),
+    ShortConstantOperation(Opcode.OP_GETSTATIC, drtReference(), JavaHashMap.VERIFICATION_TYPE),
     SimpleOperation(Opcode.OP_ALOAD_1),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, putMethodRef),
+    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, constant = JavaHashMap.PUT),
     SimpleOperation(Opcode.OP_POP),
     SimpleOperation(Opcode.OP_RETURN),
   )
@@ -539,7 +482,7 @@ internal fun declGlobalVariableMethod(): MethodInfo {
   )
 
   val signature = MethodSignature(
-    listOf(ObjectVti(loxObjectClassInfo), ObjectVti(javaLangStringClassInfo)),
+    listOf(ObjectVti(loxObjectClassInfo), JavaString.VERIFICATION_TYPE),
     EmptyVti()
   )
 

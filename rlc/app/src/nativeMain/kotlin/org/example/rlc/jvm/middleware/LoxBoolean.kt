@@ -19,7 +19,6 @@ import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
-import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.toUtf8Value
 
 internal fun loxBooleanCf() = ClassFile(
@@ -180,9 +179,9 @@ private fun toString(): MethodInfo {
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(Opcode.OP_GETFIELD, booleanValueFieldRefInfo, BooleanVti()),
     ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 5),
-    ByteConstantOperation(Opcode.OP_LDC, trueStr, javaLangStringObjectVti),
+    ByteConstantOperation(Opcode.OP_LDC, trueStr, JavaString.VERIFICATION_TYPE),
     SimpleOperation(Opcode.OP_ARETURN),
-    ByteConstantOperation(Opcode.OP_LDC, falseStr, javaLangStringObjectVti),
+    ByteConstantOperation(Opcode.OP_LDC, falseStr, JavaString.VERIFICATION_TYPE),
     SimpleOperation(Opcode.OP_ARETURN)
   )
 
@@ -199,7 +198,7 @@ private fun toString(): MethodInfo {
     accessFlagList = listOf(MethodAccessFlags.PUBLIC),
     attributeList = listOf(codeAttribute),
     isStatic = false,
-    signature = MethodSignature(listOf(), ObjectVti(javaLangStringClassInfo)),
+    signature = MethodSignature(listOf(), JavaString.VERIFICATION_TYPE),
     localVariables = listOf()
   )
 }

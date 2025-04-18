@@ -16,8 +16,8 @@ import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StackMapFrame
 import org.example.rlc.jvm.ir.StackMapTableAttribute
+import org.example.rlc.jvm.middleware.JavaString
 import org.example.rlc.jvm.middleware.javaLangObjectClassInfo
-import org.example.rlc.jvm.middleware.javaLangStringClassInfo
 
 internal class ClassCompiler {
   private val constantPool : ConstantPool = ConstantPool()
@@ -71,7 +71,7 @@ internal class ClassCompiler {
     constantPool.addConstantPoolInfo(classFile.thisClassInfo)
     constantPool.addConstantPoolInfo(classFile.superClassInfo)
     constantPool.addConstantPoolInfo(javaLangObjectClassInfo)
-    constantPool.addConstantPoolInfo(javaLangStringClassInfo)
+    constantPool.addConstantPoolInfo(JavaString.javaLangStringClassInfo)
 
     for (field in classFile.fieldList) {
       println("    Adding field to constant poo: ${field.fieldName.label}")
