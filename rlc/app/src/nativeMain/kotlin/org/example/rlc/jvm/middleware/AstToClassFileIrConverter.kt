@@ -22,6 +22,7 @@ import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.ReturnStmt
 import org.example.rlc.frontend.ast.Set
 import org.example.rlc.frontend.ast.Stmt
+import org.example.rlc.frontend.ast.This
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
 import org.example.rlc.frontend.ast.Variable
@@ -219,6 +220,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     is Call -> visitCallExpr(expr)
     is Get -> visitGet(get = expr)
     is Set -> visitSet(set = expr)
+    is This -> TODO()
   }
 
   private fun visitExprStmt(exprStmt: ExprStmt) {

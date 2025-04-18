@@ -118,6 +118,23 @@ class ParserTest {
           "  )\n" +
           ")",
     ),
+
+    PositiveTestCase(
+      name = "This",
+      fileName = "parser_class_this.lox",
+      expected = "(script\n" +
+          "  (class Car\n" +
+          "    (method init (parameters brand model) (body\n" +
+          "      (expr (set (this) brand (variable brand)))\n" +
+          "      (expr (set (this) model (variable model)))\n" +
+          "    ))\n" +
+          "    (method getFullName (parameters) (body\n" +
+          "      (return (+ (+ (get (this) brand) \" \")(get (this) model)))\n" +
+          "    ))\n" +
+          "  )\n" +
+          "  (print (call (get (call (variable Car) ( \"Lamborghini\" \"Diablo\" )) getFullName) ()))\n" +
+          ")",
+    ),
   )
 
   private val negative = listOf(

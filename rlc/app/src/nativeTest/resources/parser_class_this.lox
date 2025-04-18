@@ -1,0 +1,13 @@
+
+class Car {
+  init(brand, model) {
+    this.brand = brand;
+    this.model = model;
+  }
+
+  getFullName() {
+    return this.brand + " " + this.model;
+  }
+}
+
+print Car("Lamborghini", "Diablo").getFullName();

@@ -42,3 +42,5 @@ class Set(uid: Uuid, val obj: Expr, val name: String, val value: Expr) : Expr(ui
 class Assign(uid: Uuid, val left: Expr, val right: Expr) : Expr(uid)
 
 class Call(uid: Uuid, val callee: Expr, val args: List<Expr>) : Expr(uid)
+
+class This(uid: Uuid): Expr(uid)
