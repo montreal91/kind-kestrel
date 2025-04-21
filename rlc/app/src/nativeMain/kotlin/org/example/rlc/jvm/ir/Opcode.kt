@@ -161,6 +161,8 @@ enum class Opcode(val value: Byte) {
 
   // Set field in object
   // Takes two bytes as an operand
+  // Pops value and object ref from the stack
+  // Pushes nothing to the stack
   OP_PUTFIELD(0xB5.toByte()),
 
   // Set static field in class

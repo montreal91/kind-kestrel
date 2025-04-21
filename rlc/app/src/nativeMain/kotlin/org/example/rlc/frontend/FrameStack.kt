@@ -4,7 +4,7 @@ import co.touchlab.kermit.Logger
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalUuidApi::class)
+@OptIn(markerClass = [ExperimentalUuidApi::class])
 internal class FrameStack {
   private val frameStack = ArrayDeque<Frame>()
   private val currentFunctionDepth = ArrayDeque<Int>()
@@ -12,7 +12,7 @@ internal class FrameStack {
   private val log = FrameStack::class.qualifiedName?.let { Logger.withTag(it) }
 
   init {
-    frameStack.addLast(Frame(type = Frame.Type.GLOBAL, index = 0, name = "LoxScript", functionDepth = 0))
+    frameStack.addLast(element = Frame(type = Frame.Type.GLOBAL, index = 0, name = "LoxScript", functionDepth = 0))
   }
 
   override fun toString(): String {
@@ -29,19 +29,21 @@ internal class FrameStack {
       Frame.Type.GLOBAL -> 1
       Frame.Type.BLOCK -> frameStack.last().getIndex()
       Frame.Type.FUNCTION -> 0
+      Frame.Type.CLASS -> 0
     }
 
     val newDepth = when (type) {
       Frame.Type.GLOBAL -> 0
       Frame.Type.BLOCK -> frameStack.last().functionDepth
       Frame.Type.FUNCTION -> frameStack.last().functionDepth + 1
+      Frame.Type.CLASS -> 0
     }
 
     if (type == Frame.Type.FUNCTION) {
-      currentFunctionDepth.addLast(frameStack.size)
+      currentFunctionDepth.addLast(element = frameStack.size)
     }
 
-    frameStack.addLast(Frame(type, newIndex, frameName, newDepth))
+    frameStack.addLast(element = Frame(type, newIndex, frameName, functionDepth = newDepth))
   }
 
   internal fun popFrame(): Frame {

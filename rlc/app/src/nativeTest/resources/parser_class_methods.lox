@@ -1,0 +1,6 @@
+
+class Quark {
+  introduce() {
+    print "I am a quark!";
+  }
+}

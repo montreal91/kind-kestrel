@@ -17,7 +17,6 @@ import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
-import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.toUtf8Value
 
 /***
@@ -93,7 +92,7 @@ private fun loxClassConstructor(): MethodInfo {
     attributeList = listOf(code),
     isStatic = true,
     signature = MethodSignature(
-      listOf(ObjectVti(classInfo = javaLangStringClassInfo, isArray = false)),
+      listOf(JavaString.VERIFICATION_TYPE),
       EmptyVti()
     ),
   )
@@ -107,10 +106,10 @@ private fun loxClassEqualsMethod(): MethodInfo {
       ShortConstantOperation(Opcode.OP_INSTANCEOF, loxClassInfo),
       ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 10),
       SimpleOperation(Opcode.OP_ALOAD_0),
-      ShortConstantOperation(Opcode.OP_GETFIELD, nameRef(), javaLangStringObjectVti),
+      ShortConstantOperation(Opcode.OP_GETFIELD, nameRef(), JavaString.VERIFICATION_TYPE),
       SimpleOperation(Opcode.OP_ALOAD_1),
       ShortConstantOperation(Opcode.OP_CHECKCAST, loxClassInfo),
-      ShortConstantOperation(Opcode.OP_GETFIELD, nameRef(), javaLangStringObjectVti),
+      ShortConstantOperation(Opcode.OP_GETFIELD, nameRef(), JavaString.VERIFICATION_TYPE),
       ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, stringEquals()),
       SimpleOperation(Opcode.OP_IRETURN),
       SimpleOperation(Opcode.OP_ICONST_0),

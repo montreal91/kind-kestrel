@@ -8,7 +8,7 @@ but it holds a special place in my heart because it is my birthplace.
 My Lox Compiler compiles to JVM bytecode.
 It's not objectively special, but it's my first JVM backend compiler, so it's special to me.
 
-## Features (21/29)
+## Features (24/29)
 The brief list of features I want to implement
 
 ### Data Types
@@ -41,9 +41,9 @@ The brief list of features I want to implement
 - [x] Closures
 
 ### Classes
-- [ ] Class Declarations
-- [ ] Creating Instances
-- [ ] Properties on Instances
+- [x] Class Declarations
+- [x] Creating Instances
+- [x] Properties on Instances
 - [ ] Methods on Classes
 - [ ] This
 - [ ] Constructors and Initializers
@@ -54,7 +54,7 @@ The brief list of features I want to implement
 
 ### Meta
 - [x] The compiler should be a single executable file
-- [x] The result of successful compilation should be a single executable jar file
+- [x] The result of a successful compilation should be a single executable jar file
 - [ ] Run Lox testsuite for RLC
 - [ ] Set up CI/CD pipeline to run tests and testsuite before merge
 

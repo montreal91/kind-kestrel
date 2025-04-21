@@ -4,6 +4,7 @@ package org.example.rlc.frontend
 
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.BlockStmt
+import org.example.rlc.frontend.ast.ClassDeclStmt
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.ForStmt
 import org.example.rlc.frontend.ast.FunDeclStmt
@@ -40,6 +41,7 @@ class AstNodeCollector {
       is ReturnStmt -> {}
       is VarDeclStmt -> {}
       is WhileStmt -> visitWhileStmt(stmt)
+      is ClassDeclStmt -> {}
     }
   }
 

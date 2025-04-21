@@ -1,20 +1,23 @@
 package org.example.rlc.jvm.middleware
 
-import org.example.rlc.frontend.ast.Assignment
+import org.example.rlc.frontend.ast.Assign
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
-import org.example.rlc.frontend.ast.CallExpr
+import org.example.rlc.frontend.ast.Call
+import org.example.rlc.frontend.ast.ClassDeclStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.ForStmt
 import org.example.rlc.frontend.ast.FunDeclStmt
+import org.example.rlc.frontend.ast.Get
 import org.example.rlc.frontend.ast.Grouping
 import org.example.rlc.frontend.ast.IfStmt
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.ReturnStmt
+import org.example.rlc.frontend.ast.Set
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
@@ -40,6 +43,7 @@ class AstPrettyPrinter {
     is ForStmt -> visitForStmt(stmt)
     is FunDeclStmt -> visitFunDeclStmt(stmt)
     is ReturnStmt -> visitReturnStmt(stmt)
+    is ClassDeclStmt -> TODO()
   }
 
   private fun visitPrintStmt(stmt: PrintStmt) {
@@ -164,8 +168,10 @@ class AstPrettyPrinter {
     is Literal -> visitLiteral(expr)
     is Logical -> visitLogical(expr)
     is Unary -> visitUnary(expr)
-    is Assignment -> visitAssignment(expr)
-    is CallExpr -> visitCallExpr(expr)
+    is Assign -> visitAssignment(expr)
+    is Call -> visitCallExpr(expr)
+    is Get -> TODO()
+    is Set -> TODO()
   }
 
   private fun visitBinary(expr: Binary) {
@@ -214,7 +220,7 @@ class AstPrettyPrinter {
     depth--
   }
 
-  private fun visitAssignment(expr: Assignment) {
+  private fun visitAssignment(expr: Assign) {
     addIndent()
     sb.append("ASSIGN:\n")
     depth++
@@ -223,7 +229,7 @@ class AstPrettyPrinter {
     depth--
   }
 
-  private fun visitCallExpr(expr: CallExpr) {
+  private fun visitCallExpr(expr: Call) {
     addIndent()
     sb.append("CALL:\n")
     depth++

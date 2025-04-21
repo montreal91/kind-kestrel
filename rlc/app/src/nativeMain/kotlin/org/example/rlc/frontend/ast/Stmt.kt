@@ -32,16 +32,6 @@ class FunDeclStmt(
 ): Stmt(uid) {
   val arity: Int get() = parameters.size
   val enclosedVariables = mutableListOf<VariableResolutionResult>()
-
-  private var isClosure = false
-
-  fun markAsClosure() {
-    isClosure = true
-  }
-
-  fun isClosure(): Boolean {
-    return isClosure
-  }
 }
 
 class FormalParameter(
@@ -50,5 +40,7 @@ class FormalParameter(
 )
 
 class ReturnStmt(uid: Uuid, val expr: Expr?): Stmt(uid)
+
+class ClassDeclStmt(uid: Uuid, val identifier: Token, val methods: List<FunDeclStmt>): Stmt(uid)
 
 typealias Ast = List<Stmt>

@@ -10,7 +10,7 @@ import org.example.rlc.jvm.ir.Opcode
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 
-internal fun generateConstructor(className: String): MethodInfo {
+internal fun generateDefaultConstructor(className: String): MethodInfo {
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, generateConstructorMethodRef(className)),
@@ -26,7 +26,7 @@ internal fun generateConstructor(className: String): MethodInfo {
   )
 }
 
-private fun generateConstructorMethodRef(className: String): MethodRefInfo {
+internal fun generateConstructorMethodRef(className: String): MethodRefInfo {
   return MethodRefInfo(
     label = "$className.\"<init>\":()V",
     classInfo = ClassInfo(className),

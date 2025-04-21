@@ -7,6 +7,7 @@ import kotlin.uuid.ExperimentalUuidApi
 
 
 internal data class PositiveTestCase(
+  val name: String,
   val fileName: String,
   val expected: String
 )
@@ -25,29 +26,97 @@ private fun Parser.getErrorMessages(): List<String> {
   return messages
 }
 
-
 @OptIn(ExperimentalUuidApi::class)
 class ParserTest {
   private val positive = listOf(
     PositiveTestCase(
+      name = "Simple Addition",
       fileName = "parser_one.lox",
-      expected = "(expr (+ 1 2))",
+      expected = "(script\n  (expr (+ 1 2))\n)",
     ),
     PositiveTestCase(
+      name = "Print Complex Expression",
       fileName = "parser_two.lox",
-      expected = "(print (- (+ (- 1) (* 2 3)) (/ 4 5)))",
+      expected = "(script\n  (print (- (+ (- 1)(* 2 3))(/ 4 5)))\n)",
     ),
     PositiveTestCase(
+      name = "Or Expression",
       fileName = "parser_or.lox",
-      expected = "(expr (or true false))",
+      expected = "(script\n  (expr (or true false))\n)",
     ),
     PositiveTestCase(
+      name = "And Expression",
       fileName = "parser_and.lox",
-      expected = "(expr (and false true))",
+      expected = "(script\n  (expr (and false true))\n)",
     ),
     PositiveTestCase(
+      name = "Grouping",
       fileName = "parser_grouping.lox",
-      expected = "(expr (* (group (+ 1 2)) (group (- (- 3) 4))))",
+      expected = "(script\n  (expr (* (group (+ 1 2))(group (- (- 3) 4))))\n)",
+    ),
+    PositiveTestCase(
+      name = "Var",
+      fileName = "parser_var.lox",
+      expected = "(script\n  (var x nil)\n  (var y (+ 1 5))\n)",
+    ),
+    PositiveTestCase(
+      name = "Empty Class Declaration",
+      fileName = "parser_class_void.lox",
+      expected = "(script\n" +
+          "  (class Void)\n" +
+          "  (var v (call (variable Void) ()))\n" +
+          "  (expr (set (variable v) ether \"Ether\"))\n" +
+          "  (print (get (variable v) ether))\n" +
+          "  (var voidMaker (variable Void))\n" +
+          "  (var vacuum (call (variable voidMaker) ()))\n" +
+          "  (expr (set (variable vacuum) ether \"Light\"))\n" +
+          "  (print (get (variable vacuum) ether))\n" +
+          "  (print (get (variable v) ether))\n" +
+          ")",
+    ),
+    PositiveTestCase(
+      name = "Blocks",
+      fileName = "parser_blocks.lox",
+      expected = "(script\n" +
+          "  (var a 0)\n" +
+          "  (var b 0)\n" +
+          "  (block\n" +
+          "    (var b 1)\n" +
+          "    (print (+ (variable a)(variable b)))\n" +
+          "    (block\n" +
+          "      (var a 2)\n" +
+          "      (print (+ (variable a)(variable b)))\n" +
+          "    )\n" +
+          "  )\n" +
+          "  (print (+ (variable a)(variable b)))\n" +
+          ")"
+    ),
+
+    PositiveTestCase(
+      name = "Functions",
+      fileName = "parser_fun.lox",
+      expected = "(script\n" +
+          "  (fun doNothing (parameters) (body\n" +
+          "  ))\n" +
+          "  (fun doSomething (parameters) (body\n" +
+          "    (print \"Doing Something\")\n" +
+          "  ))\n" +
+          "  (fun add (parameters a b) (body\n" +
+          "    (return (+ (variable a)(variable b)))\n" +
+          "  ))\n" +
+          ")",
+    ),
+
+    PositiveTestCase(
+      name = "Class With Methods",
+      fileName = "parser_class_methods.lox",
+      expected = "(script\n" +
+          "  (class Quark\n" +
+          "    (method introduce (parameters) (body\n" +
+          "      (print \"I am a quark!\")\n" +
+          "    ))\n" +
+          "  )\n" +
+          ")",
     ),
   )
 
@@ -76,8 +145,18 @@ class ParserTest {
       val scanner = Scanner(text)
       val parser = Parser(tokens = scanner.scan())
       val ast = parser.parse()
-      assertEquals(expected = false, actual = parser.hasErrors)
-      assertEquals(case.expected, AstToLispExprConverter(ast).convertToLisp())
+
+      assertEquals(
+        expected = false,
+        actual = parser.hasErrors,
+        message = "Case '${case.name}' has unexpected parse errors.\n${parser.getErrorMessages()}"
+      )
+
+      assertEquals(
+        expected = case.expected,
+        actual = AstToLispExprConverter(ast).convertToLisp(),
+        message = "Case '${case.name}' failed.\n",
+      )
     }
   }
 

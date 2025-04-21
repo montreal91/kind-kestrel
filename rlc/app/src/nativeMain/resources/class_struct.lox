@@ -1,0 +1,25 @@
+
+print "Program output:";
+print "";
+
+class Struct {}
+print Struct;
+var structMaker = Struct;
+
+var car = Struct();
+
+print car;
+car.name = "Lamborghini";
+
+print structMaker;
+var engine = structMaker();
+
+car.engine = engine;
+car.engine.type = "V8";
+
+car.model = "Diablo";
+
+print "";
+print "";
+print car.name + " " + car.model;
+print "Engine Type: " + car.engine.type;

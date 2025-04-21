@@ -1,23 +1,26 @@
 package org.example.rlc.jvm.middleware
 
-import org.example.rlc.frontend.EnclosedUpvalue
 import org.example.rlc.frontend.EnclosedLocal
+import org.example.rlc.frontend.EnclosedUpvalue
 import org.example.rlc.frontend.Token
-import org.example.rlc.frontend.ast.Assignment
+import org.example.rlc.frontend.ast.Assign
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
-import org.example.rlc.frontend.ast.CallExpr
+import org.example.rlc.frontend.ast.Call
+import org.example.rlc.frontend.ast.ClassDeclStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.ForStmt
 import org.example.rlc.frontend.ast.FunDeclStmt
+import org.example.rlc.frontend.ast.Get
 import org.example.rlc.frontend.ast.Grouping
 import org.example.rlc.frontend.ast.IfStmt
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.ReturnStmt
+import org.example.rlc.frontend.ast.Set
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
@@ -56,14 +59,13 @@ import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
 import org.example.rlc.jvm.ir.VerificationTypeInfo
-import org.example.rlc.jvm.ir.javaLangStringObjectVti
 import org.example.rlc.jvm.ir.loxMainClassName
 import org.example.rlc.jvm.ir.loxObjectClassName
 import org.example.rlc.jvm.ir.toUtf8Value
 import kotlin.uuid.ExperimentalUuidApi
 
 
-@OptIn(ExperimentalUuidApi::class)
+@OptIn(markerClass = [ExperimentalUuidApi::class])
 class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionTable) {
   private val objectClass = javaLangObjectClassInfo
   private val classes = mutableListOf(
@@ -71,7 +73,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     loxObjectCf(),
     loxBooleanCf(),
     loxDoubleCf(),
-    loxNilCf(),
+    LoxNil.loxNilCf(),
     loxStringCf(),
     loxRuntimeError(),
     loxPointerCf(),
@@ -194,8 +196,8 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   }
 
   private fun visitStmt(stmt: Stmt) = when (stmt) {
-    is ExprStmt -> visitExprStmt(stmt)
-    is PrintStmt -> visitPrintStmt(stmt)
+    is ExprStmt -> visitExprStmt(exprStmt = stmt)
+    is PrintStmt -> visitPrintStmt(printStmt = stmt)
     is BlockStmt -> visitBlockStmt(stmt)
     is VarDeclStmt -> visitVarDecl(stmt)
     is IfStmt -> visitIfStatement(stmt)
@@ -203,6 +205,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     is ForStmt -> visitForStmt(stmt)
     is FunDeclStmt -> visitFunDeclStmt(stmt)
     is ReturnStmt -> visitReturnStmt(stmt)
+    is ClassDeclStmt -> visitClassDeclStmt(classDeclStmt = stmt)
   }
 
   private fun visitExpr(expr: Expr) = when (expr) {
@@ -212,8 +215,10 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     is Logical -> visitLogical(expr)
     is Unary -> visitUnary(expr)
     is Variable -> visitVariable(expr)
-    is Assignment -> visitAssignment(expr)
-    is CallExpr -> visitCallExpr(expr)
+    is Assign -> visitAssignment(expr)
+    is Call -> visitCallExpr(expr)
+    is Get -> visitGet(get = expr)
+    is Set -> visitSet(set = expr)
   }
 
   private fun visitExprStmt(exprStmt: ExprStmt) {
@@ -286,10 +291,10 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     currentFunction = outerFunction
 
     val instantiationCode = generateFunctionInstantiationCode(
-      stmt.identifier.value,
-      outerFunction,
-      stmt.enclosedVariables.map { it as EnclosedVariable },
-      currentCode.size,
+      functionName = "LoxFunction${stmt.identifier.value}",
+      outerFunctionName = outerFunction,
+      enclosedVariables = stmt.enclosedVariables.map { it as EnclosedVariable },
+      currentCodeOffset = currentCode.size,
     )
 
     currentCode.addAll(instantiationCode)
@@ -307,6 +312,34 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     }
 
     println("Finished compiling function. (function=${stmt.identifier.value})")
+  }
+
+  private fun visitClassDeclStmt(classDeclStmt: ClassDeclStmt) {
+    classes.add(generateInstanceClass(name = classDeclStmt.identifier.value))
+
+    val constructor = generateConstructorClass(name = classDeclStmt.identifier.value)
+
+    classes.add(constructor)
+
+    /// Constructor method initialization code goes here
+    currentCode.addAll(generateFunctionInstantiationCode(
+      constructor.thisClassInfo.className.encodedString,
+      "",
+      listOf(),
+      currentCode.size,
+    ))
+
+    when (val resolution = resolutionTable.get(classDeclStmt.uid)) {
+      is GlobalVariable -> declGlobalVariable(variable = resolution)
+      is LocalVariable -> setLocalVariable(resolution)
+      is EnclosedVariable -> {
+        println("A function can't be declared as an enclosed value.")
+      }
+
+      UnresolvedVariable -> throw IllegalStateException(
+        "Variable ${classDeclStmt.identifier} is unresolved, but expected to be resolved"
+      )
+    }
   }
 
   private fun visitIfStatement(stmt: IfStmt) {
@@ -393,7 +426,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     exitLoop.setJumpTo(currentCode.size)
   }
 
-  private fun visitCallExpr(expr: CallExpr) {
+  private fun visitCallExpr(expr: Call) {
     println("Visiting Call Expression. ${expr.args.size}")
     visitExpr(expr.callee)
 
@@ -405,6 +438,50 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     expr.args.forEach(this::visitExpr)
 
     currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, generateCallMethodRef(expr.args.size)))
+  }
+
+  private fun visitGet(get: Get) {
+    visitExpr(expr = get.obj)
+
+    val loadFieldNameOp = ByteConstantOperation(
+      Opcode.OP_LDC,
+      constant = StringRefInfo(value = get.name),
+      value = JavaString.VERIFICATION_TYPE,
+    )
+
+    val loadErrorMessageOp = ByteConstantOperation(
+      Opcode.OP_LDC,
+      constant = StringRefInfo(value = "Undefined property ${get.name}."),
+      value = JavaString.VERIFICATION_TYPE,
+    )
+
+    val invokeInstanceGetMethodOp = ShortConstantOperation(
+      Opcode.OP_INVOKE_VIRTUAL,
+      constant = getInstanceFieldMethodRef(),
+    )
+
+    currentCode.add(loadFieldNameOp)
+    currentCode.add(loadErrorMessageOp)
+    currentCode.add(invokeInstanceGetMethodOp)
+  }
+
+  private fun visitSet(set: Set) {
+    visitExpr(expr = set.obj)
+    visitExpr(expr = set.value)
+
+    val loadFieldNameOp = ByteConstantOperation(
+      Opcode.OP_LDC,
+      constant = StringRefInfo(value = set.name),
+      value = JavaString.VERIFICATION_TYPE,
+    )
+
+    val invokeSetMethodOp = ShortConstantOperation(
+      Opcode.OP_INVOKE_VIRTUAL,
+      constant = setInstanceFieldMethodRef()
+    )
+
+    currentCode.add(loadFieldNameOp)
+    currentCode.add(invokeSetMethodOp)
   }
 
   private fun visitLiteral(expr: Literal) = when (expr.type) {
@@ -504,8 +581,8 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
 
     val message = "Undefined variable '${variable.name}'."
     val ops = listOf(
-      ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(variable.name), javaLangStringObjectVti),
-      ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(value = message), javaLangStringObjectVti),
+      ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(variable.name), JavaString.VERIFICATION_TYPE),
+      ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(value = message), JavaString.VERIFICATION_TYPE),
       ShortConstantOperation(Opcode.OP_INVOKE_STATIC, getMethodRef)
     )
 
@@ -551,7 +628,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     )
 
     currentCode.add(
-      ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(variable.name), javaLangStringObjectVti)
+      ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(variable.name), JavaString.VERIFICATION_TYPE)
     )
     currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_STATIC, getMethodRef))
   }
@@ -610,8 +687,8 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     )
 
     val message = "Undefined variable '${variable.name}'."
-    currentCode.add(ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(variable.name), javaLangStringObjectVti))
-    currentCode.add(ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(value = message), javaLangStringObjectVti))
+    currentCode.add(ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(variable.name), JavaString.VERIFICATION_TYPE))
+    currentCode.add(ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(value = message), JavaString.VERIFICATION_TYPE))
     currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_STATIC, getMethodRef))
   }
 
@@ -702,7 +779,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     visitExpr(expr.expression)
   }
 
-  private fun visitAssignment(expr: Assignment) {
+  private fun visitAssignment(expr: Assign) {
     visitExpr(expr.right)
     currentCode.add(SimpleOperation(Opcode.OP_DUP))
 
@@ -745,20 +822,14 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   }
 
   private fun compileNil() {
-    val ops = listOf(
-      ShortConstantOperation(Opcode.OP_NEW, loxNilClassInfo, ObjectVti(loxObjectClassInfo)),
-      SimpleOperation(Opcode.OP_DUP),
-      ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxNilConstructorInfo),
-    )
-
-    currentCode.addAll(ops)
+    currentCode.addAll(elements = LoxNil.generateNil())
   }
 
   private fun compileString(literal: Literal) {
     val ops = listOf(
       ShortConstantOperation(Opcode.OP_NEW, loxStringClassInfo, ObjectVti(loxObjectClassInfo)),
       SimpleOperation(Opcode.OP_DUP),
-      ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(literal.value), javaLangStringObjectVti),
+      ByteConstantOperation(Opcode.OP_LDC, StringRefInfo(literal.value), JavaString.VERIFICATION_TYPE),
       ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxStringConstructorInfo)
     )
 
@@ -885,9 +956,11 @@ private fun generateCallMethodRef(arity: Int): MethodRefInfo {
 
   val sb = StringBuilder()
   sb.append("(")
-  for (i in 0..<arity) {
+
+  (0..<arity).forEach { i ->
     sb.append("L$loxObjectClassName;")
   }
+
   sb.append(")L$loxObjectClassName;")
   val signature = sb.toString()
   return MethodRefInfo(
@@ -933,16 +1006,15 @@ private fun generateFunctionInstantiationCode(
   enclosedVariables: List<EnclosedVariable>,
   currentCodeOffset: Int,
 ): List<Operation> {
-  val functionClassName = "LoxFunction${functionName}"
-  val thisClassInfo = ClassInfo(functionClassName)
+  val thisClassInfo = ClassInfo(className = functionName)
   val res = wrapLocalsIfNeeded(enclosedVariables, currentCodeOffset)
 
   val invokeFunctionObjectConstructorOp = ShortConstantOperation(
       Opcode.OP_INVOKE_SPECIAL,
-      generateLoxFunctionConstructorInfo(className = "LoxFunction${functionName}")
+    constant = generateLoxFunctionConstructorInfo(className = functionName)
     )
 
-  res.add(ShortConstantOperation(Opcode.OP_NEW, thisClassInfo, ObjectVti(thisClassInfo)))
+  res.add(ShortConstantOperation(Opcode.OP_NEW, constant = thisClassInfo, value = ObjectVti(thisClassInfo)))
   res.add(SimpleOperation(Opcode.OP_DUP))
   res.add(invokeFunctionObjectConstructorOp)
 
@@ -953,15 +1025,15 @@ private fun generateFunctionInstantiationCode(
 
     val putFieldOp = ShortConstantOperation(
       Opcode.OP_PUTFIELD,
-      generateFieldRef(className = "LoxFunction${functionName}", fieldName = "__enclosed_value__${v.name}__")
+      constant = generateFieldRef(className = functionName, fieldName = "__enclosed_value__${v.name}__")
     )
 
     val accessOps = when (v.enclosedObject) {
-      is EnclosedLocal -> compileEnclosedLocal(v)
-      is EnclosedUpvalue -> compileEnclosedUpvalue(v, outerFunctionName)
+      is EnclosedLocal -> compileEnclosedLocal(variable = v)
+      is EnclosedUpvalue -> compileEnclosedUpvalue(variable = v, outerFunctionName)
     }
 
-    res.addAll(accessOps)
+    res.addAll(elements = accessOps)
     res.add(putFieldOp)
   }
 
@@ -972,14 +1044,16 @@ private fun generateFunctionInstantiationCode(
 
 private fun compileEnclosedLocal(variable: EnclosedVariable): List<Operation> {
   if (variable.enclosedObject !is EnclosedLocal) {
-    throw IllegalStateException("Trying to compile local, but it is not local.\nVariable=($variable)")
+    throw IllegalStateException(
+      message = "Trying to compile local, but it is not local.\nVariable=($variable)"
+    )
   }
 
   val res = mutableListOf<Operation>()
   val loadFromLocalArrayOp = OperationWithIndex(
     Opcode.OP_ALOAD,
-    getActualLocalVariableIndex(variable).toByte(),
-    ObjectVti(loxObjectClassInfo)
+    index = getActualLocalVariableIndex(resolution = variable).toByte(),
+    value = ObjectVti(loxObjectClassInfo)
   )
 
   res.add(loadFromLocalArrayOp)

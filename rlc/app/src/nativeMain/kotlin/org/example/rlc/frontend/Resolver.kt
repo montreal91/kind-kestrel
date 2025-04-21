@@ -1,21 +1,26 @@
 package org.example.rlc.frontend
 
 import co.touchlab.kermit.Logger
-import org.example.rlc.frontend.ast.Assignment
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+import org.example.rlc.frontend.ast.Assign
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
-import org.example.rlc.frontend.ast.CallExpr
+import org.example.rlc.frontend.ast.Call
+import org.example.rlc.frontend.ast.ClassDeclStmt
 import org.example.rlc.frontend.ast.Expr
 import org.example.rlc.frontend.ast.ExprStmt
 import org.example.rlc.frontend.ast.ForStmt
 import org.example.rlc.frontend.ast.FunDeclStmt
+import org.example.rlc.frontend.ast.Get
 import org.example.rlc.frontend.ast.Grouping
 import org.example.rlc.frontend.ast.IfStmt
 import org.example.rlc.frontend.ast.Literal
 import org.example.rlc.frontend.ast.Logical
 import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.ReturnStmt
+import org.example.rlc.frontend.ast.Set
 import org.example.rlc.frontend.ast.Stmt
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
@@ -26,8 +31,6 @@ import org.example.rlc.frontend.scope.GlobalVariable
 import org.example.rlc.frontend.scope.LocalVariable
 import org.example.rlc.frontend.scope.VariableResolutionResult
 import org.example.rlc.frontend.scope.VariableResolutionTable
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 class Resolver {
@@ -59,6 +62,7 @@ class Resolver {
     is ForStmt -> visitForStmt(stmt)
     is FunDeclStmt -> visitFunDeclStmt(stmt)
     is ReturnStmt -> visitReturnStmt(stmt)
+    is ClassDeclStmt -> visitClassDeclStmt(classDecl = stmt)
   }
 
   private fun visitExpr(expr: Expr) = when (expr) {
@@ -68,27 +72,29 @@ class Resolver {
     is Variable -> visitIdentifier(expr)
     is Logical -> visitLogical(expr)
     is Unary -> visitUnary(expr)
-    is Assignment -> visitAssignment(expr)
-    is CallExpr -> visitCallExpr(expr)
+    is Assign -> visitAssignment(expr)
+    is Call -> visitCallExpr(expr)
+    is Get -> visitGetExpr(get = expr)
+    is Set -> visitSetExpr(set = expr)
   }
 
   private fun visitBlockStmt(stmt: BlockStmt) {
     println("Resolver visiting a block statement.")
-    frameStack.addNewFrame(Frame.Type.BLOCK, frameName = "Block")
-    stmt.statements.forEach(this::visitStmt)
+    frameStack.addNewFrame(type = Frame.Type.BLOCK, frameName = "Block")
+    stmt.statements.forEach(action = this::visitStmt)
     frameStack.popFrame()
   }
 
   private fun visitExprStmt(stmt: ExprStmt) {
-    visitExpr(stmt.expr)
+    visitExpr(expr = stmt.expr)
   }
 
   private fun visitPrintStmt(stmt: PrintStmt) {
-    visitExpr(stmt.expr)
+    visitExpr(expr = stmt.expr)
   }
 
   private fun visitReturnStmt(stmt: ReturnStmt) {
-    stmt.expr?.let(this::visitExpr)
+    stmt.expr?.let(block = this::visitExpr)
   }
 
   private fun visitVarDeclStmt(stmt: VarDeclStmt) {
@@ -133,6 +139,20 @@ class Resolver {
     }
 
     functionContexts.removeLast()
+  }
+
+  private fun visitClassDeclStmt(classDecl: ClassDeclStmt) {
+    checkVariable(variableToken = classDecl.identifier)
+    resolveVariableDeclaration(uid = classDecl.uid, variable = classDecl.identifier.value)
+
+    frameStack.addNewFrame(
+      type = Frame.Type.CLASS,
+      frameName = classDecl.identifier.value
+    )
+
+    classDecl.methods.forEach(action = this::visitFunDeclStmt)
+
+    frameStack.popFrame()
   }
 
   private fun visitIfStmt(stmt: IfStmt) {
@@ -184,14 +204,23 @@ class Resolver {
     visitExpr(expr.right)
   }
 
-  private fun visitAssignment(expr: Assignment) {
+  private fun visitAssignment(expr: Assign) {
     visitExpr(expr.left)
     visitExpr(expr.right)
   }
 
-  private fun visitCallExpr(expr: CallExpr) {
+  private fun visitCallExpr(expr: Call) {
     visitExpr(expr.callee)
     expr.args.forEach(this::visitExpr)
+  }
+
+  private fun visitGetExpr(get: Get) {
+    visitExpr(expr = get.obj)
+  }
+
+  private fun visitSetExpr(set: Set) {
+    visitExpr(expr = set.obj)
+    visitExpr(expr = set.value)
   }
 
   private fun resolveVariable(identifier: String): VariableResolutionResult {

@@ -1,0 +1,10 @@
+
+fun doNothing() {}
+
+fun doSomething() {
+  print "Doing Something";
+}
+
+fun add(a, b) {
+  return a + b;
+}
