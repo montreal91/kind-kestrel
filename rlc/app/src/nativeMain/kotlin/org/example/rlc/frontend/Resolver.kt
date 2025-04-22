@@ -1,6 +1,8 @@
 package org.example.rlc.frontend
 
 import co.touchlab.kermit.Logger
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 import org.example.rlc.frontend.ast.Assign
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.Binary
@@ -30,8 +32,6 @@ import org.example.rlc.frontend.scope.GlobalVariable
 import org.example.rlc.frontend.scope.LocalVariable
 import org.example.rlc.frontend.scope.VariableResolutionResult
 import org.example.rlc.frontend.scope.VariableResolutionTable
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 class Resolver {
@@ -263,14 +263,6 @@ class Resolver {
 
     error(message = "This identifier already exists.", variableToken)
   }
-
-//  private fun checkVariable(name: String) {
-//    if (!frameStack.existInCurrentFrame(identifier = name)) {
-//      return
-//    }
-//
-//    error(message = "This identifier already exists.", name)
-//  }
 
   private fun resolveVariableDeclaration(uid: Uuid, variable: String) {
     if (frameStack.isGlobal()) {
