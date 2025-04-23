@@ -286,6 +286,14 @@ class StackMapTableMaker {
         }
 
         Opcode.OP_NOP -> {}
+        Opcode.OP_DUP_2 -> {
+          val top = stack.removeLast()
+          val prev = stack.removeLast()
+          stack.addLast(prev)
+          stack.addLast(top)
+          stack.addLast(prev)
+          stack.addLast(top)
+        }
       }
 
       print("    Stack: ")

@@ -41,6 +41,16 @@ class FormalParameter(
 
 class ReturnStmt(uid: Uuid, val expr: Expr?): Stmt(uid)
 
-class ClassDeclStmt(uid: Uuid, val identifier: Token, val methods: List<FunDeclStmt>): Stmt(uid)
+class ClassDeclStmt(uid: Uuid, val identifier: Token, val methods: List<FunDeclStmt>): Stmt(uid) {
+  fun getConstructorArity(): Int {
+    for (method in methods) {
+      if (method.identifier.value == "init") {
+        return method.arity
+      }
+    }
+
+    return 0
+  }
+}
 
 typealias Ast = List<Stmt>

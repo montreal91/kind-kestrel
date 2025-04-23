@@ -56,6 +56,11 @@ enum class Opcode(val value: Byte) {
   // Duplicate the top operand stack value
   OP_DUP(0x59.toByte()),
 
+  // Duplicate the top one or two values on the operand stack and push
+  // the duplicated value or values back onto the operand stack in the
+  // original order.
+  OP_DUP_2(0x5C.toByte()),
+
   // Fetch field from object.
   // Pops object reference from the stack
   // Pushes field value to the stack

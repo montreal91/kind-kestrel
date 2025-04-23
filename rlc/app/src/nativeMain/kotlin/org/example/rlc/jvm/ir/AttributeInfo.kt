@@ -118,5 +118,6 @@ class CodeAttribute(
     Opcode.OP_L2D -> 0
     Opcode.OP_SWAP -> 0
     Opcode.OP_NOP -> 0
+    Opcode.OP_DUP_2 -> 0
   }
 }

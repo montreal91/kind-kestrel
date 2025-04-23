@@ -131,7 +131,15 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     code.add(ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, loxDoubleConstructorInfo))
     code.add(SimpleOperation(Opcode.OP_ARETURN))
 
-    classes.add(generateLoxFunction(name = clock, arity = 0, code = code, emptyList()))
+    classes.add(
+      generateLoxFunction(
+        name = clock,
+        arity = 0,
+        code = code,
+        enclosedVariables = emptyList(),
+        isMethod = false
+      )
+    )
 
     val instantiationCode = listOf(
       ShortConstantOperation(
@@ -217,7 +225,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     is Call -> visitCallExpr(expr)
     is Get -> visitGet(get = expr)
     is Set -> visitSet(set = expr)
-    is This -> visitThis(expr)
+    is This -> visitThis()
   }
 
   private fun visitExprStmt(exprStmt: ExprStmt) {
@@ -277,7 +285,8 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       funDecl.identifier.value,
       funDecl.arity,
       currentCode,
-      funDecl.enclosedVariables.map { it as EnclosedVariable }
+      funDecl.enclosedVariables.map { it as EnclosedVariable },
+      isMethod = isMethod
     )
 
     classes.add(function)
@@ -335,7 +344,8 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
 
     val constructor = generateConstructorClass(
       name = classDeclStmt.identifier.value,
-      functionStuff = functionStuff
+      functionStuff = functionStuff,
+      arity = classDeclStmt.getConstructorArity()
     )
 
     classes.add(constructor)
@@ -456,7 +466,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
 
     expr.args.forEach(this::visitExpr)
 
-    currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, generateCallMethodRef(expr.args.size)))
+    currentCode.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, LoxFunction.generateCallMethodRef(expr.args.size)))
   }
 
   private fun visitGet(get: Get) {
@@ -554,8 +564,15 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     }
   }
 
-  private fun visitThis(tis: This) {
-    TODO("Implement `this` access.")
+  private fun visitThis() {
+    currentCode.add(SimpleOperation(Opcode.OP_ALOAD_0))
+    currentCode.add(
+      ShortConstantOperation(
+        Opcode.OP_GETFIELD,
+        JavaClass.generateFieldRef("LoxFunction$currentFunction", "__this__"),
+        loxObjectVti,
+      )
+    )
   }
 
   private fun setLocalVariable(resolution: LocalVariable) {
@@ -957,32 +974,5 @@ private fun generateCallCheckMethodRef(): MethodRefInfo {
     argsSize = 2,
     returnSize = 0,
     returnTypeInfo = EmptyVti(),
-  )
-}
-
-private fun generateCallMethodRef(arity: Int): MethodRefInfo {
-  val className = "LoxCallable$arity"
-  val functionName = "__call__"
-
-  val sb = StringBuilder()
-  sb.append("(")
-
-  (0..<arity).forEach { i ->
-    sb.append("L$loxObjectClassName;")
-  }
-
-  sb.append(")L$loxObjectClassName;")
-  val signature = sb.toString()
-  return MethodRefInfo(
-    label = "$className.$functionName:${signature}",
-    classInfo = ClassInfo(className),
-    nameAndType = NameAndTypeInfo(
-      label = "$functionName:${signature}",
-      name = functionName.toUtf8Value(),
-      descriptor = signature.toUtf8Value(),
-    ),
-    argsSize = arity + 1,
-    returnSize = 1,
-    returnTypeInfo = ObjectVti(loxObjectClassInfo)
   )
 }

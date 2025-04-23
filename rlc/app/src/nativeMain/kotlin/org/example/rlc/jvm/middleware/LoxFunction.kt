@@ -14,6 +14,7 @@ import org.example.rlc.jvm.ir.Operation
 import org.example.rlc.jvm.ir.OperationWithIndex
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
+import org.example.rlc.jvm.ir.loxObjectClassName
 import org.example.rlc.jvm.ir.toUtf8Value
 
 internal object LoxFunction {
@@ -30,7 +31,7 @@ internal object LoxFunction {
     returnTypeInfo = EmptyVti(),
   )
 
-  fun generateInstantiationCode(
+  internal fun generateInstantiationCode(
     functionName: String,
     outerFunctionName: String,
     enclosedVariables: List<EnclosedVariable>,
@@ -70,6 +71,33 @@ internal object LoxFunction {
     println("Finished compiling enclosed variables.")
 
     return res.toList()
+  }
+
+  internal fun generateCallMethodRef(arity: Int): MethodRefInfo {
+    val className = "LoxCallable$arity"
+    val functionName = "__call__"
+
+    val sb = StringBuilder()
+    sb.append("(")
+
+    (0..<arity).forEach { i ->
+      sb.append("L$loxObjectClassName;")
+    }
+
+    sb.append(")L$loxObjectClassName;")
+    val signature = sb.toString()
+    return MethodRefInfo(
+      label = "$className.$functionName:${signature}",
+      classInfo = ClassInfo(className),
+      nameAndType = NameAndTypeInfo(
+        label = "$functionName:${signature}",
+        name = functionName.toUtf8Value(),
+        descriptor = signature.toUtf8Value(),
+      ),
+      argsSize = arity + 1,
+      returnSize = 1,
+      returnTypeInfo = ObjectVti(loxObjectClassInfo)
+    )
   }
 }
 
