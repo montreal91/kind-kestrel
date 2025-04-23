@@ -15,23 +15,24 @@ import org.example.rlc.jvm.ir.MethodSignature
 import org.example.rlc.jvm.ir.NameAndTypeInfo
 import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
+import org.example.rlc.jvm.ir.OperationWithIndex
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
 import org.example.rlc.jvm.ir.toUtf8Value
 
-internal fun generateConstructorClass(name: String): ClassFile {
+internal fun generateConstructorClass(name: String, arity: Int, functionStuff: List<FunctionStuff>): ClassFile {
   return ClassFile(
     thisClassInfo = ClassInfo(className = "LoxClass_$name"),
-    superClassInfo = ClassInfo(className = "LoxCallable0"),
+    superClassInfo = ClassInfo(className = "LoxCallable$arity"),
     accessFlagList = listOf(),
     interfaceList = listOf(),
     fieldList = listOf(),
     methodList = listOf(
-      generateDefaultConstructor(className = "LoxCallable0"),
-      generateConstructorCallMethod(className = name),
+      generateDefaultConstructor(className = "LoxCallable$arity"),
+      generateConstructorCallMethod(className = name, arity = arity, methods = functionStuff),
       generateToStringMethod(output = "<class $name>"),
-      generateArity(arity = 0),
+      generateArity(arity = arity),
     ),
     attributeList = listOf(),
   )
@@ -83,22 +84,68 @@ private fun generateToStringMethod(output: String): MethodInfo {
   )
 }
 
-private fun generateConstructorCallMethod(className: String): MethodInfo {
+private fun generateConstructorCallMethod(className: String, arity: Int, methods: List<FunctionStuff>): MethodInfo {
   val loxInstanceCi = ClassInfo(className = "LoxInstance_$className")
-
-  val codeAttribute = CodeAttribute(argsSize = 1, code = listOf(
+  val code = mutableListOf(
     ShortConstantOperation(Opcode.OP_NEW, constant = loxInstanceCi, value = ObjectVti(classInfo = loxInstanceCi)),
     SimpleOperation(Opcode.OP_DUP),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, constant = generateConstructorMethodRef(className = "LoxInstance_$className")),
-    SimpleOperation(Opcode.OP_ARETURN),
-  ))
+  )
+
+  for (method in methods) {
+    code.add(SimpleOperation(Opcode.OP_DUP))
+    code.addAll(
+      LoxFunction.generateInstantiationCode(
+        functionName = "LoxFunction${method.name}",
+        outerFunctionName = "",
+        enclosedVariables = method.enclosedVariables,
+        currentCodeOffset = code.size
+      )
+    )
+
+    // here on the stack [object, function]
+
+    // put the object into function
+    code.add(SimpleOperation(Opcode.OP_DUP_2))
+    code.add(SimpleOperation(Opcode.OP_SWAP))
+    code.add(ShortConstantOperation(Opcode.OP_PUTFIELD, constant = JavaClass.generateFieldRef(
+      className = "LoxFunction${method.name}",
+      fieldName = "__this__",
+    )))
+
+    // here on stack should be [object, function] again
+
+    code.add(ByteConstantOperation(Opcode.OP_LDC, constant = StringRefInfo(method.name), value = JavaString.VERIFICATION_TYPE))
+    code.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, constant = setInstanceFieldMethodRef()))
+    code.add(SimpleOperation(Opcode.OP_POP)) // Remove LoxNil from the stack
+  }
+
+  if (hasInitializer(methods)) {
+    // If there is an initializer, it should be called.
+    code.add(SimpleOperation(Opcode.OP_DUP))
+    code.add(ByteConstantOperation(Opcode.OP_LDC, constant = StringRefInfo("init"), value = JavaString.VERIFICATION_TYPE))
+    code.add(ByteConstantOperation(Opcode.OP_LDC, constant = StringRefInfo("No `init` error."), value = JavaString.VERIFICATION_TYPE))
+    code.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, constant = getInstanceFieldMethodRef()))
+
+    code.add(ShortConstantOperation(Opcode.OP_CHECKCAST, constant = ClassInfo("LoxCallable$arity")))
+
+    for (i in 1 .. arity) {
+      code.add(OperationWithIndex(Opcode.OP_ALOAD, index = i.toByte(), value = loxObjectVti))
+    }
+
+    code.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, LoxFunction.generateCallMethodRef(arity)))
+    code.add(SimpleOperation(Opcode.OP_POP)) // Remove LoxNil from the stack
+  }
+
+  code.add(SimpleOperation(Opcode.OP_ARETURN))
+  val codeAttribute = CodeAttribute(argsSize = 1, code = code)
 
   return MethodInfo(
     methodName = "__call__",
     accessFlagList = listOf(),
     attributeList = listOf(codeAttribute),
     signature = MethodSignature(
-      arguments = generateMethodSignature(arity = 0),
+      arguments = generateMethodSignature(arity = arity),
       returnType = loxObjectVti
     ),
     isStatic = false
@@ -236,4 +283,14 @@ private fun generateInstanceConstructor(thisClassName: String, superClassName: S
     isStatic = false,
     signature = MethodSignature(listOf(), EmptyVti())
   )
+}
+
+private fun hasInitializer(methods: List<FunctionStuff>): Boolean {
+  for (method in methods) {
+    if (method.name == "init") {
+      return true
+    }
+  }
+
+  return false
 }

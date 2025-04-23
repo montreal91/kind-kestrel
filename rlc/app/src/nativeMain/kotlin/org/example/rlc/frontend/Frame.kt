@@ -4,7 +4,7 @@ import co.touchlab.kermit.Logger
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalUuidApi::class)
+@OptIn(markerClass = [ExperimentalUuidApi::class])
 class Frame(
   val type: Type,
   private var index: Int,
@@ -16,9 +16,10 @@ class Frame(
     BLOCK,
     FUNCTION,
     CLASS,
+    METHOD,
   }
 
-  private val log = Frame::class.qualifiedName?.let { Logger.withTag(it) }
+  private val log = Frame::class.qualifiedName?.let(block = Logger::withTag)
 
   override fun toString(): String {
     val sb = StringBuilder()
@@ -80,10 +81,15 @@ class Frame(
   }
 
   internal fun getResolvedVariable(identifier: String): FrameVariable {
-    return frameVariables.getOrElse(identifier, this::unresolvedIndex)
+    return frameVariables.getOrElse(key = identifier, defaultValue = this::unresolvedIndex)
   }
 
   private fun unresolvedIndex(): FrameVariable {
-    return FrameVariable(index = -1, isUpvalue = false, Uuid.NIL, VariableType.LOCAL)
+    return FrameVariable(
+      index = -1,
+      isUpvalue = false,
+      declarationId = Uuid.NIL,
+      type = VariableType.LOCAL
+    )
   }
 }

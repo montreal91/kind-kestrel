@@ -29,7 +29,8 @@ internal fun generateLoxFunction(
   name: String,
   arity: Int,
   code: List<Operation>,
-  enclosedVariables: List<EnclosedVariable>
+  enclosedVariables: List<EnclosedVariable>,
+  isMethod: Boolean,
 ): ClassFile {
   val codeAttribute = CodeAttribute(
     argsSize = arity + 1,
@@ -59,7 +60,10 @@ internal fun generateLoxFunction(
     ),
     attributeList = listOf(),
     accessFlagList = listOf(),
-    fieldList = generateFieldsFromEnclosedVariableList(variables = enclosedVariables)
+    fieldList = generateFieldsFromEnclosedVariableList(
+      variables = enclosedVariables,
+      isMethod = isMethod
+    )
   )
 }
 
@@ -212,8 +216,21 @@ private fun generateArityMethodRef(className: String): MethodRefInfo {
   )
 }
 
-private fun generateFieldsFromEnclosedVariableList(variables: List<EnclosedVariable>): List<FieldInfo> {
+private fun generateFieldsFromEnclosedVariableList(
+  variables: List<EnclosedVariable>,
+  isMethod: Boolean
+): List<FieldInfo> {
   val res = mutableListOf<FieldInfo>()
+
+  if (isMethod) {
+    res.add(
+      FieldInfo(
+        accessFlagList = emptyList(),
+        fieldName = "__this__".toUtf8Value(),
+        fieldDescriptor = "LLoxObject;".toUtf8Value(),
+      )
+    )
+  }
 
   for (variable in variables) {
     res.add(generateFieldFromEnclosedVariable(variable))

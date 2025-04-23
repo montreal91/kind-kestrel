@@ -21,6 +21,7 @@ import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.ReturnStmt
 import org.example.rlc.frontend.ast.Set
 import org.example.rlc.frontend.ast.Stmt
+import org.example.rlc.frontend.ast.This
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
 import org.example.rlc.frontend.ast.Variable
@@ -490,11 +491,12 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
       val token = currentToken
       matchAny(terminals.toList())
 
-      if (token.type == Token.Type.IDENTIFIER) {
-        return Variable(uidGen(), token.value)
-      }
+      return when (token.type) {
+        Token.Type.IDENTIFIER -> Variable(uidGen(), token.value)
+        Token.Type.THIS -> This(uid = uidGen(), token = token)
 
-      return Literal(uidGen(), token.value, tokenTypeToLiteralType(token.type))
+        else -> Literal(uidGen(), token.value, tokenTypeToLiteralType(token.type))
+      }
     }
 
     if (matchAny(listOf(Token.Type.LEFT_PAREN))) {

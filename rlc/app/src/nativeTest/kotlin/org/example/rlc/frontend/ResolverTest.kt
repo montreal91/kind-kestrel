@@ -75,7 +75,7 @@ private class MockUuidGenerator {
   val mockGen: () -> Uuid = { fakeUuids[index++] }
 }
 
-@OptIn(ExperimentalUuidApi::class)
+@OptIn(markerClass = [ExperimentalUuidApi::class])
 class ResolverTest {
   @Test
   fun testGlobalAssignAndAccess() {

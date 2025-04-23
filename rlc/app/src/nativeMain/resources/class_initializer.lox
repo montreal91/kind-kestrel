@@ -1,0 +1,8 @@
+
+class Keyboard {
+  init() {
+    this.keys = 105;
+  }
+}
+
+print Keyboard().keys;

@@ -1,8 +1,12 @@
 package org.example.rlc.frontend.scope
 
+import org.example.rlc.frontend.EnclosedLocal
 import org.example.rlc.frontend.EnclosedObject
+import org.example.rlc.frontend.EnclosedUpvalue
 
-sealed class VariableResolutionResult
+sealed class VariableResolutionResult {
+  abstract fun actualIndex(): Int
+}
 
 class LocalVariable(
   val name: String,
@@ -30,6 +34,10 @@ class LocalVariable(
   override fun toString(): String {
     return "(LocalVariable name=$name index=$variableArrayIndex isUpValue=$isUpValue)"
   }
+
+  override fun actualIndex(): Int {
+    return variableArrayIndex + 1
+  }
 }
 
 class GlobalVariable(val name: String): VariableResolutionResult() {
@@ -47,6 +55,10 @@ class GlobalVariable(val name: String): VariableResolutionResult() {
 
   override fun toString(): String {
     return "(GlobalVariable name=$name)"
+  }
+
+  override fun actualIndex(): Int {
+    return -1
   }
 }
 
@@ -70,6 +82,17 @@ class EnclosedVariable(
   override fun toString(): String {
     return "(EnclosedVariable name=$name depth=$depth enclosedObject=$enclosedObject)"
   }
+
+  override fun actualIndex(): Int {
+    return when (enclosedObject) {
+      is EnclosedLocal -> enclosedObject.localVariableIndex + 1
+      is EnclosedUpvalue -> -1
+    }
+  }
 }
 
-data object UnresolvedVariable : VariableResolutionResult()
+data object UnresolvedVariable : VariableResolutionResult() {
+  override fun actualIndex(): Int {
+    return -1
+  }
+}

@@ -19,6 +19,7 @@ import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.ReturnStmt
 import org.example.rlc.frontend.ast.Set
 import org.example.rlc.frontend.ast.Stmt
+import org.example.rlc.frontend.ast.This
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
 import org.example.rlc.frontend.ast.Variable
@@ -172,6 +173,7 @@ class AstPrettyPrinter {
     is Call -> visitCallExpr(expr)
     is Get -> TODO()
     is Set -> TODO()
+    is This -> TODO()
   }
 
   private fun visitBinary(expr: Binary) {

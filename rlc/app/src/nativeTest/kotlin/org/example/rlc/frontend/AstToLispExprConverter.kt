@@ -18,6 +18,7 @@ import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.ReturnStmt
 import org.example.rlc.frontend.ast.Set
 import org.example.rlc.frontend.ast.Stmt
+import org.example.rlc.frontend.ast.This
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
 import org.example.rlc.frontend.ast.Variable
@@ -75,6 +76,7 @@ class AstToLispExprConverter(
       is Variable -> visitVariable(expr)
       is Get -> visitGet(get = expr)
       is Set -> visitSet(set = expr)
+      is This -> visitThis()
     }
   }
 
@@ -243,6 +245,10 @@ class AstToLispExprConverter(
     sb.append("${set.name} ")
     visitExpr(expr = set.value)
     sb.append(")")
+  }
+
+  private fun visitThis() {
+    sb.append("(this)")
   }
 
   private fun visitUnary(expr: Unary) {

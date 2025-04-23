@@ -26,7 +26,7 @@ private fun Parser.getErrorMessages(): List<String> {
   return messages
 }
 
-@OptIn(ExperimentalUuidApi::class)
+@OptIn(markerClass = [ExperimentalUuidApi::class])
 class ParserTest {
   private val positive = listOf(
     PositiveTestCase(
@@ -116,6 +116,23 @@ class ParserTest {
           "      (print \"I am a quark!\")\n" +
           "    ))\n" +
           "  )\n" +
+          ")",
+    ),
+
+    PositiveTestCase(
+      name = "This",
+      fileName = "parser_class_this.lox",
+      expected = "(script\n" +
+          "  (class Car\n" +
+          "    (method init (parameters brand model) (body\n" +
+          "      (expr (set (this) brand (variable brand)))\n" +
+          "      (expr (set (this) model (variable model)))\n" +
+          "    ))\n" +
+          "    (method getFullName (parameters) (body\n" +
+          "      (return (+ (+ (get (this) brand) \" \")(get (this) model)))\n" +
+          "    ))\n" +
+          "  )\n" +
+          "  (print (call (get (call (variable Car) ( \"Lamborghini\" \"Diablo\" )) getFullName) ()))\n" +
           ")",
     ),
   )

@@ -22,6 +22,7 @@ import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.ReturnStmt
 import org.example.rlc.frontend.ast.Set
 import org.example.rlc.frontend.ast.Stmt
+import org.example.rlc.frontend.ast.This
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
 import org.example.rlc.frontend.ast.Variable
@@ -76,6 +77,7 @@ class Resolver {
     is Call -> visitCallExpr(expr)
     is Get -> visitGetExpr(get = expr)
     is Set -> visitSetExpr(set = expr)
+    is This -> visitThis(thisExpr = expr)
   }
 
   private fun visitBlockStmt(stmt: BlockStmt) {
@@ -221,6 +223,13 @@ class Resolver {
   private fun visitSetExpr(set: Set) {
     visitExpr(expr = set.obj)
     visitExpr(expr = set.value)
+  }
+
+  private fun visitThis(thisExpr: This) {
+    when (frameStack.isInsideMethod()) {
+      true -> {}
+      false -> error(message = "Can't use 'this' outside of a class", token = thisExpr.token)
+    }
   }
 
   private fun resolveVariable(identifier: String): VariableResolutionResult {

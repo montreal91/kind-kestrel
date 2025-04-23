@@ -8,7 +8,7 @@ but it holds a special place in my heart because it is my birthplace.
 My Lox Compiler compiles to JVM bytecode.
 It's not objectively special, but it's my first JVM backend compiler, so it's special to me.
 
-## Features (24/29)
+## Features (27/29)
 The brief list of features I want to implement
 
 ### Data Types
@@ -44,9 +44,9 @@ The brief list of features I want to implement
 - [x] Class Declarations
 - [x] Creating Instances
 - [x] Properties on Instances
-- [ ] Methods on Classes
-- [ ] This
-- [ ] Constructors and Initializers
+- [x] Methods on Classes
+- [x] This
+- [x] Constructors and Initializers
 - [ ] Inheritance
 - [ ] Super
 
