@@ -493,7 +493,7 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
 
       return when (token.type) {
         Token.Type.IDENTIFIER -> Variable(uidGen(), token.value)
-        Token.Type.THIS -> This(uidGen())
+        Token.Type.THIS -> This(uid = uidGen(), token = token)
 
         else -> Literal(uidGen(), token.value, tokenTypeToLiteralType(token.type))
       }

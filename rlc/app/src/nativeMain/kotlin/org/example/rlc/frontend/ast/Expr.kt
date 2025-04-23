@@ -43,4 +43,4 @@ class Assign(uid: Uuid, val left: Expr, val right: Expr) : Expr(uid)
 
 class Call(uid: Uuid, val callee: Expr, val args: List<Expr>) : Expr(uid)
 
-class This(uid: Uuid): Expr(uid)
+class This(uid: Uuid, val token: Token): Expr(uid)

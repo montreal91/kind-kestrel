@@ -26,7 +26,7 @@ private fun Parser.getErrorMessages(): List<String> {
   return messages
 }
 
-@OptIn(ExperimentalUuidApi::class)
+@OptIn(markerClass = [ExperimentalUuidApi::class])
 class ParserTest {
   private val positive = listOf(
     PositiveTestCase(

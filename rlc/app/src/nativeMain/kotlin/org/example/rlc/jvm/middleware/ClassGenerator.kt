@@ -20,7 +20,7 @@ import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
 import org.example.rlc.jvm.ir.toUtf8Value
 
-internal fun generateConstructorClass(name: String): ClassFile {
+internal fun generateConstructorClass(name: String, functionStuff: List<FunctionStuff>): ClassFile {
   return ClassFile(
     thisClassInfo = ClassInfo(className = "LoxClass_$name"),
     superClassInfo = ClassInfo(className = "LoxCallable0"),
@@ -29,7 +29,7 @@ internal fun generateConstructorClass(name: String): ClassFile {
     fieldList = listOf(),
     methodList = listOf(
       generateDefaultConstructor(className = "LoxCallable0"),
-      generateConstructorCallMethod(className = name),
+      generateConstructorCallMethod(className = name, methods = functionStuff),
       generateToStringMethod(output = "<class $name>"),
       generateArity(arity = 0),
     ),
@@ -83,15 +83,32 @@ private fun generateToStringMethod(output: String): MethodInfo {
   )
 }
 
-private fun generateConstructorCallMethod(className: String): MethodInfo {
+private fun generateConstructorCallMethod(className: String, methods: List<FunctionStuff>): MethodInfo {
   val loxInstanceCi = ClassInfo(className = "LoxInstance_$className")
-
-  val codeAttribute = CodeAttribute(argsSize = 1, code = listOf(
+  val code = mutableListOf(
     ShortConstantOperation(Opcode.OP_NEW, constant = loxInstanceCi, value = ObjectVti(classInfo = loxInstanceCi)),
     SimpleOperation(Opcode.OP_DUP),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, constant = generateConstructorMethodRef(className = "LoxInstance_$className")),
-    SimpleOperation(Opcode.OP_ARETURN),
-  ))
+  )
+
+  for (method in methods) {
+    code.add(SimpleOperation(Opcode.OP_DUP))
+    code.addAll(
+      LoxFunction.generateInstantiationCode(
+        functionName = "LoxFunction${method.name}",
+        outerFunctionName = "",
+        enclosedVariables = method.enclosedVariables,
+        currentCodeOffset = code.size
+      )
+    )
+
+    code.add(ByteConstantOperation(Opcode.OP_LDC, constant = StringRefInfo(method.name), value = JavaString.VERIFICATION_TYPE))
+    code.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, constant = setInstanceFieldMethodRef()))
+    code.add(SimpleOperation(Opcode.OP_POP)) // Remove LoxNil from the stack
+  }
+
+  code.add(SimpleOperation(Opcode.OP_ARETURN))
+  val codeAttribute = CodeAttribute(argsSize = 1, code = code)
 
   return MethodInfo(
     methodName = "__call__",

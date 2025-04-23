@@ -28,14 +28,14 @@ internal class FrameStack {
     val newIndex = when (type) {
       Frame.Type.GLOBAL -> 1
       Frame.Type.BLOCK -> frameStack.last().getIndex()
-      Frame.Type.FUNCTION -> 0
+      Frame.Type.FUNCTION, Frame.Type.METHOD -> 0
       Frame.Type.CLASS -> 0
     }
 
     val newDepth = when (type) {
       Frame.Type.GLOBAL -> 0
       Frame.Type.BLOCK -> frameStack.last().functionDepth
-      Frame.Type.FUNCTION -> frameStack.last().functionDepth + 1
+      Frame.Type.FUNCTION, Frame.Type.METHOD -> frameStack.last().functionDepth + 1
       Frame.Type.CLASS -> 0
     }
 
@@ -82,8 +82,18 @@ internal class FrameStack {
     }
   }
 
+  internal fun isInsideMethod(): Boolean {
+    for (frame in frameStack.reversed()) {
+      if (frame.type == Frame.Type.METHOD) {
+        return true
+      }
+    }
+
+    return false
+  }
+
   internal fun lookup(identifier: String): LookupResult {
-    return recursiveLookup(identifier, frameStack.lastIndex)
+    return recursiveLookup(identifier, frameIndex = frameStack.lastIndex)
   }
 
   private fun recursiveLookup(identifier: String, frameIndex: Int): LookupResult {
@@ -104,7 +114,7 @@ internal class FrameStack {
 
     if (frameIndex == 0) {
       throw IllegalArgumentException(
-        "Identifier $identifier is not found in the frame stack. This should not happen."
+        message = "Identifier $identifier is not found in the frame stack. This should not happen."
       )
     }
 
