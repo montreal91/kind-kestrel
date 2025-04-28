@@ -1,0 +1,6 @@
+
+class Chaos {}
+
+class Titan < Chaos {}
+
+class God < Titan {}

@@ -6,13 +6,13 @@ import kotlin.test.assertEquals
 import kotlin.uuid.ExperimentalUuidApi
 
 
-internal data class PositiveTestCase(
+private data class PositiveTestCase(
   val name: String,
   val fileName: String,
   val expected: String
 )
 
-internal data class NegativeTestCase(
+private data class NegativeTestCase(
   val fileName: String,
   val expectedErrors: List<String>
 )
@@ -133,6 +133,16 @@ class ParserTest {
           "    ))\n" +
           "  )\n" +
           "  (print (call (get (call (variable Car) ( \"Lamborghini\" \"Diablo\" )) getFullName) ()))\n" +
+          ")",
+    ),
+
+    PositiveTestCase(
+      name = "Inheritance",
+      fileName = "parser_inheritance.lox",
+      expected = "(script\n" +
+          "  (class Chaos)\n" +
+          "  (class Titan (superclass Chaos))\n" +
+          "  (class God (superclass Titan))\n" +
           ")",
     ),
   )

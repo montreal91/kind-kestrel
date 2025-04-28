@@ -158,7 +158,7 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
 
     consume(expectedType = Token.Type.IDENTIFIER, message = "Expect identifier after 'class'.")
     val identifier = previous
-
+    val superclass = superclass()
     consume(expectedType = Token.Type.LEFT_BRACE, message = "Expect '{' after class name.")
 
     while (!isLastToken && currentToken.type == Token.Type.IDENTIFIER) {
@@ -167,7 +167,17 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
     }
 
     consume(expectedType = Token.Type.RIGHT_BRACE, message = "Expect '}' at the end of the class declaration.")
-    statements.last().add(ClassDeclStmt(uid = uidGen(), identifier, methods))
+    statements.last().add(ClassDeclStmt(uid = uidGen(), identifier = identifier, superclass = superclass, methods = methods))
+  }
+
+  private fun superclass(): Token? {
+    if (currentToken.type == Token.Type.LESS) {
+      consume(expectedType = Token.Type.LESS, message = "Expect '<'")
+      consume(expectedType = Token.Type.IDENTIFIER, message = "Expect identifier after '<'")
+      return previous
+    }
+
+    return null
   }
 
   private fun statement() = when (currentToken.type) {

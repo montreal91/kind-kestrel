@@ -170,6 +170,14 @@ class AstToLispExprConverter(
     addIndent()
     sb.append("(class ${stmt.identifier.value}")
 
+    when (stmt.superclass == null) {
+      true -> {}
+      false -> {
+        sb.addSpaceIfNeeded()
+        sb.append("(superclass ${stmt.superclass.value})")
+      }
+    }
+
     if (stmt.methods.isEmpty()) {
       sb.append(")\n")
       return
