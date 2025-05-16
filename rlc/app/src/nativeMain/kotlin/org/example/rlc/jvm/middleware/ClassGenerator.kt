@@ -96,7 +96,7 @@ private fun generateConstructorCallMethod(className: String, arity: Int, methods
     code.add(SimpleOperation(Opcode.OP_DUP))
     code.addAll(
       LoxFunction.generateInstantiationCode(
-        functionName = "LoxFunction${method.name}",
+        functionName = "LoxMethod_${className}_${method.name}",
         outerFunctionName = "",
         enclosedVariables = method.enclosedVariables,
         currentCodeOffset = code.size
@@ -109,7 +109,7 @@ private fun generateConstructorCallMethod(className: String, arity: Int, methods
     code.add(SimpleOperation(Opcode.OP_DUP_2))
     code.add(SimpleOperation(Opcode.OP_SWAP))
     code.add(ShortConstantOperation(Opcode.OP_PUTFIELD, constant = JavaClass.generateFieldRef(
-      className = "LoxFunction${method.name}",
+      className = "LoxBasicCallable",
       fieldName = "__this__",
     )))
 
@@ -123,6 +123,7 @@ private fun generateConstructorCallMethod(className: String, arity: Int, methods
   if (hasInitializer(methods)) {
     // If there is an initializer, it should be called.
     code.add(SimpleOperation(Opcode.OP_DUP))
+    code.add(SimpleOperation(Opcode.OP_NOP))
     code.add(ByteConstantOperation(Opcode.OP_LDC, constant = StringRefInfo("init"), value = JavaString.VERIFICATION_TYPE))
     code.add(ByteConstantOperation(Opcode.OP_LDC, constant = StringRefInfo("No `init` error."), value = JavaString.VERIFICATION_TYPE))
     code.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, constant = getInstanceFieldMethodRef()))

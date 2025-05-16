@@ -144,13 +144,13 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     val instantiationCode = listOf(
       ShortConstantOperation(
         Opcode.OP_NEW,
-        ClassInfo(className = "LoxFunction$clock"),
-        ObjectVti(ClassInfo(className = "LoxFunction$clock"))
+        ClassInfo(className = "LoxFunction_$clock"),
+        ObjectVti(ClassInfo(className = "LoxFunction_$clock"))
       ),
       SimpleOperation(Opcode.OP_DUP),
       ShortConstantOperation(
         Opcode.OP_INVOKE_SPECIAL,
-        LoxFunction.generateConstructorInfo("LoxFunction$clock")
+        LoxFunction.generateConstructorInfo("LoxFunction_$clock")
       )
     )
 
@@ -209,7 +209,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     is IfStmt -> visitIfStatement(stmt)
     is WhileStmt -> visitWhileStmt(stmt)
     is ForStmt -> visitForStmt(stmt)
-    is FunDeclStmt -> visitFunDeclStmt(funDecl = stmt, isMethod = false)
+    is FunDeclStmt -> visitFunDeclStmt(funDecl = stmt, isMethod = false, prefix = "")
     is ReturnStmt -> visitReturnStmt(stmt)
     is ClassDeclStmt -> visitClassDeclStmt(classDeclStmt = stmt)
   }
@@ -266,7 +266,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     }
   }
 
-  private fun visitFunDeclStmt(funDecl: FunDeclStmt, isMethod: Boolean) {
+  private fun visitFunDeclStmt(funDecl: FunDeclStmt, isMethod: Boolean, prefix: String) {
     println("Compiling function. (function=${funDecl.identifier.value})")
     val outerCode = currentCode
     val outerFunction = currentFunction
@@ -282,7 +282,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     }
 
     val function = generateLoxFunction(
-      funDecl.identifier.value,
+      prefix + funDecl.identifier.value,
       funDecl.arity,
       currentCode,
       funDecl.enclosedVariables.map { it as EnclosedVariable },
@@ -302,7 +302,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       true -> {}
       false -> {
         val instantiationCode = LoxFunction.generateInstantiationCode(
-          functionName = "LoxFunction${funDecl.identifier.value}",
+          functionName = "LoxFunction_${funDecl.identifier.value}",
           outerFunctionName = outerFunction,
           enclosedVariables = funDecl.enclosedVariables.map { it as EnclosedVariable },
           currentCodeOffset = currentCode.size,
@@ -334,7 +334,8 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   private fun visitClassDeclStmt(classDeclStmt: ClassDeclStmt) {
     classes.add(generateInstanceClass(name = classDeclStmt.identifier.value))
 
-    classDeclStmt.methods.forEach { stmt -> visitFunDeclStmt(stmt, true) }
+    classDeclStmt.methods.forEach { stmt -> visitFunDeclStmt(stmt, true, prefix = classDeclStmt.identifier.value + "_") }
+
     val functionStuff = classDeclStmt.methods.map {
       stmt -> FunctionStuff(
         name = stmt.identifier.value,
@@ -359,7 +360,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     ))
 
     when (val resolution = resolutionTable.get(classDeclStmt.uid)) {
-      is GlobalVariable -> declGlobalVariable(variable = resolution)
+      is GlobalVariable -> declGlobalVariable(resolution)
       is LocalVariable -> setLocalVariable(resolution)
       is EnclosedVariable -> {
         println("A function can't be declared as an enclosed value.")
@@ -569,7 +570,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     currentCode.add(
       ShortConstantOperation(
         Opcode.OP_GETFIELD,
-        JavaClass.generateFieldRef("LoxFunction$currentFunction", "__this__"),
+        JavaClass.generateFieldRef("LoxBasicCallable", "__this__"),
         loxObjectVti,
       )
     )
