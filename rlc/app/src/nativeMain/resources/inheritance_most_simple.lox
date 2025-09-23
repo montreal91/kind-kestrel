@@ -1,0 +1,9 @@
+
+class Chaos {}
+
+class Titan < Chaos {}
+
+class God < Titan {}
+
+print "Now where is your god?";
+print "Does he hear you pray?";

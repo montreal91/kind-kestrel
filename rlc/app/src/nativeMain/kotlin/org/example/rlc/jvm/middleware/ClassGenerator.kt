@@ -21,7 +21,11 @@ import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
 import org.example.rlc.jvm.ir.toUtf8Value
 
-internal fun generateConstructorClass(name: String, arity: Int, functionStuff: List<FunctionStuff>): ClassFile {
+internal fun generateConstructorClass(
+  name: String,
+  arity: Int,
+  functionStuff: List<FunctionStuff>
+): ClassFile {
   return ClassFile(
     thisClassInfo = ClassInfo(className = "LoxClass_$name"),
     superClassInfo = ClassInfo(className = "LoxCallable$arity"),

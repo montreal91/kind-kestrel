@@ -83,6 +83,8 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   private val localVariables = mutableListOf<VerificationTypeInfo>()
   private val generatedCallables = mutableMapOf<Int, ClassFile>()
 
+  private val classStatements = mutableMapOf<String, ClassDeclStmt>()
+
   fun convert(roots: Ast): List<ClassFile> {
     println("==============================")
     println("The Translation stage started.\n")
@@ -274,7 +276,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     currentCode = mutableListOf()
     currentFunction = funDecl.identifier.value
 
-    visitBlockStmt(funDecl.body)
+    visitBlockStmt(stmt = funDecl.body)
 
     if (currentCode.isEmpty() || currentCode.last().opcode != Opcode.OP_ARETURN) {
       compileNil()
@@ -282,10 +284,10 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     }
 
     val function = generateLoxFunction(
-      prefix + funDecl.identifier.value,
+      name = prefix + funDecl.identifier.value,
       funDecl.arity,
       currentCode,
-      funDecl.enclosedVariables.map { it as EnclosedVariable },
+      enclosedVariables = funDecl.enclosedVariables.map { it as EnclosedVariable },
       isMethod = isMethod
     )
 
@@ -308,7 +310,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
           currentCodeOffset = currentCode.size,
         )
 
-        currentCode.addAll(instantiationCode)
+        currentCode.addAll(elements = instantiationCode)
       }
     }
 
@@ -324,7 +326,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       }
 
       UnresolvedVariable -> throw IllegalStateException(
-        "Variable ${funDecl.identifier} is unresolved, but expected to be resolved"
+        message = "Variable ${funDecl.identifier} is unresolved, but expected to be resolved"
       )
     }
 
@@ -333,16 +335,17 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
 
   private fun visitClassDeclStmt(classDeclStmt: ClassDeclStmt) {
     classes.add(generateInstanceClass(name = classDeclStmt.identifier.value))
+    classStatements[classDeclStmt.identifier.value] = classDeclStmt
 
-    classDeclStmt.methods.forEach { stmt -> visitFunDeclStmt(stmt, true, prefix = classDeclStmt.identifier.value + "_") }
-
-    val functionStuff = classDeclStmt.methods.map {
-      stmt -> FunctionStuff(
-        name = stmt.identifier.value,
-        enclosedVariables = stmt.enclosedVariables.map{ it as EnclosedVariable }.toList()
+    classDeclStmt.methods.forEach { stmt ->
+      visitFunDeclStmt(
+        funDecl = stmt,
+        isMethod = true,
+        prefix = classDeclStmt.identifier.value + "_"
       )
     }
 
+    val functionStuff = copyDownMethods(stmt = classDeclStmt)
     val constructor = generateConstructorClass(
       name = classDeclStmt.identifier.value,
       functionStuff = functionStuff,
@@ -352,22 +355,24 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     classes.add(constructor)
 
     /// Constructor method initialization code goes here
-    currentCode.addAll(LoxFunction.generateInstantiationCode(
-      functionName = constructor.thisClassInfo.className.encodedString,
-      outerFunctionName = "",
-      enclosedVariables = listOf(),
-      currentCodeOffset = currentCode.size,
-    ))
+    currentCode.addAll(
+      elements = LoxFunction.generateInstantiationCode(
+        functionName = constructor.thisClassInfo.className.encodedString,
+        outerFunctionName = "",
+        enclosedVariables = listOf(),
+        currentCodeOffset = currentCode.size,
+      )
+    )
 
     when (val resolution = resolutionTable.get(classDeclStmt.uid)) {
-      is GlobalVariable -> declGlobalVariable(resolution)
+      is GlobalVariable -> declGlobalVariable(variable = resolution)
       is LocalVariable -> setLocalVariable(resolution)
       is EnclosedVariable -> {
         println("A function can't be declared as an enclosed value.")
       }
 
       UnresolvedVariable -> throw IllegalStateException(
-        "Variable ${classDeclStmt.identifier} is unresolved, but expected to be resolved"
+        message = "Variable ${classDeclStmt.identifier} is unresolved, but expected to be resolved"
       )
     }
   }
@@ -878,6 +883,38 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   }
 
   private fun getLocalVariableArraySize() = resolutionTable.getMaxIndex() + 2
+
+  private fun copyDownMethods(stmt: ClassDeclStmt): List<FunctionStuff> {
+    val methods = mutableMapOf<String, FunDeclStmt>()
+
+    println("-> Copying down methods for the class ${stmt.identifier.value}")
+    println("--> Known classes: ${classStatements.keys}")
+
+    stmt.superclass?.let { superClass -> println("--> Inheriting methods from the class ${superClass.value}") }
+
+    // Super Methods
+    if (stmt.superclass != null) {
+      println("----> Super class name: [${stmt.superclass.value}]")
+      val decl = classStatements[stmt.superclass.value]!!
+      println("----> Super class decl: $decl")
+      decl.methods.forEach { method -> methods[method.identifier.value] = method }
+      println("----> Super class methods: ${decl.methods.size}")
+    }
+
+    println("--> ${methods.size} methods copied down for the class ${stmt.identifier.value}")
+
+    // Not Super Methods
+    stmt.methods.forEach { method -> methods[method.identifier.value] = method }
+
+    println("--> ${methods.size} total methods for the class ${stmt.identifier.value}")
+    println("<- Finished copying down methods for the class ${stmt.identifier.value}")
+    return methods.values.map { m ->
+      FunctionStuff(
+        name = m.identifier.value,
+        enclosedVariables = m.enclosedVariables.map { it as EnclosedVariable }.toList()
+      )
+    }
+  }
 
   private fun publicStaticVoidMain(): MethodInfo {
     currentCode.add(SimpleOperation(opcode = Opcode.OP_RETURN))

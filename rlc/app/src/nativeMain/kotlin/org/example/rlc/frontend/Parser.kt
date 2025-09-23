@@ -167,7 +167,14 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
     }
 
     consume(expectedType = Token.Type.RIGHT_BRACE, message = "Expect '}' at the end of the class declaration.")
-    statements.last().add(ClassDeclStmt(uid = uidGen(), identifier = identifier, superclass = superclass, methods = methods))
+    statements.last().add(
+        ClassDeclStmt(
+            uid = uidGen(),
+            identifier = identifier,
+            superclass = superclass,
+            methods = methods
+        )
+    )
   }
 
   private fun superclass(): Token? {

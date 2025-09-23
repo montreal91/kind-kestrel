@@ -1,0 +1,11 @@
+
+class Chaos {
+  say() {
+    print "Chaos Noises";
+  }
+}
+
+class Earth < Chaos {}
+
+print "Expected: Chaos Noises";
+Earth().say();
