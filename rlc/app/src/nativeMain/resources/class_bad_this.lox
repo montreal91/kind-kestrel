@@ -1,0 +1,8 @@
+
+fun function() {
+  this.y = 1;
+  print "should not be printed";
+}
+
+
+function();

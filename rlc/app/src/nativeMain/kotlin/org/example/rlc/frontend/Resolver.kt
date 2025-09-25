@@ -33,13 +33,19 @@ import org.example.rlc.frontend.scope.LocalVariable
 import org.example.rlc.frontend.scope.VariableResolutionResult
 import org.example.rlc.frontend.scope.VariableResolutionTable
 
+/**
+ * A `Resolver` is responsible for the semantic analysis of an abstract syntax tree (AST)
+ * in the context of variable resolution. It ensures that variables are properly declared
+ * and resolves every variable to a specific scope, identifying whether it is global, local, or enclosed.
+ *
+ * This class runs the resolution process to analyze declarations, detect scoping issues,
+ * and assign the appropriate variable resolution information for each identifier.
+ */
 @OptIn(ExperimentalUuidApi::class)
 class Resolver {
   private val resolutionTable = VariableResolutionTable()
   private val frameStack = FrameStack()
   private val errors = mutableListOf<LoxCompileError>()
-
-  private val functionContexts = ArrayDeque<FunctionContext>()
 
   private val log = Resolver::class.qualifiedName?.let { Logger.withTag(it) }
 
@@ -113,8 +119,6 @@ class Resolver {
       type = Frame.Type.FUNCTION,
       frameName = stmt.identifier.value
     )
-    functionContexts.addLast(FunctionContext())
-
     for (param in stmt.parameters) {
       checkVariable(param.identifier)
       resolveVariableDeclaration(uid = param.uid, variable = param.identifier.value)
@@ -139,8 +143,6 @@ class Resolver {
         name = ev.key, depth = -1, enclosedObject = enclosedObject
       ))
     }
-
-    functionContexts.removeLast()
   }
 
   private fun visitClassDeclStmt(classDecl: ClassDeclStmt) {
@@ -279,7 +281,7 @@ class Resolver {
     } else {
       frameStack.declareVariable(variable, uid)
 
-      // Defines, in which local variable array index
+      // Defines, in which a local variable array index
       // this variable should resolve to
       val lookup = frameStack.lookup(variable)
       resolutionTable.set(

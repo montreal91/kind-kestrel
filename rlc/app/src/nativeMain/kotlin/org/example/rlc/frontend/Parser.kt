@@ -29,57 +29,24 @@ import org.example.rlc.frontend.ast.WhileStmt
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-private val equalityTokens = setOf(
-  Token.Type.EQUAL_EQUAL,
-  Token.Type.BANG_EQUAL,
-)
-
-private val comparisonTokens = setOf(
-  Token.Type.GREATER,
-  Token.Type.GREATER_EQUAL,
-  Token.Type.LESS,
-  Token.Type.LESS_EQUAL,
-)
-
-private fun Token.isPlusOrMinus() = when (this.type) {
-  Token.Type.PLUS -> true
-  Token.Type.MINUS -> true
-  else -> false
-}
-
-
-private fun Token.isStarOrSlash() = when (this.type) {
-  Token.Type.STAR -> true
-  Token.Type.SLASH -> true
-  else -> false
-}
-
-private fun Token.isUnaryOperator() = when (this.type) {
-  Token.Type.MINUS -> true
-  Token.Type.BANG -> true
-  else -> false
-}
-
-private val terminals = setOf(
-  Token.Type.TRUE,
-  Token.Type.FALSE,
-  Token.Type.NIL,
-  Token.Type.THIS,
-  Token.Type.NUMBER,
-  Token.Type.STRING,
-  Token.Type.IDENTIFIER
-)
-
-private fun Token.isTerminal() = when {
-  terminals.contains(this.type) -> true
-  else -> false
-}
-
-private class ParserException(msg: String) : Exception(msg)
-
-@OptIn(ExperimentalUuidApi::class)
-private fun defaultUidGen() = Uuid.random()
-
+/**
+ * A `Parser` processes a sequence of tokens and translates them into a list of syntax tree statements.
+ *
+ * The parser validates the syntactic structure of input tokens based on predefined grammar rules
+ * and organizes them into an abstract syntax tree (AST) structure. It also handles error reporting
+ * during the parsing phase by throwing exceptions or synchronizing after encountering errors. The
+ * resulting statement tree can then be used for interpretation or compilation processes.
+ *
+ * @property tokens List of tokens to be parsed, typically produced by a scanner or lexer.
+ * @property uidGen A function that generates unique identifiers for nodes during parsing.
+ * @property hasErrors Indicates if any parsing errors have occurred during processing.
+ * @property statements A stack of syntax statements under construction while parsing.
+ * @property errors A list of errors encountered during parsing for reporting or debugging.
+ * @property index Current index of the token being processed.
+ * @property currentToken Reference to the current token being processed.
+ * @property previous Reference to the previously processed token.
+ * @property isLastToken Evaluates if the parser has reached the end of the token stream.
+ */
 @OptIn(ExperimentalUuidApi::class)
 class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = ::defaultUidGen) {
   val hasErrors: Boolean get() = errors.isNotEmpty()
@@ -571,3 +538,55 @@ private fun tokenTypeToLiteralType(tokenType: Token.Type) = when (tokenType) {
   Token.Type.NIL -> Literal.Type.NIL_TYPE
   else -> error("Token $tokenType does not represent a valid literal.")
 }
+
+
+private val equalityTokens = setOf(
+  Token.Type.EQUAL_EQUAL,
+  Token.Type.BANG_EQUAL,
+)
+
+private val comparisonTokens = setOf(
+  Token.Type.GREATER,
+  Token.Type.GREATER_EQUAL,
+  Token.Type.LESS,
+  Token.Type.LESS_EQUAL,
+)
+
+private fun Token.isPlusOrMinus() = when (this.type) {
+  Token.Type.PLUS -> true
+  Token.Type.MINUS -> true
+  else -> false
+}
+
+
+private fun Token.isStarOrSlash() = when (this.type) {
+  Token.Type.STAR -> true
+  Token.Type.SLASH -> true
+  else -> false
+}
+
+private fun Token.isUnaryOperator() = when (this.type) {
+  Token.Type.MINUS -> true
+  Token.Type.BANG -> true
+  else -> false
+}
+
+private val terminals = setOf(
+  Token.Type.TRUE,
+  Token.Type.FALSE,
+  Token.Type.NIL,
+  Token.Type.THIS,
+  Token.Type.NUMBER,
+  Token.Type.STRING,
+  Token.Type.IDENTIFIER
+)
+
+private fun Token.isTerminal() = when {
+  terminals.contains(this.type) -> true
+  else -> false
+}
+
+private class ParserException(msg: String) : Exception(msg)
+
+@OptIn(ExperimentalUuidApi::class)
+private fun defaultUidGen() = Uuid.random()

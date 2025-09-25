@@ -24,6 +24,28 @@ import platform.posix.exit
 import kotlin.uuid.ExperimentalUuidApi
 
 
+/**
+ * Represents a CLI (Command Line Interface) application that processes commands and arguments for
+ * a compiler program. This class extends CliktCommand to handle user interaction via the command line.
+ *
+ * The available parameters include:
+ * - A required file path to process.
+ * - Optional flags for additional functionality like enabling debug mode or printing the program's AST.
+ *
+ * Parameters:
+ * - `path`: The path to the file to be processed, provided as a required command-line argument.
+ * - `debugMode`: An optional flag (`--debug`), which enables additional debug-related tasks during compilation.
+ * - `printAst`: An optional flag (`--print-ast`), which triggers pretty-printing the abstract syntax tree (AST)
+ *               of the program instead of compilation.
+ *
+ * Behavior:
+ * - If the `--print-ast` flag is supplied, the program parses the file to an
+ *   AST and outputs its human-readable representation.
+ *   This is achieved using the `prettyPrintAst` function.
+ * - If no flags are supplied, the program compiles the file into JAR or raw classes,
+ *   depending on the presence of the `--debug` flag.
+ *   The compilation process is handled internally by the `compile` function.
+ */
 internal class Cli : CliktCommand() {
   private val path: String by argument(help = "Path to the file.")
   private val debugMode: Boolean by option(
@@ -38,6 +60,17 @@ internal class Cli : CliktCommand() {
     help = "Pretty-print ast of the program."
   ).flag()
 
+  /**
+   * Executes the primary logic of the CLI application based on the provided command-line arguments.
+   *
+   * Behavior:
+   * - If the `--print-ast` flag is set, it calls the `prettyPrintAst` function to parse the file
+   *   and output its abstract syntax tree (AST) in a human-readable format.
+   * - Otherwise, it invokes the `compile` function to process the file, which can generate either plain class
+   *   files or a JAR file depending on whether the `--debug` flag is enabled.
+   *
+   * This function acts as an entry point to determine the application's runtime behavior.
+   */
   override fun run() {
     if (printAst) {
       prettyPrintAst(path)
@@ -75,6 +108,15 @@ internal fun readFile(pathName: String): String {
   throw RuntimeException("This should never happen.")
 }
 
+/**
+ * Compiles a source file into an executable format, handling lexical analysis, parsing,
+ * semantic analysis, and code generation. Depending on the provided debug mode,
+ * compilation outputs could include plain files or a JAR file.
+ *
+ * @param pathName The path to the source file to be compiled.
+ * @param debugMode A flag indicating whether to compile in debug mode.
+ *        If true, the output will be plain class files. If false, the output will be a JAR file.
+ */
 @OptIn(ExperimentalForeignApi::class, ExperimentalUuidApi::class)
 private fun compile(pathName: String, debugMode: Boolean) {
   val programText = readFile(pathName)

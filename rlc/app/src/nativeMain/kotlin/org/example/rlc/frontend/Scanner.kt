@@ -1,54 +1,13 @@
 package org.example.rlc.frontend
 
-private val keywords = mapOf(
-  Pair("and", Token.Type.AND),
-  Pair("class", Token.Type.CLASS),
-  Pair("else", Token.Type.ELSE),
-  Pair("false", Token.Type.FALSE),
-  Pair("for", Token.Type.FOR),
-  Pair("fun", Token.Type.FUN),
-  Pair("if", Token.Type.IF),
-  Pair("nil", Token.Type.NIL),
-  Pair("or", Token.Type.OR),
-  Pair("print", Token.Type.PRINT),
-  Pair("return", Token.Type.RETURN),
-  Pair("super", Token.Type.SUPER),
-  Pair("this", Token.Type.THIS),
-  Pair("true", Token.Type.TRUE),
-  Pair("var", Token.Type.VAR),
-  Pair("while", Token.Type.WHILE),
-)
-
-private val punctuatorStart = mapOf(
-  Pair('+', Token.Type.PLUS),
-  Pair('-', Token.Type.MINUS),
-  Pair('*', Token.Type.STAR),
-  Pair('(', Token.Type.LEFT_PAREN),
-  Pair(')', Token.Type.RIGHT_PAREN),
-  Pair('{', Token.Type.LEFT_BRACE),
-  Pair('}', Token.Type.RIGHT_BRACE),
-  Pair(',', Token.Type.COMMA),
-  Pair(';', Token.Type.SEMICOLON),
-  Pair('.', Token.Type.DOT),
-  Pair('!', Token.Type.BANG),
-  Pair('=', Token.Type.EQUAL),
-  Pair('>', Token.Type.GREATER),
-  Pair('<', Token.Type.LESS),
-)
-
-private val doubleCharPunctuators = mapOf(
-  Pair('!', Token.Type.BANG_EQUAL),
-  Pair('=', Token.Type.EQUAL_EQUAL),
-  Pair('>', Token.Type.GREATER_EQUAL),
-  Pair('<', Token.Type.LESS_EQUAL),
-)
-
-private fun Char.isIdentifierStart(): Boolean = this == '_' || this.isLetter()
-
-private fun Char.isPunctuatorStart(): Boolean = this in punctuatorStart.keys
-
-private fun Char.isDoubleCharPunctuator(): Boolean = this in doubleCharPunctuators.keys
-
+/**
+ * The `Scanner` class is responsible for performing lexical analysis on a given string input.
+ * It tokenizes the input text into meaningful symbols (tokens) or identifies errors,
+ * which can then be processed further by the compiler or interpreter.
+ *
+ * @property text The input string that the scanner reads and tokenizes.
+ * @property hasErrors Indicates whether the scanner has encountered any lexical errors.
+ */
 class Scanner(private val text: String) {
   val hasErrors get() = errors.isNotEmpty()
 
@@ -74,6 +33,14 @@ class Scanner(private val text: String) {
 
   fun getErrors(): List<LoxCompileError> = errors.toList()
 
+  /**
+   * Scans through the source text to generate a list of tokens for further processing.
+   * The method parses the input text, identifies various components such as keywords, identifiers, numbers,
+   * strings, comments, and punctuators, and classifies them into corresponding token types.
+   * It also handles errors such as unexpected characters and unterminated strings.
+   *
+   * @return A list of tokens representing the lexical structure of the input text.
+   */
   fun scan(): List<Token> {
     while (!atEnd) {
       skipWhitespace()
@@ -204,3 +171,52 @@ class Scanner(private val text: String) {
     advance()
   }
 }
+
+private val keywords = mapOf(
+  Pair("and", Token.Type.AND),
+  Pair("class", Token.Type.CLASS),
+  Pair("else", Token.Type.ELSE),
+  Pair("false", Token.Type.FALSE),
+  Pair("for", Token.Type.FOR),
+  Pair("fun", Token.Type.FUN),
+  Pair("if", Token.Type.IF),
+  Pair("nil", Token.Type.NIL),
+  Pair("or", Token.Type.OR),
+  Pair("print", Token.Type.PRINT),
+  Pair("return", Token.Type.RETURN),
+  Pair("super", Token.Type.SUPER),
+  Pair("this", Token.Type.THIS),
+  Pair("true", Token.Type.TRUE),
+  Pair("var", Token.Type.VAR),
+  Pair("while", Token.Type.WHILE),
+)
+
+private val punctuatorStart = mapOf(
+  Pair('+', Token.Type.PLUS),
+  Pair('-', Token.Type.MINUS),
+  Pair('*', Token.Type.STAR),
+  Pair('(', Token.Type.LEFT_PAREN),
+  Pair(')', Token.Type.RIGHT_PAREN),
+  Pair('{', Token.Type.LEFT_BRACE),
+  Pair('}', Token.Type.RIGHT_BRACE),
+  Pair(',', Token.Type.COMMA),
+  Pair(';', Token.Type.SEMICOLON),
+  Pair('.', Token.Type.DOT),
+  Pair('!', Token.Type.BANG),
+  Pair('=', Token.Type.EQUAL),
+  Pair('>', Token.Type.GREATER),
+  Pair('<', Token.Type.LESS),
+)
+
+private val doubleCharPunctuators = mapOf(
+  Pair('!', Token.Type.BANG_EQUAL),
+  Pair('=', Token.Type.EQUAL_EQUAL),
+  Pair('>', Token.Type.GREATER_EQUAL),
+  Pair('<', Token.Type.LESS_EQUAL),
+)
+
+private fun Char.isIdentifierStart(): Boolean = this == '_' || this.isLetter()
+
+private fun Char.isPunctuatorStart(): Boolean = this in punctuatorStart.keys
+
+private fun Char.isDoubleCharPunctuator(): Boolean = this in doubleCharPunctuators.keys
