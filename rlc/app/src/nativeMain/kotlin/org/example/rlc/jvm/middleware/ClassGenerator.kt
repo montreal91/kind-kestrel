@@ -21,6 +21,17 @@ import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
 import org.example.rlc.jvm.ir.toUtf8Value
 
+/**
+ * Generates a class file for a constructor class.
+ * The generated class inherits from a parent callable class with the specified arity.
+ * It creates methods such as the default constructor, a callable constructor,
+ * a string representation method, and an arity method.
+ *
+ * @param name the name of the constructor class to be generated
+ * @param arity the arity (number of arguments) of the callable constructor
+ * @param functionStuff a list of function metadata required for generating constructor logic
+ * @return a ClassFile instance representing the generated constructor class
+ */
 internal fun generateConstructorClass(
   name: String,
   arity: Int,
@@ -42,6 +53,12 @@ internal fun generateConstructorClass(
   )
 }
 
+/**
+ * Generates a `ClassFile` instance representing an instance class for the given name.
+ *
+ * @param name The name of the instance for which the class is being generated.
+ * @return A `ClassFile` object that represents the generated instance class.
+ */
 internal fun generateInstanceClass(name: String): ClassFile {
   val instanceClassName = "LoxInstance_$name"
 
@@ -88,18 +105,29 @@ private fun generateToStringMethod(output: String): MethodInfo {
   )
 }
 
-private fun generateConstructorCallMethod(className: String, arity: Int, methods: List<FunctionStuff>): MethodInfo {
+private fun generateConstructorCallMethod(
+  className: String,
+  arity: Int,
+  methods: List<FunctionStuff>
+): MethodInfo {
   val loxInstanceCi = ClassInfo(className = "LoxInstance_$className")
   val code = mutableListOf(
-    ShortConstantOperation(Opcode.OP_NEW, constant = loxInstanceCi, value = ObjectVti(classInfo = loxInstanceCi)),
+    ShortConstantOperation(
+      Opcode.OP_NEW,
+      constant = loxInstanceCi,
+      value = ObjectVti(classInfo = loxInstanceCi)
+    ),
     SimpleOperation(Opcode.OP_DUP),
-    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, constant = generateConstructorMethodRef(className = "LoxInstance_$className")),
+    ShortConstantOperation(
+      Opcode.OP_INVOKE_SPECIAL,
+      constant = generateConstructorMethodRef(className = "LoxInstance_$className")
+    ),
   )
 
   for (method in methods) {
     code.add(SimpleOperation(Opcode.OP_DUP))
     code.addAll(
-      LoxFunction.generateInstantiationCode(
+      elements = LoxFunction.generateInstantiationCode(
         functionName = "LoxMethod_${method.classItBelongsTo}_${method.name}",
         outerFunctionName = "",
         enclosedVariables = method.enclosedVariables,
@@ -112,14 +140,24 @@ private fun generateConstructorCallMethod(className: String, arity: Int, methods
     // put the object into function
     code.add(SimpleOperation(Opcode.OP_DUP_2))
     code.add(SimpleOperation(Opcode.OP_SWAP))
-    code.add(ShortConstantOperation(Opcode.OP_PUTFIELD, constant = JavaClass.generateFieldRef(
-      className = "LoxBasicCallable",
-      fieldName = "__this__",
-    )))
+    code.add(
+      ShortConstantOperation(
+        Opcode.OP_PUTFIELD, constant = JavaClass.generateFieldRef(
+          className = "LoxBasicCallable",
+          fieldName = "__this__",
+        )
+      )
+    )
 
-    // here on stack should be [object, function] again
+    // here on the stack should be [object, function] again
 
-    code.add(ByteConstantOperation(Opcode.OP_LDC, constant = StringRefInfo(method.name), value = JavaString.VERIFICATION_TYPE))
+    code.add(
+      ByteConstantOperation(
+        Opcode.OP_LDC,
+        constant = StringRefInfo(value = method.name),
+        value = JavaString.VERIFICATION_TYPE
+      )
+    )
     code.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, constant = setInstanceFieldMethodRef()))
     code.add(SimpleOperation(Opcode.OP_POP)) // Remove LoxNil from the stack
   }
@@ -128,17 +166,39 @@ private fun generateConstructorCallMethod(className: String, arity: Int, methods
     // If there is an initializer, it should be called.
     code.add(SimpleOperation(Opcode.OP_DUP))
     code.add(SimpleOperation(Opcode.OP_NOP))
-    code.add(ByteConstantOperation(Opcode.OP_LDC, constant = StringRefInfo("init"), value = JavaString.VERIFICATION_TYPE))
-    code.add(ByteConstantOperation(Opcode.OP_LDC, constant = StringRefInfo("No `init` error."), value = JavaString.VERIFICATION_TYPE))
+    code.add(
+      ByteConstantOperation(
+        Opcode.OP_LDC,
+        constant = StringRefInfo("init"),
+        value = JavaString.VERIFICATION_TYPE
+      )
+    )
+    code.add(
+      ByteConstantOperation(
+        Opcode.OP_LDC,
+        constant = StringRefInfo("No `init` error."),
+        value = JavaString.VERIFICATION_TYPE
+      )
+    )
     code.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, constant = getInstanceFieldMethodRef()))
 
-    code.add(ShortConstantOperation(Opcode.OP_CHECKCAST, constant = ClassInfo("LoxCallable$arity")))
+    code.add(
+      ShortConstantOperation(
+        Opcode.OP_CHECKCAST,
+        constant = ClassInfo(className = "LoxCallable$arity")
+      )
+    )
 
-    for (i in 1 .. arity) {
+    for (i in 1..arity) {
       code.add(OperationWithIndex(Opcode.OP_ALOAD, index = i.toByte(), value = loxObjectVti))
     }
 
-    code.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, LoxFunction.generateCallMethodRef(arity)))
+    code.add(
+      ShortConstantOperation(
+        Opcode.OP_INVOKE_VIRTUAL,
+        LoxFunction.generateCallMethodRef(arity)
+      )
+    )
     code.add(SimpleOperation(Opcode.OP_POP)) // Remove LoxNil from the stack
   }
 
@@ -166,17 +226,29 @@ private fun objectFieldMap() = FieldInfo(
 private fun getFieldMethod(instanceClassName: String): MethodInfo {
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, objectFieldMapReference(instanceClassName), JavaHashMap.VERIFICATION_TYPE),
+    ShortConstantOperation(
+      Opcode.OP_GETFIELD,
+      constant = objectFieldMapReference(instanceClassName),
+      value = JavaHashMap.VERIFICATION_TYPE
+    ),
     SimpleOperation(Opcode.OP_ALOAD_1),
-    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, JavaHashMap.CONTAINS_KEY),
+    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, constant = JavaHashMap.CONTAINS_KEY),
     ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 11),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, objectFieldMapReference(instanceClassName), JavaHashMap.VERIFICATION_TYPE),
+    ShortConstantOperation(
+      Opcode.OP_GETFIELD,
+      constant = objectFieldMapReference(instanceClassName),
+      value = JavaHashMap.VERIFICATION_TYPE
+    ),
     SimpleOperation(Opcode.OP_ALOAD_1),
-    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, JavaHashMap.GET),
-    ShortConstantOperation(Opcode.OP_CHECKCAST, loxObjectClassInfo),
+    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, constant = JavaHashMap.GET),
+    ShortConstantOperation(Opcode.OP_CHECKCAST, constant = loxObjectClassInfo),
     SimpleOperation(Opcode.OP_ARETURN),
-    ShortConstantOperation(Opcode.OP_NEW, loxRuntimeErrorClassInfo, ObjectVti(loxRuntimeErrorClassInfo)),
+    ShortConstantOperation(
+      Opcode.OP_NEW,
+      constant = loxRuntimeErrorClassInfo,
+      value = ObjectVti(loxRuntimeErrorClassInfo)
+    ),
     SimpleOperation(Opcode.OP_DUP),
     SimpleOperation(Opcode.OP_ALOAD_2),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, runtimeErrorConstructorRef()),
@@ -229,7 +301,11 @@ internal fun setInstanceFieldMethodRef(): MethodRefInfo {
 private fun setFieldMethod(instanceClassName: String): MethodInfo {
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_GETFIELD, constant = objectFieldMapReference(instanceClassName), value = JavaHashMap.VERIFICATION_TYPE),
+    ShortConstantOperation(
+      Opcode.OP_GETFIELD,
+      constant = objectFieldMapReference(instanceClassName),
+      value = JavaHashMap.VERIFICATION_TYPE
+    ),
     SimpleOperation(Opcode.OP_ALOAD_2),
     SimpleOperation(Opcode.OP_ALOAD_1),
     ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, constant = JavaHashMap.PUT),
@@ -272,12 +348,25 @@ private fun objectFieldMapReference(instanceClassName: String) = FieldRefInfo(
 private fun generateInstanceConstructor(thisClassName: String, superClassName: String): MethodInfo {
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, generateConstructorMethodRef(superClassName)),
+    ShortConstantOperation(
+      Opcode.OP_INVOKE_SPECIAL,
+      constant = generateConstructorMethodRef(superClassName)
+    ),
     SimpleOperation(Opcode.OP_ALOAD_0),
-    ShortConstantOperation(Opcode.OP_NEW, JavaHashMap.CLASS_INFO, JavaHashMap.VERIFICATION_TYPE),
+    ShortConstantOperation(
+      Opcode.OP_NEW,
+      constant = JavaHashMap.CLASS_INFO,
+      value = JavaHashMap.VERIFICATION_TYPE
+    ),
     SimpleOperation(Opcode.OP_DUP),
-    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, JavaHashMap.CONSTRUCTOR),
-    ShortConstantOperation(Opcode.OP_PUTFIELD, objectFieldMapReference(thisClassName)),
+    ShortConstantOperation(
+      Opcode.OP_INVOKE_SPECIAL,
+      constant = JavaHashMap.CONSTRUCTOR
+    ),
+    ShortConstantOperation(
+      Opcode.OP_PUTFIELD,
+      constant = objectFieldMapReference(instanceClassName = thisClassName)
+    ),
     SimpleOperation(Opcode.OP_RETURN)
   )
 
@@ -286,7 +375,7 @@ private fun generateInstanceConstructor(thisClassName: String, superClassName: S
     accessFlagList = listOf(),
     attributeList = listOf(CodeAttribute(code = code, argsSize = 1)),
     isStatic = false,
-    signature = MethodSignature(listOf(), EmptyVti())
+    signature = MethodSignature(arguments = listOf(), returnType = EmptyVti())
   )
 }
 

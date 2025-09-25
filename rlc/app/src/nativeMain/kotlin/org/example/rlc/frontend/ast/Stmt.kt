@@ -46,16 +46,6 @@ class ClassDeclStmt(
   val identifier: Token,
   val superclass: Token?,
   val methods: List<FunDeclStmt>
-): Stmt(uid) {
-  fun getConstructorArity(): Int {
-    for (method in methods) {
-      if (method.identifier.value == "init") {
-        return method.arity
-      }
-    }
-
-    return 0
-  }
-}
+): Stmt(uid)
 
 typealias Ast = List<Stmt>

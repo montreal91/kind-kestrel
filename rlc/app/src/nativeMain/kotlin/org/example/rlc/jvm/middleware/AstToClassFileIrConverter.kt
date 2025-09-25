@@ -1,5 +1,6 @@
 package org.example.rlc.jvm.middleware
 
+import co.touchlab.kermit.Logger
 import org.example.rlc.frontend.Token
 import org.example.rlc.frontend.ast.Assign
 import org.example.rlc.frontend.ast.Ast
@@ -63,6 +64,38 @@ import org.example.rlc.jvm.ir.toUtf8Value
 import kotlin.uuid.ExperimentalUuidApi
 
 
+/**
+ * Converts abstract syntax tree (AST) nodes into intermediate representation (IR) for class files.
+ * This class processes the AST and translates its constructs into a Java-like class file structure,
+ * suitable for a JVM environment.
+ *
+ * @constructor Initializes a new instance of AstToClassFileIrConverter.
+ *
+ * @property resolutionTable Maintains variable resolution mappings during conversion, enabling
+ *           correct handling of scopes and variable accesses.
+ * @property objectClass Represents the base class information for the `LoxObject`.
+ *           Serves as the foundation for other classes.
+ * @property classes A container holding the list of class file representations generated during the
+ *           conversion process.
+ * @property currentCode Tracks the current method/callable code being generated during conversion.
+ * @property currentFunction Refers to the function under construction while processing its AST representation.
+ * @property methodRefs Holds references to generated methods for reuse in bytecode generation.
+ * @property localVariables Tracks the set of local variables during function/method compilation.
+ * @property generatedCallables Maintains a registry of callable entities (functions, methods) created during conversion.
+ * @property classStatements Holds processed class-related statements within the current scope.
+ * @property log Used for recording operations, diagnostics, or transformations during conversion.
+ *
+ * The methods in this class implement a visitor pattern for traversing the AST and processing
+ * specific nodes (e.g., statements, expressions) to generate the corresponding IR. Internal
+ * helper functions handle scoped variable resolution, arithmetic operations, logical expressions,
+ * and callable entity definitions.
+ *
+ * Usage of this class involves providing a root AST node and invoking the `convert` function,
+ * which returns a list of compiled class file representations.
+ *
+ * @see VariableResolutionTable for maintaining variable scopes and resolutions.
+ * @see ClassFile for the intermediate representation of a compiled class.
+ */
 @OptIn(markerClass = [ExperimentalUuidApi::class])
 class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionTable) {
   private val objectClass = javaLangObjectClassInfo
@@ -82,20 +115,32 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   private val methodRefs = mutableMapOf<Token.Type, MethodRefInfo>()
   private val localVariables = mutableListOf<VerificationTypeInfo>()
   private val generatedCallables = mutableMapOf<Int, ClassFile>()
-
   private val classStatements = mutableMapOf<String, ClassDeclStmt>()
 
+  private val log = AstToClassFileIrConverter::class.qualifiedName?.let { Logger.withTag(tag = it) }
+
+  /**
+   * Translates the provided abstract syntax tree (AST) into a list of class files.
+   *
+   * This method is the main entry point for the translation stage, where the AST is processed
+   * and converted into an intermediate representation usable as class files. It initializes
+   * global structures, processes statements in the AST, handles callable entities, and
+   * finalizes the generated class structures.
+   *
+   * @param roots the abstract syntax tree (AST) to be processed and converted
+   * @return a list of generated class files
+   */
   fun convert(roots: Ast): List<ClassFile> {
-    println("==============================")
-    println("The Translation stage started.\n")
+    log?.d(messageString = "==============================")
+    log?.d(messageString = "The Translation stage started.")
 
     initGlobals()
-    roots.forEach(this::visitStmt)
+    roots.forEach(action = this::visitStmt)
     handleCallables()
     finalizeClass()
 
-    println("The Translation stage ended.\n")
-    println("============================")
+    log?.d(messageString = "The Translation stage ended.")
+    log?.d(messageString = "============================")
 
     return classes.toList()
   }
@@ -254,7 +299,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   private fun visitVarDecl(stmt: VarDeclStmt) {
     stmt.initializer?.let(this::visitExpr) ?: compileNil()
 
-    // This actually stores LoxPointer inside global or local variable
+    // This actually stores LoxPointer inside the global or local variable
     when (val resolution = resolutionTable.get(stmt.uid)) {
       is LocalVariable -> declLocalVariable(resolution)
       is GlobalVariable -> declGlobalVariable(resolution)
@@ -334,6 +379,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   }
 
   private fun visitClassDeclStmt(classDeclStmt: ClassDeclStmt) {
+    log?.d(messageString = "Compiling class. (class=${classDeclStmt.identifier.value})")
     classes.add(generateInstanceClass(name = classDeclStmt.identifier.value))
     classStatements[classDeclStmt.identifier.value] = classDeclStmt
 
@@ -349,7 +395,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     val constructor = generateConstructorClass(
       name = classDeclStmt.identifier.value,
       functionStuff = functionStuff,
-      arity = classDeclStmt.getConstructorArity()
+      arity = calculateClassConstructorArity(classDeclStmt),
     )
 
     classes.add(constructor)
@@ -368,13 +414,18 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       is GlobalVariable -> declGlobalVariable(variable = resolution)
       is LocalVariable -> setLocalVariable(resolution)
       is EnclosedVariable -> {
-        println("A function can't be declared as an enclosed value.")
+        log?.e(messageString = "A function can't be declared as an enclosed value.")
+        throw IllegalStateException(
+          message = "Variable ${classDeclStmt.identifier} is unresolved, but expected to be resolved"
+        )
       }
 
       UnresolvedVariable -> throw IllegalStateException(
         message = "Variable ${classDeclStmt.identifier} is unresolved, but expected to be resolved"
       )
     }
+
+    log?.d(messageString = "Finished compiling class. (class=${classDeclStmt.identifier.value})")
   }
 
   private fun visitIfStatement(stmt: IfStmt) {
@@ -708,7 +759,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       extraWork.add(
         ShortConstantOperation(
           Opcode.OP_PUTFIELD,
-          JavaClass.generateFieldRef(className = "LoxPointer", fieldName = "__value__")
+          constant = JavaClass.generateFieldRef(className = "LoxPointer", fieldName = "__value__")
         )
       )
       extraWork.add(OperationWithIndex(Opcode.OP_ASTORE, variableArrayIndex, ObjectVti(loxObjectClassInfo)))
@@ -885,18 +936,15 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   private fun getLocalVariableArraySize() = resolutionTable.getMaxIndex() + 2
 
   private fun copyDownMethods(stmt: ClassDeclStmt): List<FunctionStuff> {
+    stmt.superclass?.let { superClass ->
+      log?.d(messageString = "Inheriting methods from the class ${superClass.value}")
+    }
+
     val methods = mutableMapOf<String, FunctionStuff>()
-
-    println("-> Copying down methods for the class ${stmt.identifier.value}")
-    println("--> Known classes: ${classStatements.keys}")
-
-    stmt.superclass?.let { superClass -> println("--> Inheriting methods from the class ${superClass.value}") }
 
     // Super Methods
     if (stmt.superclass != null) {
-      println("----> Super class name: [${stmt.superclass.value}]")
       val decl = classStatements[stmt.superclass.value]!!
-      println("----> Super class decl: $decl")
 
       decl.methods.forEach { method ->
         methods[method.identifier.value] = FunctionStuff(
@@ -905,11 +953,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
           classItBelongsTo = stmt.superclass.value,
         )
       }
-
-      println("----> Super class methods: ${decl.methods.size}")
     }
-
-    println("--> ${methods.size} methods copied down for the class ${stmt.identifier.value}")
 
     // Not Super Methods
     stmt.methods.forEach { method ->
@@ -920,10 +964,26 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       )
     }
 
-    println("--> ${methods.size} total methods for the class ${stmt.identifier.value}")
-    println("<- Finished copying down methods for the class ${stmt.identifier.value}")
-
     return methods.values.toList()
+  }
+
+  private fun calculateClassConstructorArity(stmt: ClassDeclStmt): Int {
+    var currentClassStmt: ClassDeclStmt? = stmt
+
+    while (currentClassStmt != null) {
+      for (method in currentClassStmt.methods) {
+        if (method.identifier.value == "init") {
+          return method.parameters.size
+        }
+      }
+
+      currentClassStmt = when (currentClassStmt.superclass) {
+        null -> null
+        else -> classStatements[currentClassStmt.superclass.value]!!
+      }
+    }
+
+    return 0
   }
 
   private fun publicStaticVoidMain(): MethodInfo {

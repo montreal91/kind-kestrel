@@ -1,0 +1,15 @@
+
+class Keyboard {
+  init(keys) {
+    this.keys = keys;
+  }
+
+  getKeys() {
+    return this.keys;
+  }
+}
+
+var keyboard = Keyboard(69);
+
+// Expected: 69
+print keyboard.getKeys();
