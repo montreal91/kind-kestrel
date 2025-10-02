@@ -23,6 +23,7 @@ class Atom {
       this.protons + other.protons,
       this.neutrons + other.neutrons + 1,
       this.electrons + other.electrons
+    );
   }
 }
 
@@ -42,5 +43,5 @@ var someHelium = hydrogen.fuse(deuterium);
 print "";
 print "Helium mass:";
 print someHelium.getMass();
-print "Helium charge:"
+print "Helium charge:";
 print someHelium.getCharge();

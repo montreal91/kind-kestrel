@@ -4,5 +4,6 @@ import org.example.rlc.frontend.scope.EnclosedVariable
 
 data class FunctionStuff(
   val name: String,
-  val enclosedVariables: List<EnclosedVariable>
+  val enclosedVariables: List<EnclosedVariable>,
+  val classItBelongsTo: String,
 )

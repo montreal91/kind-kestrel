@@ -1,0 +1,19 @@
+
+class Chaos {
+  say() {
+    print "Chaos Noises";
+  }
+}
+
+class Earth < Chaos {
+  volcano() {
+    print "Eruption";
+  }
+}
+
+
+
+print "Expected: Chaos Noises";
+Earth().say();
+print "Expected: Eruption";
+Earth().volcano();

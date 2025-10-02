@@ -147,6 +147,8 @@ class Resolver {
     checkVariable(variableToken = classDecl.identifier)
     resolveVariableDeclaration(uid = classDecl.uid, variable = classDecl.identifier.value)
 
+    classDecl.superclass?.let { it -> resolveVariable(it.value) }
+
     frameStack.addNewFrame(
       type = Frame.Type.CLASS,
       frameName = classDecl.identifier.value

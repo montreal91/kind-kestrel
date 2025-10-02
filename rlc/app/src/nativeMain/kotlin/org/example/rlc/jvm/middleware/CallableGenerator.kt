@@ -48,8 +48,13 @@ internal fun generateLoxFunction(
     isStatic = false
   )
 
+  val prefix = when (isMethod) {
+    true -> "LoxMethod"
+    false -> "LoxFunction"
+  }
+
   return ClassFile(
-    thisClassInfo = ClassInfo(className = "LoxFunction${name}"),
+    thisClassInfo = ClassInfo(className = "${prefix}_${name}"),
     superClassInfo = ClassInfo(className = "LoxCallable${arity}"),
     interfaceList = listOf(),
     methodList = listOf(
@@ -61,8 +66,7 @@ internal fun generateLoxFunction(
     attributeList = listOf(),
     accessFlagList = listOf(),
     fieldList = generateFieldsFromEnclosedVariableList(
-      variables = enclosedVariables,
-      isMethod = isMethod
+      variables = enclosedVariables
     )
   )
 }
@@ -91,7 +95,6 @@ internal fun generateAbstractCallable(arity: Int): ClassFile {
 }
 
 internal fun generateLoxBasicCallable(): ClassFile {
-
   val code = listOf(
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(
@@ -118,6 +121,12 @@ internal fun generateLoxBasicCallable(): ClassFile {
     signature = MethodSignature(listOf(), IntegerVti())
   )
 
+  val basicThis = FieldInfo(
+    accessFlagList = emptyList(),
+    fieldName = "__this__".toUtf8Value(),
+    fieldDescriptor = "LLoxObject;".toUtf8Value(),
+  )
+
   return ClassFile(
     thisClassInfo = ClassInfo(className = "LoxBasicCallable"),
     superClassInfo = loxObjectClassInfo,
@@ -125,7 +134,7 @@ internal fun generateLoxBasicCallable(): ClassFile {
     methodList = listOf(loxCallableConstructor, abstractArity, checkCallFunction()),
     accessFlagList = listOf(ClassAccessFlags.ABSTRACT),
     attributeList = listOf(),
-    fieldList = listOf()
+    fieldList = listOf(basicThis) // Put __this__ field here
   )
 }
 
@@ -217,20 +226,9 @@ private fun generateArityMethodRef(className: String): MethodRefInfo {
 }
 
 private fun generateFieldsFromEnclosedVariableList(
-  variables: List<EnclosedVariable>,
-  isMethod: Boolean
+  variables: List<EnclosedVariable>
 ): List<FieldInfo> {
   val res = mutableListOf<FieldInfo>()
-
-  if (isMethod) {
-    res.add(
-      FieldInfo(
-        accessFlagList = emptyList(),
-        fieldName = "__this__".toUtf8Value(),
-        fieldDescriptor = "LLoxObject;".toUtf8Value(),
-      )
-    )
-  }
 
   for (variable in variables) {
     res.add(generateFieldFromEnclosedVariable(variable))
