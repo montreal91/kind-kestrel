@@ -22,6 +22,7 @@ import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.ReturnStmt
 import org.example.rlc.frontend.ast.Set
 import org.example.rlc.frontend.ast.Stmt
+import org.example.rlc.frontend.ast.Super
 import org.example.rlc.frontend.ast.This
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
@@ -47,7 +48,7 @@ class Resolver {
   private val frameStack = FrameStack()
   private val errors = mutableListOf<LoxCompileError>()
 
-  private val log = Resolver::class.qualifiedName?.let { Logger.withTag(it) }
+  private val log = this::class.qualifiedName?.let { Logger.withTag(tag = it) }
 
   val hasErrors = errors.isNotEmpty()
 
@@ -84,10 +85,11 @@ class Resolver {
     is Get -> visitGetExpr(get = expr)
     is Set -> visitSetExpr(set = expr)
     is This -> visitThis(thisExpr = expr)
+    is Super -> visitSuper(expr)
   }
 
   private fun visitBlockStmt(stmt: BlockStmt) {
-    println("Resolver visiting a block statement.")
+    log?.d(messageString = "Resolver visiting a block statement.")
     frameStack.addNewFrame(type = Frame.Type.BLOCK, frameName = "Block")
     stmt.statements.forEach(action = this::visitStmt)
     frameStack.popFrame()
@@ -234,6 +236,10 @@ class Resolver {
       true -> {}
       false -> error(message = "Can't use 'this' outside of a class", token = thisExpr.token)
     }
+  }
+
+  private fun visitSuper(expr: Super) {
+    log?.d(messageString = "Visiting a super expression.")
   }
 
   private fun resolveVariable(identifier: String): VariableResolutionResult {

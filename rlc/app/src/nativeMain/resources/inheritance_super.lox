@@ -1,0 +1,21 @@
+
+class Chaos {
+  makeNoise() {
+    print "Chaos Noises";
+  }
+}
+
+class Titan < Chaos {
+  makeNoise() {
+    print "Titan Noises";
+  }
+
+  invokeChaos() {
+    super.makeNoise();
+  }
+}
+
+var t = Titan();
+
+t.makeNoise();
+t.invokeChaos();

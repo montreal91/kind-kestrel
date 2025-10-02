@@ -145,6 +145,26 @@ class ParserTest {
           "  (class God (superclass Titan))\n" +
           ")",
     ),
+
+    PositiveTestCase(
+      name = "Super",
+      fileName = "parser_inheritance_super.lox",
+      expected = "(script\n" +
+          "  (class Chaos\n" +
+          "    (method makeNoise (parameters) (body\n" +
+          "      (print \"Chaos Noises\")\n" +
+          "    ))\n" +
+          "  )\n" +
+          "  (class Titan (superclass Chaos)\n" +
+          "    (method makeNoise (parameters) (body\n" +
+          "      (print \"Titan Noises\")\n" +
+          "    ))\n" +
+          "    (method invokeChaos (parameters) (body\n" +
+          "      (expr (call (get (super) makeNoise) ()))\n" +
+          "    ))\n" +
+          "  )\n" +
+          ")",
+    ),
   )
 
   private val negative = listOf(

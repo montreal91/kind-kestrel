@@ -2,6 +2,7 @@
 
 package org.example.rlc.frontend
 
+import co.touchlab.kermit.Logger
 import org.example.rlc.frontend.ast.Assign
 import org.example.rlc.frontend.ast.Binary
 import org.example.rlc.frontend.ast.BlockStmt
@@ -21,11 +22,13 @@ import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.ReturnStmt
 import org.example.rlc.frontend.ast.Set
 import org.example.rlc.frontend.ast.Stmt
+import org.example.rlc.frontend.ast.Super
 import org.example.rlc.frontend.ast.This
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
 import org.example.rlc.frontend.ast.Variable
 import org.example.rlc.frontend.ast.WhileStmt
+import org.example.rlc.jvm.middleware.AstToClassFileIrConverter
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -47,7 +50,6 @@ import kotlin.uuid.Uuid
  * @property previous Reference to the previously processed token.
  * @property isLastToken Evaluates if the parser has reached the end of the token stream.
  */
-@OptIn(ExperimentalUuidApi::class)
 class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = ::defaultUidGen) {
   val hasErrors: Boolean get() = errors.isNotEmpty()
 
@@ -60,13 +62,13 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
   private val previous: Token get() = tokens[index - 1]
   private val isLastToken: Boolean get() = index == tokens.size - 1
 
+  private val log = this::class.qualifiedName?.let { Logger.withTag(tag = it) }
+
   fun parse(): List<Stmt> {
-    println("______________________")
-    println("Parsing stage started.\n")
+    log?.d(messageString = "Parsing stage started.")
     statements.add(mutableListOf())
     program()
-    println("Parsing stage ended.\n")
-    println("____________________")
+    log?.d(messageString = "Parsing stage ended.")
     return statements.last().toList()
   }
 
@@ -322,8 +324,8 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
 
   private fun assignment(): Expr {
     val left = logicOr()
-    println(
-      "Prev: [${previous.type}, ${previous.value}] " +
+    log?.d(
+      messageString = "Prev: [${previous.type}, ${previous.value}] " +
           "Curr: [${currentToken.type}, ${currentToken.value}], " +
           "Left Type: [${left::class}]"
     )
@@ -473,11 +475,12 @@ class Parser(private val tokens: List<Token>, private val uidGen: () -> Uuid = :
   private fun primary(): Expr {
     if (currentToken.isTerminal()) {
       val token = currentToken
-      matchAny(terminals.toList())
+      matchAny(types = terminals.toList())
 
       return when (token.type) {
-        Token.Type.IDENTIFIER -> Variable(uidGen(), token.value)
+        Token.Type.IDENTIFIER -> Variable(uidGen(), variable = token.value)
         Token.Type.THIS -> This(uid = uidGen(), token = token)
+        Token.Type.SUPER -> Super(uid = uidGen(), token = token)
 
         else -> Literal(uidGen(), token.value, tokenTypeToLiteralType(token.type))
       }
@@ -576,6 +579,7 @@ private val terminals = setOf(
   Token.Type.FALSE,
   Token.Type.NIL,
   Token.Type.THIS,
+  Token.Type.SUPER,
   Token.Type.NUMBER,
   Token.Type.STRING,
   Token.Type.IDENTIFIER

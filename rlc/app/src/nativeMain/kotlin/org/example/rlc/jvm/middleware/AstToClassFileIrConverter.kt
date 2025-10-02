@@ -21,6 +21,7 @@ import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.ReturnStmt
 import org.example.rlc.frontend.ast.Set
 import org.example.rlc.frontend.ast.Stmt
+import org.example.rlc.frontend.ast.Super
 import org.example.rlc.frontend.ast.This
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
@@ -153,7 +154,13 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     generatedCallables[0] = generateAbstractCallable(arity = 0)
     val code = mutableListOf<Operation>()
 
-    code.add(ShortConstantOperation(Opcode.OP_NEW, loxDoubleClassInfo, ObjectVti(loxDoubleClassInfo)))
+    code.add(
+      ShortConstantOperation(
+        Opcode.OP_NEW,
+        constant = loxDoubleClassInfo,
+        value = ObjectVti(loxDoubleClassInfo),
+      )
+    )
     code.add(SimpleOperation(Opcode.OP_DUP))
 
     val systemTimeMillisMri = MethodRefInfo(
@@ -273,6 +280,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     is Get -> visitGet(get = expr)
     is Set -> visitSet(set = expr)
     is This -> visitThis()
+    is Super -> visitSuper(expr)
   }
 
   private fun visitExprStmt(exprStmt: ExprStmt) {
@@ -630,6 +638,10 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
         loxObjectVti,
       )
     )
+  }
+
+  private fun visitSuper(expr: Super) {
+    log?.d(messageString = "Visiting super: ($expr)")
   }
 
   private fun setLocalVariable(resolution: LocalVariable) {
