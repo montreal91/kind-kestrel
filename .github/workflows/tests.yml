@@ -26,4 +26,4 @@ jobs:
       run: cd rlc/; chmod +x gradlew;
 
     - name: Run Kotlin/Native tests
-      run: cd rlc/; ./gradlew allTests;
+      run: cd rlc/; ./gradlew allTests --info;

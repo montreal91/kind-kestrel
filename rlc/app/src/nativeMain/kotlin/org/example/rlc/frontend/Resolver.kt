@@ -1,3 +1,4 @@
+@file:OptIn(markerClass = [ExperimentalUuidApi::class])
 package org.example.rlc.frontend
 
 import co.touchlab.kermit.Logger
@@ -42,7 +43,6 @@ import org.example.rlc.frontend.scope.VariableResolutionTable
  * This class runs the resolution process to analyze declarations, detect scoping issues,
  * and assign the appropriate variable resolution information for each identifier.
  */
-@OptIn(ExperimentalUuidApi::class)
 class Resolver {
   private val resolutionTable = VariableResolutionTable()
   private val frameStack = FrameStack()
@@ -50,7 +50,7 @@ class Resolver {
 
   private val log = this::class.qualifiedName?.let { Logger.withTag(tag = it) }
 
-  val hasErrors = errors.isNotEmpty()
+  val hasErrors get() = errors.isNotEmpty()
 
   fun resolve(program: Ast): VariableResolutionTable {
     program.forEach(this::visitStmt)
@@ -84,7 +84,7 @@ class Resolver {
     is Call -> visitCallExpr(expr)
     is Get -> visitGetExpr(get = expr)
     is Set -> visitSetExpr(set = expr)
-    is This -> visitThis(thisExpr = expr)
+    is This -> visitThis(expr = expr)
     is Super -> visitSuper(expr)
   }
 
@@ -151,7 +151,7 @@ class Resolver {
     checkVariable(variableToken = classDecl.identifier)
     resolveVariableDeclaration(uid = classDecl.uid, variable = classDecl.identifier.value)
 
-    classDecl.superclass?.let { it -> resolveVariable(it.value) }
+    classDecl.superclass?.let { resolveVariable(identifier = it.value) }
 
     frameStack.addNewFrame(
       type = Frame.Type.CLASS,
@@ -184,7 +184,11 @@ class Resolver {
   }
 
   private fun error(message: String, token: Token) {
+    log?.d(messageString = "Adding error: $message, token: $token")
+    log?.d(messageString = "Collected errors: ${errors.size}.")
     errors.add(LoxCompileError(message = message, token))
+    log?.d(messageString = "Resolver has errors: ${hasErrors}.")
+    log?.d(messageString = "Collected errors: ${errors.size}.")
   }
 
   private fun visitLiteral() {}
@@ -231,10 +235,10 @@ class Resolver {
     visitExpr(expr = set.value)
   }
 
-  private fun visitThis(thisExpr: This) {
+  private fun visitThis(expr: This) {
     when (frameStack.isInsideMethod()) {
       true -> {}
-      false -> error(message = "Can't use 'this' outside of a class", token = thisExpr.token)
+      false -> error(message = "Can't use 'this' outside of a class", token = expr.token)
     }
   }
 

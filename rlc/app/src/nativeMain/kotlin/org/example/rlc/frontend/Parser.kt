@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalUuidApi::class)
+@file:OptIn(markerClass = [ExperimentalUuidApi::class])
 
 package org.example.rlc.frontend
 
@@ -28,7 +28,6 @@ import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
 import org.example.rlc.frontend.ast.Variable
 import org.example.rlc.frontend.ast.WhileStmt
-import org.example.rlc.jvm.middleware.AstToClassFileIrConverter
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 

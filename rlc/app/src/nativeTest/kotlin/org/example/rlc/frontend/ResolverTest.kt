@@ -1,7 +1,8 @@
-@file:OptIn(ExperimentalUuidApi::class)
+@file:OptIn(markerClass = [ExperimentalUuidApi::class])
 
 package org.example.rlc.frontend
 
+import co.touchlab.kermit.Logger
 import org.example.rlc.application.readFile
 import org.example.rlc.frontend.ast.Ast
 import org.example.rlc.frontend.ast.FunDeclStmt
@@ -17,66 +18,9 @@ import kotlin.test.assertTrue
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-private val fakeUuids = listOf(
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000001"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000002"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000003"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000004"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000005"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000006"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000007"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000008"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000009"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000010"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000011"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000012"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000013"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000014"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000015"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000016"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000017"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000018"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000019"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000020"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000021"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000022"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000023"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000024"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000025"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000026"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000027"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000028"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000029"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000030"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000031"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000032"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000033"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000034"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000035"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000036"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000037"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000038"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000039"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000040"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000041"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000042"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000043"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000044"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000045"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000046"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000047"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000048"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000049"),
-  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000050"),
-)
-
-private class MockUuidGenerator {
-  private var index = 0
-  val mockGen: () -> Uuid = { fakeUuids[index++] }
-}
-
-@OptIn(markerClass = [ExperimentalUuidApi::class])
 class ResolverTest {
+  private val log = this::class.qualifiedName?.let { Logger.withTag(tag = it) }
+
   @Test
   fun testGlobalAssignAndAccess() {
     val resolutionTable = getResolutionTable(filename = "resolver_01_global.lox")
@@ -139,7 +83,7 @@ class ResolverTest {
     //mutate()(); global
 
     for (k in resolutionTable._test_getKeys()) {
-      println(k)
+      log?.d(messageString = k.toString())
     }
 
     val expectedResults = listOf(
@@ -163,7 +107,7 @@ class ResolverTest {
     val resolutionTable = getResolutionTable(filename = "resolver_04_upvalue_02.lox")
 
     for (k in resolutionTable._test_getKeys()) {
-      println("$k => ${resolutionTable.get(k)}")
+      log?.d(messageString = "$k => ${resolutionTable.get(k)}")
     }
 
     val expectedResults = listOf(
@@ -191,7 +135,6 @@ class ResolverTest {
   @Test
   fun testUpvalue03() {
     val resolutionContext = getResolutionContext(filename = "resolver_04_upvalue_03.lox")
-//    val resolutionTable = getResolutionTable(filename = "resolver_04_upvalue_03.lox")
 
     for (k in resolutionContext.table._test_getKeys()) {
       println("$k => ${resolutionContext.table.get(k)}")
@@ -272,6 +215,21 @@ class ResolverTest {
 
     assertEnclosedVariables(functions = statementMap, expectedEnclosedVariables)
   }
+
+  @Test
+  fun testInvalidThis() {
+    val text = readFile(pathName = "${PATH_PREFIX}\\resolver_05_invalid_this.lox")
+    val scanner = Scanner(text)
+    val parser = Parser(tokens = scanner.scan(), uidGen = MockUuidGenerator().mockGen)
+    val ast = parser.parse()
+
+    val resolver = Resolver()
+    val res = resolver.resolve(program = ast)
+
+    log?.d(messageString = "Resolution errors: ${resolver.hasErrors}")
+
+    assertTrue(actual = resolver.hasErrors)
+  }
 }
 
 private data class Expectation(val variableId: Uuid, val expectedResult: VariableResolutionResult)
@@ -312,9 +270,68 @@ private fun getResolutionContext(filename: String): ResolutionContext {
   val ast = parser.parse()
 
   val resolver = Resolver()
-  return ResolutionContext(table = resolver.resolve(ast), ast = ast)
+  return ResolutionContext(table = resolver.resolve(program = ast), ast = ast)
 }
 
 private fun getResolutionTable(filename: String): VariableResolutionTable {
   return getResolutionContext(filename).table
+}
+
+
+private val fakeUuids = listOf(
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000001"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000002"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000003"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000004"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000005"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000006"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000007"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000008"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000009"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000010"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000011"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000012"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000013"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000014"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000015"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000016"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000017"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000018"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000019"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000020"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000021"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000022"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000023"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000024"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000025"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000026"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000027"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000028"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000029"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000030"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000031"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000032"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000033"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000034"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000035"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000036"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000037"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000038"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000039"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000040"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000041"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000042"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000043"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000044"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000045"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000046"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000047"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000048"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000049"),
+  Uuid.parse(uuidString = "00000000-0000-0000-0000-000000000050"),
+)
+
+private class MockUuidGenerator {
+  private var index = 0
+  val mockGen: () -> Uuid = { fakeUuids[index++] }
 }
