@@ -65,6 +65,7 @@ internal fun loxObjectCf() = ClassFile(
     loxObjectStaticInitializer(),
     getFieldMethod(),
     setFieldMethod(),
+    getSuperMethod(),
     abstractEqMethod(),
     abstractTruthyMethod(),
   ),
@@ -285,9 +286,17 @@ private fun abstractTruthyMethod(): MethodInfo = MethodInfo(
 
 private fun getFieldMethod(): MethodInfo {
   val code = listOf(
-    ShortConstantOperation(Opcode.OP_NEW, constant = loxRuntimeErrorClassInfo, value = ObjectVti(loxRuntimeErrorClassInfo)),
+    ShortConstantOperation(
+      Opcode.OP_NEW,
+      constant = loxRuntimeErrorClassInfo,
+      value = ObjectVti(loxRuntimeErrorClassInfo)
+    ),
     SimpleOperation(Opcode.OP_DUP),
-    ByteConstantOperation(Opcode.OP_LDC, constant = StringRefInfo(value = "only instances have fields"), value = ObjectVti(loxStringClassInfo)),
+    ByteConstantOperation(
+      Opcode.OP_LDC,
+      constant = StringRefInfo(value = "only instances have fields"),
+      value = ObjectVti(loxStringClassInfo)
+    ),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, constant = runtimeErrorConstructorRef()),
     SimpleOperation(Opcode.OP_ATHROW)
   )
@@ -304,11 +313,49 @@ private fun getFieldMethod(): MethodInfo {
   )
 }
 
+private fun getSuperMethod(): MethodInfo {
+  val code = listOf(
+    ShortConstantOperation(
+      Opcode.OP_NEW,
+      constant = loxRuntimeErrorClassInfo,
+      value = ObjectVti(loxRuntimeErrorClassInfo)
+    ),
+    SimpleOperation(Opcode.OP_DUP),
+    ByteConstantOperation(
+      Opcode.OP_LDC,
+      constant = StringRefInfo(value = "only instances can have super classes"),
+      value = ObjectVti(loxStringClassInfo)
+    ),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, constant = runtimeErrorConstructorRef()),
+    SimpleOperation(Opcode.OP_ATHROW)
+  )
+
+  return MethodInfo(
+    methodName = "__get_super__",
+    accessFlagList = listOf(MethodAccessFlags.NONE),
+    attributeList = listOf(CodeAttribute(argsSize = 3, code = code)),
+    isStatic = false,
+    signature = MethodSignature(
+      arguments = listOf(JavaString.VERIFICATION_TYPE, JavaString.VERIFICATION_TYPE),
+      returnType = loxObjectVti
+    )
+  )
+}
+
+
 private fun setFieldMethod(): MethodInfo {
   val code = listOf(
-    ShortConstantOperation(Opcode.OP_NEW, constant = loxRuntimeErrorClassInfo, value = ObjectVti(loxRuntimeErrorClassInfo)),
+    ShortConstantOperation(
+      Opcode.OP_NEW,
+      constant = loxRuntimeErrorClassInfo,
+      value = ObjectVti(loxRuntimeErrorClassInfo)
+    ),
     SimpleOperation(Opcode.OP_DUP),
-    ByteConstantOperation(Opcode.OP_LDC, constant = StringRefInfo(value = "only instances have fields"), value = ObjectVti(loxStringClassInfo)),
+    ByteConstantOperation(
+      Opcode.OP_LDC,
+      constant = StringRefInfo(value = "only instances have fields"),
+      value = ObjectVti(loxStringClassInfo)
+    ),
     ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, constant = runtimeErrorConstructorRef()),
     SimpleOperation(Opcode.OP_ATHROW)
   )

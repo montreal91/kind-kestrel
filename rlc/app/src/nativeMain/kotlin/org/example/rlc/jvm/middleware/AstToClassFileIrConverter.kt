@@ -132,7 +132,6 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
    * @return a list of generated class files
    */
   fun convert(roots: Ast): List<ClassFile> {
-    log?.d(messageString = "==============================")
     log?.d(messageString = "The Translation stage started.")
 
     initGlobals()
@@ -141,7 +140,6 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     finalizeClass()
 
     log?.d(messageString = "The Translation stage ended.")
-    log?.d(messageString = "============================")
 
     return classes.toList()
   }
@@ -280,7 +278,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     is Get -> visitGet(get = expr)
     is Set -> visitSet(set = expr)
     is This -> visitThis()
-    is Super -> visitSuper(expr)
+    is Super -> {}
   }
 
   private fun visitExprStmt(exprStmt: ExprStmt) {
@@ -400,10 +398,17 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     }
 
     val functionStuff = copyDownMethods(stmt = classDeclStmt)
+    val superFunctionStuff = getSuperMethods(stmt = classDeclStmt)
+
+    for (sm in superFunctionStuff) {
+      log?.d(messageString = "Compiling super method. (method=${sm.name})")
+    }
+
     val constructor = generateConstructorClass(
       name = classDeclStmt.identifier.value,
-      functionStuff = functionStuff,
+      methodMetadata = functionStuff,
       arity = calculateClassConstructorArity(classDeclStmt),
+      superMethodMetadata = superFunctionStuff,
     )
 
     classes.add(constructor)
@@ -535,7 +540,18 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   }
 
   private fun visitGet(get: Get) {
-    visitExpr(expr = get.obj)
+    when (get.obj) {
+      is Super -> {
+        log?.d { "Super" }
+        generateCodeForSuper(methodName = get.name)
+        return
+      }
+
+      else -> {
+        log?.d { "Not Super" }
+        visitExpr(get.obj)
+      }
+    }
 
     val loadFieldNameOp = ByteConstantOperation(
       Opcode.OP_LDC,
@@ -640,10 +656,6 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     )
   }
 
-  private fun visitSuper(expr: Super) {
-    log?.d(messageString = "Visiting super: ($expr)")
-  }
-
   private fun setLocalVariable(resolution: LocalVariable) {
     val variableArrayIndex = resolution.actualIndex().toByte()
 
@@ -671,6 +683,40 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
     }
 
     currentCode.add(op)
+  }
+
+  private fun generateCodeForSuper(methodName: String) {
+    currentCode.add(SimpleOperation(Opcode.OP_ALOAD_0))
+
+    currentCode.add(
+      ShortConstantOperation(
+        Opcode.OP_GETFIELD,
+        JavaClass.generateFieldRef("LoxBasicCallable", "__this__"),
+        loxObjectVti,
+      )
+    )
+
+    // code to invoke __get_super__ method on the instance
+    val loadFieldNameOp = ByteConstantOperation(
+      Opcode.OP_LDC,
+      constant = StringRefInfo(value = methodName),
+      value = JavaString.VERIFICATION_TYPE,
+    )
+
+    val loadErrorMessageOp = ByteConstantOperation(
+      Opcode.OP_LDC,
+      constant = StringRefInfo(value = "Super class does not have method ${methodName}."),
+      value = JavaString.VERIFICATION_TYPE,
+    )
+
+    val invokeInstanceGetMethodOp = ShortConstantOperation(
+      Opcode.OP_INVOKE_VIRTUAL,
+      constant = getSuperMethodRef(),
+    )
+
+    currentCode.add(loadFieldNameOp)
+    currentCode.add(loadErrorMessageOp)
+    currentCode.add(invokeInstanceGetMethodOp)
   }
 
   private fun setGlobalVariable(variable: GlobalVariable) {
@@ -947,32 +993,36 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
 
   private fun getLocalVariableArraySize() = resolutionTable.getMaxIndex() + 2
 
-  private fun copyDownMethods(stmt: ClassDeclStmt): List<FunctionStuff> {
+  private fun copyDownMethods(stmt: ClassDeclStmt): List<MethodMetadata> {
     stmt.superclass?.let { superClass ->
       log?.d(messageString = "Inheriting methods from the class ${superClass.value}")
     }
 
-    val methods = mutableMapOf<String, FunctionStuff>()
+    val methods = mutableMapOf<String, MethodMetadata>()
 
     // Super Methods
     if (stmt.superclass != null) {
       val decl = classStatements[stmt.superclass.value]!!
 
       decl.methods.forEach { method ->
-        methods[method.identifier.value] = FunctionStuff(
+        methods[method.identifier.value] = MethodMetadata(
           name = method.identifier.value,
           enclosedVariables = method.enclosedVariables.map { it as EnclosedVariable }.toList(),
           classItBelongsTo = stmt.superclass.value,
+          currentClass = stmt.identifier.value,
+          fromSuperClass = true
         )
       }
     }
 
     // Not Super Methods
     stmt.methods.forEach { method ->
-      methods[method.identifier.value] = FunctionStuff(
+      methods[method.identifier.value] = MethodMetadata(
         name = method.identifier.value,
         enclosedVariables = method.enclosedVariables.map { it as EnclosedVariable }.toList(),
         classItBelongsTo = stmt.identifier.value,
+        currentClass = stmt.identifier.value,
+        fromSuperClass = false
       )
     }
 
@@ -1047,7 +1097,7 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
   }
 
   private fun getArithmeticMethodRef(operation: Token.Type): MethodRefInfo {
-    return methodRefs.getOrPut(operation) { createBinaryNumericMethodRef(operation) }
+    return methodRefs.getOrPut(key = operation) { createBinaryNumericMethodRef(operation) }
   }
 
   private fun createBinaryNumericMethodRef(operation: Token.Type): MethodRefInfo {
@@ -1076,6 +1126,28 @@ class AstToClassFileIrConverter(private val resolutionTable: VariableResolutionT
       returnSize = 1,
       returnTypeInfo = ObjectVti(loxObjectClassInfo, isArray = false)
     )
+  }
+
+  private fun getSuperMethods(stmt: ClassDeclStmt): List<MethodMetadata> {
+    val methods = mutableListOf<MethodMetadata>()
+
+    stmt.superclass?.let { superClass ->
+      val decl = classStatements[superClass.value]!!
+
+      for (method in decl.methods) {
+        methods.add(
+          MethodMetadata(
+            name = method.identifier.value,
+            enclosedVariables = method.enclosedVariables.map { it as EnclosedVariable }.toList(),
+            classItBelongsTo = decl.identifier.value,
+            currentClass = stmt.identifier.value,
+            fromSuperClass = true,
+          )
+        )
+      }
+    }
+
+    return methods
   }
 }
 

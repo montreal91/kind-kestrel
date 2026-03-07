@@ -17,5 +17,8 @@ class Titan < Chaos {
 
 var t = Titan();
 
+print "Expected: Titan Noises";
 t.makeNoise();
+
+print "Expected: Chaos Noises";
 t.invokeChaos();

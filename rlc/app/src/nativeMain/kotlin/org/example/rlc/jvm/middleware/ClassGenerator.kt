@@ -1,5 +1,6 @@
 package org.example.rlc.jvm.middleware
 
+import co.touchlab.kermit.Logger
 import org.example.rlc.jvm.ir.ByteConstantOperation
 import org.example.rlc.jvm.ir.ClassFile
 import org.example.rlc.jvm.ir.ClassInfo
@@ -15,11 +16,14 @@ import org.example.rlc.jvm.ir.MethodSignature
 import org.example.rlc.jvm.ir.NameAndTypeInfo
 import org.example.rlc.jvm.ir.ObjectVti
 import org.example.rlc.jvm.ir.Opcode
+import org.example.rlc.jvm.ir.Operation
 import org.example.rlc.jvm.ir.OperationWithIndex
 import org.example.rlc.jvm.ir.ShortConstantOperation
 import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StringRefInfo
 import org.example.rlc.jvm.ir.toUtf8Value
+
+private val log = Logger.withTag(tag = "ClassGenerator.kt")
 
 /**
  * Generates a class file for a constructor class.
@@ -29,13 +33,14 @@ import org.example.rlc.jvm.ir.toUtf8Value
  *
  * @param name the name of the constructor class to be generated
  * @param arity the arity (number of arguments) of the callable constructor
- * @param functionStuff a list of function metadata required for generating constructor logic
+ * @param methodMetadata a list of function metadata required for generating constructor logic
  * @return a ClassFile instance representing the generated constructor class
  */
 internal fun generateConstructorClass(
   name: String,
   arity: Int,
-  functionStuff: List<FunctionStuff>
+  methodMetadata: List<MethodMetadata>,
+  superMethodMetadata: List<MethodMetadata>,
 ): ClassFile {
   return ClassFile(
     thisClassInfo = ClassInfo(className = "LoxClass_$name"),
@@ -45,7 +50,12 @@ internal fun generateConstructorClass(
     fieldList = listOf(),
     methodList = listOf(
       generateDefaultConstructor(className = "LoxCallable$arity"),
-      generateConstructorCallMethod(className = name, arity = arity, methods = functionStuff),
+      generateConstructorCallMethod(
+        className = name,
+        arity = arity,
+        methods = methodMetadata,
+        superMethods = superMethodMetadata
+      ),
       generateToStringMethod(output = "<class $name>"),
       generateArity(arity = arity),
     ),
@@ -67,11 +77,12 @@ internal fun generateInstanceClass(name: String): ClassFile {
     superClassInfo = ClassInfo(className = "LoxObject"), // Instance or object, that's the question.
     accessFlagList = listOf(),
     interfaceList = listOf(),
-    fieldList = listOf(objectFieldMap()),
+    fieldList = listOf(objectFieldMap(), superMethodsFieldMap()),
     methodList = listOf(
       generateInstanceConstructor(thisClassName = instanceClassName, superClassName = "LoxObject"),
       getFieldMethod(instanceClassName),
       setFieldMethod(instanceClassName),
+      getSuperMethod(instanceClassName),
       generateToStringMethod(output = "$name instance"),
     ),
     attributeList = listOf(),
@@ -108,7 +119,8 @@ private fun generateToStringMethod(output: String): MethodInfo {
 private fun generateConstructorCallMethod(
   className: String,
   arity: Int,
-  methods: List<FunctionStuff>
+  methods: List<MethodMetadata>,
+  superMethods: List<MethodMetadata>,
 ): MethodInfo {
   val loxInstanceCi = ClassInfo(className = "LoxInstance_$className")
   val code = mutableListOf(
@@ -124,48 +136,17 @@ private fun generateConstructorCallMethod(
     ),
   )
 
+  for (method in superMethods) {
+    code.addAll(elements = compileMethod(method))
+  }
+
   for (method in methods) {
-    code.add(SimpleOperation(Opcode.OP_DUP))
-    code.addAll(
-      elements = LoxFunction.generateInstantiationCode(
-        functionName = "LoxMethod_${method.classItBelongsTo}_${method.name}",
-        outerFunctionName = "",
-        enclosedVariables = method.enclosedVariables,
-        currentCodeOffset = code.size
-      )
-    )
-
-    // here on the stack [object, function]
-
-    // put the object into function
-    code.add(SimpleOperation(Opcode.OP_DUP_2))
-    code.add(SimpleOperation(Opcode.OP_SWAP))
-    code.add(
-      ShortConstantOperation(
-        Opcode.OP_PUTFIELD, constant = JavaClass.generateFieldRef(
-          className = "LoxBasicCallable",
-          fieldName = "__this__",
-        )
-      )
-    )
-
-    // here on the stack should be [object, function] again
-
-    code.add(
-      ByteConstantOperation(
-        Opcode.OP_LDC,
-        constant = StringRefInfo(value = method.name),
-        value = JavaString.VERIFICATION_TYPE
-      )
-    )
-    code.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, constant = setInstanceFieldMethodRef()))
-    code.add(SimpleOperation(Opcode.OP_POP)) // Remove LoxNil from the stack
+    code.addAll(elements = compileMethod(method))
   }
 
   if (hasInitializer(methods)) {
     // If there is an initializer, it should be called.
     code.add(SimpleOperation(Opcode.OP_DUP))
-    code.add(SimpleOperation(Opcode.OP_NOP))
     code.add(
       ByteConstantOperation(
         Opcode.OP_LDC,
@@ -217,10 +198,105 @@ private fun generateConstructorCallMethod(
   )
 }
 
+private fun compileMethod(method: MethodMetadata): List<Operation> {
+  val code = mutableListOf<Operation>()
+
+  code.add(SimpleOperation(Opcode.OP_DUP))
+  code.addAll(
+    elements = LoxFunction.generateInstantiationCode(
+      functionName = "LoxMethod_${method.classItBelongsTo}_${method.name}",
+      outerFunctionName = "",
+      enclosedVariables = method.enclosedVariables,
+      currentCodeOffset = code.size
+    )
+  )
+
+  // here on the stack [object, function]
+
+  // put the object into function
+  code.add(SimpleOperation(Opcode.OP_DUP_2))
+  code.add(SimpleOperation(Opcode.OP_SWAP))
+  code.add(
+    ShortConstantOperation(
+      Opcode.OP_PUTFIELD, constant = JavaClass.generateFieldRef(
+        className = "LoxBasicCallable",
+        fieldName = "__this__",
+      )
+    )
+  )
+
+  // here on the stack should be [object, function] again
+  log.d { "$method" }
+  when (method.fromSuperClass) {
+    true -> {
+      log.d { "Coming from the SuperClass." }
+
+      code.add(SimpleOperation(Opcode.OP_DUP_2))
+
+      code.add(
+        ByteConstantOperation(
+          Opcode.OP_LDC,
+          constant = StringRefInfo(value = method.name),
+          value = JavaString.VERIFICATION_TYPE
+        )
+      )
+
+      code.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, constant = setInstanceFieldMethodRef()))
+      code.add(SimpleOperation(Opcode.OP_POP)) // Remove LoxNil from the stack
+      code.add(SimpleOperation(Opcode.OP_SWAP))
+
+      // get field
+      code.add(
+        ShortConstantOperation(
+          Opcode.OP_GETFIELD,
+          constant = superMapReference(instanceClassName = "LoxInstance_${method.currentClass}"),
+          value = JavaHashMap.VERIFICATION_TYPE
+        )
+      )
+
+      code.add(SimpleOperation(Opcode.OP_SWAP))
+
+      code.add(
+        ByteConstantOperation(
+          Opcode.OP_LDC,
+          constant = StringRefInfo(value = method.name),
+          value = JavaString.VERIFICATION_TYPE
+        )
+      )
+
+      code.add(SimpleOperation(Opcode.OP_SWAP))
+      code.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, constant = JavaHashMap.PUT))
+      code.add(SimpleOperation(Opcode.OP_POP)) // Remove result of HashMap.put() from the stack
+    }
+
+    false -> {
+      log.d { "Coming from the current class." }
+      code.add(
+        ByteConstantOperation(
+          Opcode.OP_LDC,
+          constant = StringRefInfo(value = method.name),
+          value = JavaString.VERIFICATION_TYPE
+        )
+      )
+
+      code.add(ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, constant = setInstanceFieldMethodRef()))
+      code.add(SimpleOperation(Opcode.OP_POP)) // Remove LoxNil from the stack
+    }
+  }
+
+  return code
+}
+
 private fun objectFieldMap() = FieldInfo(
   accessFlagList = listOf(),
   fieldName = "__fields__".toUtf8Value(),
-  fieldDescriptor = "Ljava/util/HashMap;".toUtf8Value(),
+  fieldDescriptor = JavaHashMap.DESCRIPTOR,
+)
+
+private fun superMethodsFieldMap() = FieldInfo(
+  accessFlagList = listOf(),
+  fieldName = "__super__".toUtf8Value(),
+  fieldDescriptor = JavaHashMap.DESCRIPTOR,
 )
 
 private fun getFieldMethod(instanceClassName: String): MethodInfo {
@@ -267,6 +343,50 @@ private fun getFieldMethod(instanceClassName: String): MethodInfo {
   )
 }
 
+private fun getSuperMethod(instanceClassName: String): MethodInfo {
+  val code = listOf(
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(
+      Opcode.OP_GETFIELD,
+      constant = superMapReference(instanceClassName),
+      value = JavaHashMap.VERIFICATION_TYPE
+    ),
+    SimpleOperation(Opcode.OP_ALOAD_1),
+    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, constant = JavaHashMap.CONTAINS_KEY),
+    ControlFlowOperation(Opcode.OP_IFEQ, jumpTo = 11),
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(
+      Opcode.OP_GETFIELD,
+      constant = superMapReference(instanceClassName),
+      value = JavaHashMap.VERIFICATION_TYPE
+    ),
+    SimpleOperation(Opcode.OP_ALOAD_1),
+    ShortConstantOperation(Opcode.OP_INVOKE_VIRTUAL, constant = JavaHashMap.GET),
+    ShortConstantOperation(Opcode.OP_CHECKCAST, constant = loxObjectClassInfo),
+    SimpleOperation(Opcode.OP_ARETURN),
+    ShortConstantOperation(
+      Opcode.OP_NEW,
+      constant = loxRuntimeErrorClassInfo,
+      value = ObjectVti(loxRuntimeErrorClassInfo)
+    ),
+    SimpleOperation(Opcode.OP_DUP),
+    SimpleOperation(Opcode.OP_ALOAD_2),
+    ShortConstantOperation(Opcode.OP_INVOKE_SPECIAL, constant = runtimeErrorConstructorRef()),
+    SimpleOperation(Opcode.OP_ATHROW),
+  )
+
+  return MethodInfo(
+    methodName = "__get_super__",
+    accessFlagList = listOf(MethodAccessFlags.NONE),
+    attributeList = listOf(CodeAttribute(argsSize = 3, code = code)),
+    isStatic = false,
+    signature = MethodSignature(
+      arguments = listOf(JavaString.VERIFICATION_TYPE, JavaString.VERIFICATION_TYPE),
+      returnType = loxObjectVti
+    )
+  )
+}
+
 internal fun getInstanceFieldMethodRef(): MethodRefInfo {
   return MethodRefInfo(
     label = "LoxObject.__get__:(Ljava/lang/String;Ljava/lang/String;)LLoxObject;",
@@ -274,6 +394,21 @@ internal fun getInstanceFieldMethodRef(): MethodRefInfo {
     nameAndType = NameAndTypeInfo(
       label = "__get__:(Ljava/lang/String;Ljava/lang/String;)LLoxObject;",
       name = "__get__".toUtf8Value(),
+      descriptor = "(Ljava/lang/String;Ljava/lang/String;)LLoxObject;".toUtf8Value(),
+    ),
+    argsSize = 3,
+    returnSize = 1,
+    returnTypeInfo = loxObjectVti,
+  )
+}
+
+internal fun getSuperMethodRef(): MethodRefInfo {
+  return MethodRefInfo(
+    label = "LoxObject.__get_super__:(Ljava/lang/String;Ljava/lang/String;)LLoxObject;",
+    classInfo = loxObjectClassInfo,
+    nameAndType = NameAndTypeInfo(
+      label = "__get_super__:(Ljava/lang/String;Ljava/lang/String;)LLoxObject;",
+      name = "__get_super__".toUtf8Value(),
       descriptor = "(Ljava/lang/String;Ljava/lang/String;)LLoxObject;".toUtf8Value(),
     ),
     argsSize = 3,
@@ -341,7 +476,17 @@ private fun objectFieldMapReference(instanceClassName: String) = FieldRefInfo(
   nameAndType = NameAndTypeInfo(
     label = "__fields__:Ljava/util/HashMap;",
     name = "__fields__".toUtf8Value(),
-    descriptor = "Ljava/util/HashMap;".toUtf8Value(),
+    descriptor = JavaHashMap.DESCRIPTOR,
+  )
+)
+
+internal fun superMapReference(instanceClassName: String) = FieldRefInfo(
+  label = "$instanceClassName.__super__:Ljava/util/HashMap;",
+  classInfo = ClassInfo(className = instanceClassName),
+  nameAndType = NameAndTypeInfo(
+    label = "__super__:Ljava/util/HashMap;",
+    name = "__super__".toUtf8Value(),
+    descriptor = JavaHashMap.DESCRIPTOR,
   )
 )
 
@@ -352,6 +497,8 @@ private fun generateInstanceConstructor(thisClassName: String, superClassName: S
       Opcode.OP_INVOKE_SPECIAL,
       constant = generateConstructorMethodRef(superClassName)
     ),
+
+    // Creating a map of fields
     SimpleOperation(Opcode.OP_ALOAD_0),
     ShortConstantOperation(
       Opcode.OP_NEW,
@@ -367,6 +514,24 @@ private fun generateInstanceConstructor(thisClassName: String, superClassName: S
       Opcode.OP_PUTFIELD,
       constant = objectFieldMapReference(instanceClassName = thisClassName)
     ),
+
+    // Creating the super map
+    SimpleOperation(Opcode.OP_ALOAD_0),
+    ShortConstantOperation(
+      Opcode.OP_NEW,
+      constant = JavaHashMap.CLASS_INFO,
+      value = JavaHashMap.VERIFICATION_TYPE
+    ),
+    SimpleOperation(Opcode.OP_DUP),
+    ShortConstantOperation(
+      Opcode.OP_INVOKE_SPECIAL,
+      constant = JavaHashMap.CONSTRUCTOR
+    ),
+    ShortConstantOperation(
+      Opcode.OP_PUTFIELD,
+      constant = superMapReference(instanceClassName = thisClassName)
+    ),
+
     SimpleOperation(Opcode.OP_RETURN)
   )
 
@@ -379,7 +544,7 @@ private fun generateInstanceConstructor(thisClassName: String, superClassName: S
   )
 }
 
-private fun hasInitializer(methods: List<FunctionStuff>): Boolean {
+private fun hasInitializer(methods: List<MethodMetadata>): Boolean {
   for (method in methods) {
     if (method.name == "init") {
       return true
