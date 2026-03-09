@@ -8,11 +8,11 @@ This repository showcases different approaches to implementing an interpreter fo
 ## Implementations
 
 The first two folders contain interpreters developed following comprehensive instructions from 'Crafting Interpreters'. 
-The third folder contains a work-in-progress implementation of Lox-to-JVM bytecode compiler.
+The third folder contains an implementation of the Lox-to-JVM bytecode compiler.
 
 * **jlox**: A tree-walk interpreter implemented in Java. It focuses on high-level concepts and language features.
 * **clox**: A fast interpreter inspired by Lua implemented in C. It focuses on memory management and efficient bytecode evaluation.
-* **rlc**: Rudny Lox Compiler (work-in-progress) implemented in Kotlin. It translates Lox code to JVM bytecode, executable by any Java Virtual Machine version 11 or newer.
+* **rlc**: Rudny Lox Compiler implemented in Kotlin. It translates Lox code to JVM bytecode, executable by any Java Virtual Machine version 11 or newer.
 
 ## Tests
 
