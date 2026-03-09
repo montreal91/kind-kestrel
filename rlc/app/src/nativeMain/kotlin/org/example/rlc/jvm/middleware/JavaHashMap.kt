@@ -13,6 +13,8 @@ internal object JavaHashMap {
 
   internal val VERIFICATION_TYPE = ObjectVti(classInfo = CLASS_INFO)
 
+  internal val DESCRIPTOR = "Ljava/util/HashMap;".toUtf8Value()
+
   internal val CONSTRUCTOR = MethodRefInfo(
     label = "java/util/HashMap.\"<init>\":()V",
     classInfo = CLASS_INFO,

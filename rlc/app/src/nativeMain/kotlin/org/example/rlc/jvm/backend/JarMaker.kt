@@ -14,7 +14,7 @@ import platform.posix.fwrite
 /**
  * This file contains sorta bad code, but its only purpose is to put bytecode in a jar file.
  *
- * It is totally internal and isolated from the other parts of compiler,
+ * It is totally internal and isolated from the other parts of the compiler,
  * so it doesn't really matter.
  * I'll improve it if I find enough time and motivation.
  */

@@ -1,5 +1,19 @@
 package org.example.rlc.frontend
 
+/**
+ * Represents a lexical token produced by a scanner or parser during the lexical analysis phase.
+ *
+ * A token is identified by its type, its literal value (if applicable), and the line number
+ * from which the token was extracted in the source code. The `Token` class is immutable
+ * and provides overrides for common operations such as equality comparison and hashing.
+ *
+ * @property type The type of the token, represented by the [Type] enum.
+ *                This defines the category or meaning of the token (e.g., identifier, operator, literal).
+ * @property value The string representation or literal value associated with the token.
+ *                 This will often be the raw text from the source code.
+ * @property lineNumber The line number in the source code where the token was encountered.
+ *                      This is useful for error reporting or debugging.
+ */
 class Token(val type: Type, val value: String, val lineNumber: Int) {
   enum class Type {
     LEFT_PAREN, RIGHT_PAREN,

@@ -1,3 +1,4 @@
+@file:OptIn(markerClass = [ExperimentalUuidApi::class])
 package org.example.rlc.frontend
 
 import co.touchlab.kermit.Logger
@@ -22,6 +23,7 @@ import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.ReturnStmt
 import org.example.rlc.frontend.ast.Set
 import org.example.rlc.frontend.ast.Stmt
+import org.example.rlc.frontend.ast.Super
 import org.example.rlc.frontend.ast.This
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
@@ -33,17 +35,22 @@ import org.example.rlc.frontend.scope.LocalVariable
 import org.example.rlc.frontend.scope.VariableResolutionResult
 import org.example.rlc.frontend.scope.VariableResolutionTable
 
-@OptIn(ExperimentalUuidApi::class)
+/**
+ * A `Resolver` is responsible for the semantic analysis of an abstract syntax tree (AST)
+ * in the context of variable resolution. It ensures that variables are properly declared
+ * and resolves every variable to a specific scope, identifying whether it is global, local, or enclosed.
+ *
+ * This class runs the resolution process to analyze declarations, detect scoping issues,
+ * and assign the appropriate variable resolution information for each identifier.
+ */
 class Resolver {
   private val resolutionTable = VariableResolutionTable()
   private val frameStack = FrameStack()
   private val errors = mutableListOf<LoxCompileError>()
 
-  private val functionContexts = ArrayDeque<FunctionContext>()
+  private val log = this::class.qualifiedName?.let { Logger.withTag(tag = it) }
 
-  private val log = Resolver::class.qualifiedName?.let { Logger.withTag(it) }
-
-  val hasErrors = errors.isNotEmpty()
+  val hasErrors get() = errors.isNotEmpty()
 
   fun resolve(program: Ast): VariableResolutionTable {
     program.forEach(this::visitStmt)
@@ -77,11 +84,12 @@ class Resolver {
     is Call -> visitCallExpr(expr)
     is Get -> visitGetExpr(get = expr)
     is Set -> visitSetExpr(set = expr)
-    is This -> visitThis(thisExpr = expr)
+    is This -> visitThis(expr = expr)
+    is Super -> visitSuper(expr)
   }
 
   private fun visitBlockStmt(stmt: BlockStmt) {
-    println("Resolver visiting a block statement.")
+    log?.d(messageString = "Resolver visiting a block statement.")
     frameStack.addNewFrame(type = Frame.Type.BLOCK, frameName = "Block")
     stmt.statements.forEach(action = this::visitStmt)
     frameStack.popFrame()
@@ -113,8 +121,6 @@ class Resolver {
       type = Frame.Type.FUNCTION,
       frameName = stmt.identifier.value
     )
-    functionContexts.addLast(FunctionContext())
-
     for (param in stmt.parameters) {
       checkVariable(param.identifier)
       resolveVariableDeclaration(uid = param.uid, variable = param.identifier.value)
@@ -139,15 +145,13 @@ class Resolver {
         name = ev.key, depth = -1, enclosedObject = enclosedObject
       ))
     }
-
-    functionContexts.removeLast()
   }
 
   private fun visitClassDeclStmt(classDecl: ClassDeclStmt) {
     checkVariable(variableToken = classDecl.identifier)
     resolveVariableDeclaration(uid = classDecl.uid, variable = classDecl.identifier.value)
 
-    classDecl.superclass?.let { it -> resolveVariable(it.value) }
+    classDecl.superclass?.let { resolveVariable(identifier = it.value) }
 
     frameStack.addNewFrame(
       type = Frame.Type.CLASS,
@@ -180,7 +184,11 @@ class Resolver {
   }
 
   private fun error(message: String, token: Token) {
+    log?.d(messageString = "Adding error: $message, token: $token")
+    log?.d(messageString = "Collected errors: ${errors.size}.")
     errors.add(LoxCompileError(message = message, token))
+    log?.d(messageString = "Resolver has errors: ${hasErrors}.")
+    log?.d(messageString = "Collected errors: ${errors.size}.")
   }
 
   private fun visitLiteral() {}
@@ -227,11 +235,15 @@ class Resolver {
     visitExpr(expr = set.value)
   }
 
-  private fun visitThis(thisExpr: This) {
+  private fun visitThis(expr: This) {
     when (frameStack.isInsideMethod()) {
       true -> {}
-      false -> error(message = "Can't use 'this' outside of a class", token = thisExpr.token)
+      false -> error(message = "Can't use 'this' outside of a class", token = expr.token)
     }
+  }
+
+  private fun visitSuper(expr: Super) {
+    log?.d(messageString = "Visiting a super expression.")
   }
 
   private fun resolveVariable(identifier: String): VariableResolutionResult {
@@ -279,7 +291,7 @@ class Resolver {
     } else {
       frameStack.declareVariable(variable, uid)
 
-      // Defines, in which local variable array index
+      // Defines, in which a local variable array index
       // this variable should resolve to
       val lookup = frameStack.lookup(variable)
       resolutionTable.set(

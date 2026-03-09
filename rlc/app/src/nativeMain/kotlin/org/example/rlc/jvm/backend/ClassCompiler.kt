@@ -19,9 +19,34 @@ import org.example.rlc.jvm.ir.StackMapTableAttribute
 import org.example.rlc.jvm.middleware.JavaString
 import org.example.rlc.jvm.middleware.javaLangObjectClassInfo
 
+/**
+ * A compiler class responsible for compiling a high-level `ClassFile` representation
+ * into its corresponding binary format, adhering to the Java bytecode structure.
+ *
+ * This class encompasses methods for processing various components of a Java class,
+ * including constant pools, fields, methods, interfaces, and attributes. The overall
+ * compilation process ensures the generation of a `CompiledBinaryFile` that contains
+ * the bytecode representation of the provided `ClassFile`.
+ *
+ * Key responsibilities of this class include:
+ * - Managing the constant pool and adding necessary entries during the compilation process.
+ * - Compiling class fields, methods, and attributes into their binary representations.
+ * - Handling specific attribute types, such as `CodeAttribute` and `StackMapTableAttribute`.
+ * - Generating the binary layout of Java class definitions, including header information,
+ *   constant pool data, and all related components.
+ *
+ * This is an internal class and is not intended for external use.
+ */
 internal class ClassCompiler {
   private val constantPool : ConstantPool = ConstantPool()
 
+  /**
+   * Compiles a given `ClassFile` into a binary file in the JVM `.class` format.
+   *
+   * @param classFile The `ClassFile` object containing class metadata, fields,
+   * interfaces, methods, and attributes to be compiled.
+   * @return A `CompiledBinaryFile` representing the compiled bytecode and its corresponding filename.
+   */
   fun compileClass(classFile: ClassFile): CompiledBinaryFile {
     println("Compiling class: ${classFile.filename}")
     val res = mutableListOf<Byte>()

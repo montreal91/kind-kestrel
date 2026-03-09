@@ -19,6 +19,7 @@ import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.ReturnStmt
 import org.example.rlc.frontend.ast.Set
 import org.example.rlc.frontend.ast.Stmt
+import org.example.rlc.frontend.ast.Super
 import org.example.rlc.frontend.ast.This
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
@@ -174,6 +175,7 @@ class AstPrettyPrinter {
     is Get -> TODO()
     is Set -> TODO()
     is This -> TODO()
+    is Super -> TODO()
   }
 
   private fun visitBinary(expr: Binary) {

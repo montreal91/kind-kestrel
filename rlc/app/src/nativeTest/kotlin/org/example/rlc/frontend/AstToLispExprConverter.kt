@@ -18,6 +18,7 @@ import org.example.rlc.frontend.ast.PrintStmt
 import org.example.rlc.frontend.ast.ReturnStmt
 import org.example.rlc.frontend.ast.Set
 import org.example.rlc.frontend.ast.Stmt
+import org.example.rlc.frontend.ast.Super
 import org.example.rlc.frontend.ast.This
 import org.example.rlc.frontend.ast.Unary
 import org.example.rlc.frontend.ast.VarDeclStmt
@@ -77,6 +78,7 @@ class AstToLispExprConverter(
       is Get -> visitGet(get = expr)
       is Set -> visitSet(set = expr)
       is This -> visitThis()
+      is Super -> visitSuper()
     }
   }
 
@@ -257,6 +259,10 @@ class AstToLispExprConverter(
 
   private fun visitThis() {
     sb.append("(this)")
+  }
+
+  private fun visitSuper() {
+    sb.append("(super)")
   }
 
   private fun visitUnary(expr: Unary) {

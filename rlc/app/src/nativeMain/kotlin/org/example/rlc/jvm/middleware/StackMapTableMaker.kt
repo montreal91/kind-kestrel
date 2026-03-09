@@ -22,6 +22,10 @@ import org.example.rlc.jvm.ir.SimpleOperation
 import org.example.rlc.jvm.ir.StackMapTableAttribute
 import org.example.rlc.jvm.ir.VerificationTypeInfo
 
+/**
+ * This class is responsible for generating and populating Stack Map Tables for a set of provided class files.
+ * It processes each class file and adds the required attributes to methods based on their code and control flow.
+ */
 class StackMapTableMaker {
   fun fillStackMapTables(classes: List<ClassFile>) {
     classes.forEach { classFile ->
